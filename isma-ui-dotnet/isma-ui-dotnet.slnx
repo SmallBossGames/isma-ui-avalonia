@@ -1,0 +1,7 @@
+<Solution>
+  <Project type="crossplat" Path="ISMA.App/ISMA.App.csproj" />
+  <Project Path="ISMA.Domain/ISMA.Domain.csproj" />
+  <Project Path="ISMA.Infrastructure/ISMA.Infrastructure.csproj" />
+  <Project Path="ISMA.ViewModels/ISMA.ViewModels.csproj" />
+  <Project Path="ISMA.Tests/ISMA.Tests.csproj" />
+</Solution>

@@ -1,0 +1,18 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace ISMA.ViewModels.ViewModels;
+
+public partial class BlueprintLoopTransactionViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private BlueprintStateViewModel _state = new();
+
+    [ObservableProperty]
+    private string _predicate = "";
+
+    [ObservableProperty]
+    private string _alias = "";
+
+    [ObservableProperty]
+    private string _text = "";
+}
