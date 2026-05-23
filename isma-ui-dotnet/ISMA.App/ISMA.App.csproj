@@ -20,7 +20,7 @@
     <PackageReference Include="AvaloniaUI.DiagnosticsSupport" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="ICSharpCode.AvalonEdit" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
   </ItemGroup>
 
 </Project>

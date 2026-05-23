@@ -39,7 +39,10 @@ public interface ISyntaxHighlighter
 
 public interface ITextEditorFactory
 {
-    object CreateTextEditor(string text, Action<string>? onTextChanged);
+    object CreateTextEditor(string text, Action<string>? onTextChanged, string? highlightingDefinitionName = null);
+    void SetSyntaxHighlighting(object editor, SyntaxTokenDto[] tokens, string source);
+    void AddSearchPanel(object editor);
+    void AddLineNumberMargin(object editor);
     void DisposeInstance(object editor);
 }
 
