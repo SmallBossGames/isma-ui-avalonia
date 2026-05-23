@@ -4,26 +4,170 @@
              x:Class="ISMA.App.Views.TasksPopOverView"
              x:CompileBindings="True"
              x:DataType="vm:TasksPopOverViewModel">
-    <StackPanel Margin="8" Spacing="8" MinWidth="300">
-        <TextBlock Text="In Progress" FontWeight="Bold" FontSize="14" />
-        <ListBox ItemsSource="{Binding InProgress}" MinHeight="100" MaxHeight="200">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:InProgressSimulationViewModel">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding Name}" />
-                        <TextBlock Text="{Binding Progress}" HorizontalAlignment="Right" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
 
-        <TextBlock Text="Completed" FontWeight="Bold" FontSize="14" />
-        <ListBox ItemsSource="{Binding Completed}" MinHeight="50" MaxHeight="150">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:CompletedSimulation">
-                    <TextBlock Text="{Binding Name}" />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-    </StackPanel>
+    <Border CornerRadius="6"
+            Padding="12"
+            MinWidth="340"
+            MaxWidth="420"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+            BorderThickness="1">
+        <Border.BoxShadow>
+            <BoxShadow Offset="0 4 16 0"
+                       Color="#80000000"
+                       Opacity="0.5"/>
+        </Border.BoxShadow>
+
+        <StackPanel Spacing="12">
+
+            <!-- In Progress Section -->
+            <StackPanel>
+                <TextBlock Text="In Progress"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Margin="0,0,0,6" />
+
+                <ItemsControl ItemsSource="{Binding InProgress}"
+                              MaxHeight="180">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:InProgressSimulationViewModel">
+                            <Border CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,2"
+                                    Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding ModelName}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <ProgressBar Value="{Binding Progress}"
+                                                 Minimum="0"
+                                                 Maximum="100"
+                                                 Height="6"
+                                                 Margin="0,2" />
+                                    <Button Content="Abort"
+                                            Padding="12,3"
+                                            FontSize="11"
+                                            HorizontalAlignment="Right"
+                                            Classes="accent"
+                                            Command="{Binding AbortCommand}"
+                                            IsEnabled="{Binding CanAbort}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Completed Section -->
+            <StackPanel>
+                <TextBlock Text="Completed"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Margin="0,0,0,6" />
+
+                <ItemsControl ItemsSource="{Binding Completed}"
+                              MaxHeight="160">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CompletedSimulationViewModel">
+                            <Border CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,2"
+                                    Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding ModelName}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="1"
+                                            Content="Show"
+                                            Padding="8,3"
+                                            FontSize="10"
+                                            Margin="6,0,0,0"
+                                            Command="{Binding ShowCommand}"
+                                            VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="2"
+                                            Content="Export"
+                                            Padding="8,3"
+                                            FontSize="10"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding ExportCommand}"
+                                            VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="3"
+                                            Content="Remove"
+                                            Padding="8,3"
+                                            FontSize="10"
+                                            Margin="4,0,0,0"
+                                            Classes="danger"
+                                            Command="{Binding RemoveCommand}"
+                                            VerticalAlignment="Center" />
+
+                                    <TextBlock Grid.Column="4"
+                                               x:Name="Chevron"
+                                               Text="⋯"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Classes="chevron"
+                                               PointerEntered="OnChevronPointerEntered"
+                                               PointerExited="OnChevronPointerExited"
+                                               PointerReleased="OnChevronPointerReleased"
+                                               IsHitTestVisible="True">
+                                        <TextBlock.Transitions>
+                                            <Transitions>
+                                                <TransformTransition Property="RotateTransform.Angle"
+                                                                     Duration="0:0:0.15" />
+                                            </Transitions>
+                                        </TextBlock.Transitions>
+                                    </TextBlock>
+
+                                    <!-- Nested Popup for Details -->
+                                    <Popup x:Name="DetailsPopup"
+                                           Placement="Bottom"
+                                           HorizontalOffset="-60"
+                                           VerticalOffset="4"
+                                           MinWidth="200">
+                                        <Border CornerRadius="4"
+                                                Padding="10"
+                                                Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                BorderThickness="1">
+                                            <Border.BoxShadow>
+                                                <BoxShadow Offset="0 2 8 0"
+                                                           Color="#60000000"
+                                                           Opacity="0.4"/>
+                                            </Border.BoxShadow>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding ModelName}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="11" />
+                                                <TextBlock Text="ID: {Binding Id}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                                <TextBlock Text="File: {Binding CachedFile}"
+                                                           FontSize="10"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+        </StackPanel>
+    </Border>
 </UserControl>

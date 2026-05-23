@@ -53,18 +53,19 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
     [RelayCommand]
     private void SelectAll()
     {
-        SelectedYAxes.Clear();
         foreach (var item in YAxisItems)
         {
-            if (!SelectedYAxes.Contains(item.Value))
-                SelectedYAxes.Add(item.Value);
+            item.IsSelected = true;
         }
     }
 
     [RelayCommand]
     private void UnselectAll()
     {
-        SelectedYAxes.Clear();
+        foreach (var item in YAxisItems)
+        {
+            item.IsSelected = false;
+        }
     }
 
     [RelayCommand]

@@ -1,7 +1,15 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace ISMA.ViewModels.Models;
 
-public sealed class NamedPickerItem
+public partial class NamedPickerItem : ObservableObject
 {
-    public string Name { get; set; } = "";
-    public string Value { get; set; } = "";
+    [ObservableProperty]
+    private string _name = "";
+
+    [ObservableProperty]
+    private string _value = "";
+
+    [ObservableProperty]
+    private bool _isSelected;
 }
