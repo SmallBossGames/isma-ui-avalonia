@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
 
 namespace ISMA.ViewModels.ViewModels;
 
-public partial class BlueprintEditorViewModel : ObservableObject
+public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 {
     private BlueprintModel _model = BlueprintModel.Empty;
     private BlueprintEditorMode _currentMode = BlueprintEditorMode.Default;
@@ -46,8 +47,20 @@ public partial class BlueprintEditorViewModel : ObservableObject
     [ObservableProperty]
     private BlueprintTransactionViewModel? _selectedTransaction;
 
+    [ObservableProperty]
+    private bool _isAddTransitionMode;
+
+    [ObservableProperty]
+    private bool _isRemoveStateMode;
+
+    [ObservableProperty]
+    private bool _isRemoveTransitionMode;
+
     public BlueprintEditorViewModel()
     {
+        IsAddTransitionMode = false;
+        IsRemoveStateMode = false;
+        IsRemoveTransitionMode = false;
     }
 
     public BlueprintEditorViewModel(BlueprintModel model)
@@ -61,12 +74,11 @@ public partial class BlueprintEditorViewModel : ObservableObject
         if (CurrentMode != BlueprintEditorMode.Default)
             return;
 
-        var statesList = _model.States.AddRange(_model.States).ToImmutableList().ToImmutableArray();
         var newState = new BlueprintStateModel
         {
-            CanvasPositionX = 100 + (_model.States.Length * 30),
-            CanvasPositionY = 100 + (_model.States.Length * 30),
-            Name = $"state{_model.States.Length}",
+            CanvasPositionX = 100 + (States.Count * 30),
+            CanvasPositionY = 100 + (States.Count * 30),
+            Name = $"State{States.Count}",
             Text = ""
         };
 
@@ -109,6 +121,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         };
 
         CurrentMode = BlueprintEditorMode.Default;
+        IsAddTransitionMode = false;
         ReloadViews();
     }
 
@@ -133,6 +146,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         };
 
         CurrentMode = BlueprintEditorMode.Default;
+        IsRemoveStateMode = false;
         SelectedState = null;
         ReloadViews();
     }
@@ -161,6 +175,7 @@ public partial class BlueprintEditorViewModel : ObservableObject
         };
 
         CurrentMode = BlueprintEditorMode.Default;
+        IsRemoveTransitionMode = false;
         SelectedTransaction = null;
         ReloadViews();
     }
@@ -186,6 +201,42 @@ public partial class BlueprintEditorViewModel : ObservableObject
         ReloadViews();
     }
 
+    [RelayCommand]
+    private void RemoveSelected()
+    {
+        if (CurrentMode == BlueprintEditorMode.RemoveState && SelectedState != null)
+        {
+            var newStateList = _model.States.RemoveAll(s => s.Name == SelectedState.Name);
+            _model = new BlueprintModel
+            {
+                Main = _model.Main,
+                Init = _model.Init,
+                States = newStateList,
+                Transactions = _model.Transactions,
+                LoopTransactions = _model.LoopTransactions
+            };
+            SelectedState = null;
+            ReloadViews();
+        }
+        else if (CurrentMode == BlueprintEditorMode.RemoveTransition && SelectedTransaction != null)
+        {
+            var newTxList = _model.Transactions.RemoveAll(tx =>
+                tx.StartStateName == SelectedTransaction.StartState.Name &&
+                tx.EndStateName == SelectedTransaction.EndState.Name &&
+                tx.Predicate == SelectedTransaction.Predicate);
+            _model = new BlueprintModel
+            {
+                Main = _model.Main,
+                Init = _model.Init,
+                States = _model.States,
+                Transactions = newTxList,
+                LoopTransactions = _model.LoopTransactions
+            };
+            SelectedTransaction = null;
+            ReloadViews();
+        }
+    }
+
     public BlueprintModel GetBlueprintModel() => _model;
 
     public void SetBlueprintModel(BlueprintModel model)
@@ -198,6 +249,51 @@ public partial class BlueprintEditorViewModel : ObservableObject
     private void ResetEditorMode()
     {
         CurrentMode = BlueprintEditorMode.Default;
+        IsAddTransitionMode = false;
+        IsRemoveStateMode = false;
+        IsRemoveTransitionMode = false;
+    }
+
+    partial void OnIsAddTransitionModeChanged(bool value)
+    {
+        if (value)
+        {
+            CurrentMode = BlueprintEditorMode.AddTransition;
+            IsRemoveStateMode = false;
+            IsRemoveTransitionMode = false;
+        }
+        else if (CurrentMode == BlueprintEditorMode.AddTransition)
+        {
+            CurrentMode = BlueprintEditorMode.Default;
+        }
+    }
+
+    partial void OnIsRemoveStateModeChanged(bool value)
+    {
+        if (value)
+        {
+            CurrentMode = BlueprintEditorMode.RemoveState;
+            IsAddTransitionMode = false;
+            IsRemoveTransitionMode = false;
+        }
+        else if (CurrentMode == BlueprintEditorMode.RemoveState)
+        {
+            CurrentMode = BlueprintEditorMode.Default;
+        }
+    }
+
+    partial void OnIsRemoveTransitionModeChanged(bool value)
+    {
+        if (value)
+        {
+            CurrentMode = BlueprintEditorMode.RemoveTransition;
+            IsAddTransitionMode = false;
+            IsRemoveStateMode = false;
+        }
+        else if (CurrentMode == BlueprintEditorMode.RemoveTransition)
+        {
+            CurrentMode = BlueprintEditorMode.Default;
+        }
     }
 
     private void ReloadViews()

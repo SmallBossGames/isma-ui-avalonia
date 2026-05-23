@@ -1,17 +1,13 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:ISMA.ViewModels.Converters"
              x:Class="ISMA.App.App"
              x:CompileBindings="True"
              RequestedThemeVariant="Default">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <x:Bind Converters:IntegerConverter/>
-                <x:Bind Converters:DoubleConverter/>
-                <x:Bind Converters:ProgressToPercentConverter/>
-                <x:Bind Converters:SaveTargetConverter/>
-                <x:Bind Converters:BoolToVisibilityConverter/>
-                <x:Bind Styles/GlobalStyles/>
+                <StyleInclude Source="avares://ISMA.App/Styles/GlobalStyles.axaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

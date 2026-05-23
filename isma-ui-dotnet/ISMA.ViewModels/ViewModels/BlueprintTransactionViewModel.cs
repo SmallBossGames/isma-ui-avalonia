@@ -15,4 +15,7 @@ public partial class BlueprintTransactionViewModel : ObservableObject
 
     [ObservableProperty]
     private string _alias = "";
+
+    [ObservableProperty]
+    private bool _isSelected;
 }

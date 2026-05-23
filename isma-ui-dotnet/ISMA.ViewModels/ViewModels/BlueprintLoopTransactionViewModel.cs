@@ -15,4 +15,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
 
     [ObservableProperty]
     private string _text = "";
+
+    [ObservableProperty]
+    private bool _isSelected;
 }

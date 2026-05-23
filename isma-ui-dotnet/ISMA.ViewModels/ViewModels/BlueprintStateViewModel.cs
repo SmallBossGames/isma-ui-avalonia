@@ -27,4 +27,7 @@ public partial class BlueprintStateViewModel : ObservableObject
 
     [ObservableProperty]
     private string _fillColorHex = "#F08080";
+
+    [ObservableProperty]
+    private bool _isSelected;
 }
