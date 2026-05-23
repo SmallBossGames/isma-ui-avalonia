@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using ISMA.App.Services;
+using ISMA.Domain.Contracts;
 using ISMA.Infrastructure.ChartViewer;
 using ISMA.Infrastructure.FileStorage;
 using ISMA.Infrastructure.Server;
@@ -57,7 +58,7 @@ public partial class App : Application
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
-        services.AddSingleton<SimulationParametersService>();
+        services.AddSingleton<ISMA.App.Services.SimulationParametersService>();
 
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();

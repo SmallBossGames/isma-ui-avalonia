@@ -17,16 +17,12 @@
         </TabControl.ItemTemplate>
 
         <TabControl.ContentTemplate>
-            <DataTemplate x:DataType="vm:LismaProjectViewModel">
-                <views:IsmaTextEditorView DataContext="{Binding}" />
-            </DataTemplate>
-            <DataTemplate x:DataType="vm:BlueprintProjectViewModel">
-                <ContentControl Content="{Binding EditorContent}" />
-            </DataTemplate>
-        </TabControl.ContentTemplate>
-
-        <TabControl.Commands>
-            <RoutedCommand x:Name="CloseTabCommand" />
-        </TabControl.Commands>
-    </TabControl>
+             <DataTemplate x:DataType="vm:LismaProjectViewModel">
+                 <views:IsmaTextEditorView DataContext="{Binding}" />
+             </DataTemplate>
+             <DataTemplate x:DataType="vm:BlueprintProjectViewModel">
+                 <ContentControl Content="{Binding EditorContent}" />
+             </DataTemplate>
+         </TabControl.ContentTemplate>
+     </TabControl>
 </UserControl>
