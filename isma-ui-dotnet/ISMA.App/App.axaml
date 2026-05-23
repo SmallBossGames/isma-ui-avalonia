@@ -1,8 +1,20 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ISMA.App.App"
+             x:CompileBindings="True"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <x:Bind Converters:IntegerConverter/>
+                <x:Bind Converters:DoubleConverter/>
+                <x:Bind Converters:ProgressToPercentConverter/>
+                <x:Bind Converters:SaveTargetConverter/>
+                <x:Bind Converters:BoolToVisibilityConverter/>
+                <x:Bind Styles/GlobalStyles/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />

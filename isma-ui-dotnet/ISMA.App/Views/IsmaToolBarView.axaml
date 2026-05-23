@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ISMA.ViewModels.ViewModels"
+             x:Class="ISMA.App.Views.IsmaToolBarView"
+             x:CompileBindings="True"
+             x:DataType="vm:MainWindowViewModel">
+    <ToolBar Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+             BorderThickness="0,0,0,1"
+             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+        <ToggleButton ToolTip.Tip="New Text Model"
+                      Command="{Binding NewTextCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="New Statechart"
+                      Command="{Binding NewBlueprintCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Open Model"
+                      Command="{Binding OpenCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Save Current"
+                      Command="{Binding SaveCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Save All"
+                      Command="{Binding SaveAllCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <Separator />
+        <ToggleButton ToolTip.Tip="Cut"
+                      Command="{Binding CutCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Copy"
+                      Command="{Binding CopyCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Paste"
+                      Command="{Binding PasteCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <Separator />
+        <ToggleButton ToolTip.Tip="Verify"
+                      Command="{Binding VerifyCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <Separator />
+        <ToggleButton ToolTip.Tip="Store Settings"
+                      Command="{Binding StoreSettingsCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+        <ToggleButton ToolTip.Tip="Load Settings"
+                      Command="{Binding LoadSettingsCommand}">
+            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
+        </ToggleButton>
+    </ToolBar>
+</UserControl>

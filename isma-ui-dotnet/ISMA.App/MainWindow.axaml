@@ -1,12 +1,76 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:ISMA.ViewModels.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:views="using:ISMA.App.Views"
+        xmlns:m="using:ISMA.Domain.Models"
         x:Class="ISMA.App.MainWindow"
+        x:CompileBindings="True"
         x:DataType="vm:MainWindowViewModel"
         Title="ISMA"
         MinWidth="500" MinHeight="600">
-    <ContentPresenter Content="{Binding}" />
+    <BorderPane>
+        <BorderPane.Top>
+            <StackPanel>
+                <views:IsmaMenuBarView />
+                <views:IsmaToolBarView />
+            </StackPanel>
+        </BorderPane.Top>
+
+        <BorderPane.Center>
+            <views:EditorTabPaneView />
+        </BorderPane.Center>
+
+        <BorderPane.Right>
+            <ContentControl Content="{Binding SimulationParameters}"
+                            IsVisible="{Binding ShowSettings}"
+                            Width="240">
+                <ContentControl.DataTemplate>
+                    <views:SettingsPanelView />
+                </ContentControl.DataTemplate>
+            </ContentControl>
+        </BorderPane.Right>
+
+        <BorderPane.Bottom>
+            <StackPanel>
+                <DataGrid ItemsSource="{Binding ErrorList.Errors}"
+                          AutoCreateColumns="False"
+                          IsReadOnly="True"
+                          CanUserResizeColumns="True"
+                          Height="150"
+                          BorderThickness="0,1,0,0">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="5*" Header="Row">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="m:ErrorInfo">
+                                    <TextBlock Text="{Binding Row}"
+                                               HorizontalAlignment="Right"
+                                               Padding="4,2,8,2" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Width="5*" Header="Position">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="m:ErrorInfo">
+                                    <TextBlock Text="{Binding Position}"
+                                               HorizontalAlignment="Right"
+                                               Padding="4,2,8,2" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Width="10*" Header="Fragment">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="m:ErrorInfo">
+                                    <TextBlock Text="{Binding FragmentName}"
+                                               Padding="4,2,4,2" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Width="80*" Header="Message"
+                                            Binding="{Binding Message}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <views:SimulationProcessBarView />
+            </StackPanel>
+        </BorderPane.Bottom>
+    </BorderPane>
 </Window>
