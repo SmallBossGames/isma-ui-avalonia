@@ -10,9 +10,9 @@ public class EditorPlatformService
 {
     private TextEditor? _focusedEditor;
 
-    public Action<string>? CutRequested { get; set; }
-    public Action<string>? CopyRequested { get; set; }
-    public Action<string>? PasteRequested { get; set; }
+    public Action? CutRequested { get; set; }
+    public Action? CopyRequested { get; set; }
+    public Action? PasteRequested { get; set; }
 
     public void SetFocusedEditor(TextEditor? editor)
     {
@@ -24,7 +24,7 @@ public class EditorPlatformService
         if (_focusedEditor is not null)
         {
             AvaloniaEdit.ApplicationCommands.Cut.Execute(null, _focusedEditor.TextArea);
-            CutRequested?.Invoke(_focusedEditor.Text);
+            CutRequested?.Invoke();
         }
     }
 
@@ -33,7 +33,7 @@ public class EditorPlatformService
         if (_focusedEditor is not null)
         {
             AvaloniaEdit.ApplicationCommands.Copy.Execute(null, _focusedEditor.TextArea);
-            CopyRequested?.Invoke(_focusedEditor.Text);
+            CopyRequested?.Invoke();
         }
     }
 
@@ -42,7 +42,15 @@ public class EditorPlatformService
         if (_focusedEditor is not null)
         {
             AvaloniaEdit.ApplicationCommands.Paste.Execute(null, _focusedEditor.TextArea);
-            PasteRequested?.Invoke(_focusedEditor.Text);
+            PasteRequested?.Invoke();
+        }
+    }
+
+    public void HandleSelectAll(TextEditor editor)
+    {
+        if (editor is not null)
+        {
+            editor.SelectAll();
         }
     }
 
@@ -76,5 +84,4 @@ public class EditorPlatformService
             e.Handled = true;
         }
     }
-
- }
+}

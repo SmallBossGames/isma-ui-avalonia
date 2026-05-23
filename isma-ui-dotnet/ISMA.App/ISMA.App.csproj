@@ -23,4 +23,10 @@
     <PackageReference Include="Avalonia.AvaloniaEdit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\LISMA.xshd" />
+  </ItemGroup>
+
+  
+
 </Project>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SyntaxDefinition name="LISMA"
+                  xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <Color name="Keyword" Foreground="#FF8C00" />
+  <Color name="Comment" Foreground="#808080" />
+  <Color name="Number"  Foreground="#4169E1" />
+  <Color name="String"  Foreground="#2E8B57" />
+  <Color name="State"   Foreground="#FF4500" />
+  <Color name="Punctuation" Foreground="#000000" />
+
+  <RuleSet>
+    <Keywords color="Keyword">
+      <Word>state</Word>
+      <Word>from</Word>
+      <Word>init</Word>
+      <Word>if</Word>
+      <Word>else</Word>
+      <Word>while</Word>
+      <Word>for</Word>
+      <Word>break</Word>
+      <Word>continue</Word>
+      <Word>return</Word>
+      <Word>function</Word>
+      <Word>variable</Word>
+      <Word>parameter</Word>
+      <Word>output</Word>
+      <Word>input</Word>
+      <Word>transition</Word>
+      <Word>loop</Word>
+      <Word>true</Word>
+      <Word>false</Word>
+    </Keywords>
+
+    <Span color="Comment" multiline="true">
+      <Begin>//</Begin>
+    </Span>
+
+    <Span color="Comment" multiline="true">
+      <Begin>/*</Begin>
+      <End>*/</End>
+    </Span>
+
+    <Span color="String">
+      <Begin>"</Begin>
+      <End>"</End>
+    </Span>
+
+    <Rule color="Number">
+      \b\d+(\.\d+)?([eE][+-]?\d+)?\b
+    </Rule>
+
+    <Rule color="State">
+      \bstate\b\s+(\w+)
+    </Rule>
+
+    <Rule color="Punctuation">
+      [\{\}\(\)\;\,\.\:\=\+\-\*\/\&lt;\&gt;\!\|\?]
+    </Rule>
+  </RuleSet>
+</SyntaxDefinition>

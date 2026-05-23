@@ -14,6 +14,7 @@ public sealed class ProjectService
     private readonly ISimulationServerFacade _serverFacade;
     private readonly ITextEditorFactory _editorFactory;
     private readonly SimulationParametersService _parametersService;
+    private readonly ISyntaxHighlighter _syntaxHighlighter;
 
     private readonly List<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
@@ -35,17 +36,19 @@ public sealed class ProjectService
         IProjectFileService projectFileService,
         ISimulationServerFacade serverFacade,
         ITextEditorFactory editorFactory,
-        SimulationParametersService parametersService)
+        SimulationParametersService parametersService,
+        ISyntaxHighlighter syntaxHighlighter)
     {
         _projectFileService = projectFileService;
         _serverFacade = serverFacade;
         _editorFactory = editorFactory;
         _parametersService = parametersService;
+        _syntaxHighlighter = syntaxHighlighter;
     }
 
     public async Task<IProjectViewModel?> CreateNewAsync()
     {
-        var project = new LismaProjectViewModel(_serverFacade, _editorFactory);
+        var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter);
         _projects.Add(project);
         ActiveProject = project;
         return project;
@@ -53,7 +56,7 @@ public sealed class ProjectService
 
     public async Task<IProjectViewModel?> CreateNewBlueprintAsync()
     {
-        var project = new BlueprintProjectViewModel();
+        var project = new BlueprintProjectViewModel(_projectFileService, _editorFactory);
         var editorVm = new BlueprintEditorViewModel();
         project.SetEditorViewModel(editorVm);
         _projects.Add(project);
@@ -63,13 +66,13 @@ public sealed class ProjectService
 
    public async Task<IProjectViewModel?> OpenAsync()
     {
-        var paths = await _projectFileService.Open(null);
+        var paths = await _projectFileService.Open((object?)null);
         if (paths == null || paths.Count == 0)
             return null;
 
-        var opened = await _projectFileService.Open((IList<string>)paths);
-        var filePath = opened.FirstOrDefault().ToString() ?? "";
-        IProjectViewModel project = CreateLismaProject(filePath);
+        var types = await _projectFileService.Open((IList<string>)paths);
+        var filePath = paths[0];
+        IProjectViewModel project = CreateProject(filePath, types[0]);
 
         _projects.Add(project);
         ActiveProject = project;
@@ -129,18 +132,32 @@ public sealed class ProjectService
 
     private LismaProjectViewModel CreateLismaProject(string path)
     {
-        var project = new LismaProjectViewModel(_serverFacade, _editorFactory,
-            new ISMA.Domain.Models.LismaTextModel("", Array.Empty<ISMA.Domain.Models.CodeRegion>()), path);
+        var project = new LismaProjectViewModel(
+            _serverFacade,
+            _editorFactory,
+            _projectFileService,
+            _syntaxHighlighter,
+            new ISMA.Domain.Models.LismaTextModel("", Array.Empty<ISMA.Domain.Models.CodeRegion>()),
+            path);
         return project;
     }
 
     private BlueprintProjectViewModel CreateBlueprintProject(string path)
     {
-        var project = new BlueprintProjectViewModel();
+        var project = new BlueprintProjectViewModel(_projectFileService, _editorFactory);
         project.LoadFromFile(path);
         var editorVm = new BlueprintEditorViewModel();
         project.SetEditorViewModel(editorVm);
         return project;
+    }
+
+    private IProjectViewModel CreateProject(string path, ProjectType type)
+    {
+        return type switch
+        {
+            ProjectType.Blueprint => CreateBlueprintProject(path),
+            ProjectType.Legacy or _ => CreateLismaProject(path)
+        };
     }
 
     private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
