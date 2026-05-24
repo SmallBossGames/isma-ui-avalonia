@@ -25,19 +25,16 @@ public class SimulationWorkflowTests : IntegrationTestBase
         Window.GetActiveProject().Should().NotBeNull();
 
         // Step 2: Write model text using LISMA language via UI
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
-        project.Should().NotBeNull();
-        project!.FullText =
-            @"""
-            main {
-                x = 0;
-            }
+        Window.GetActiveProject().Should().NotBeNull();
+        Window.SetEditorText(@"
+main {
+    x = 0;
+}
 
-            state ""initial"" (1 > 0) {
-                x = 1;
-            } from main;
-            """;
-        project.FullText.Should().NotBeNullOrEmpty();
+state ""initial"" (1 > 0) {
+    x = 1;
+} from main;
+");
 
         // Step 3: Setup simulation parameters
         ViewModel.SimulationParameters.CauchyInitials.StartTime = 0.0;
@@ -82,8 +79,8 @@ public class SimulationWorkflowTests : IntegrationTestBase
         Window.GetActiveProject().Should().NotBeNull();
 
         // Write invalid LISMA code via UI
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
-        project!.FullText = "invalid syntax here {{{";
+        Window.GetActiveProject().Should().NotBeNull();
+        Window.SetEditorText("invalid syntax here {{{");
 
         // Mock server to return compilation errors
         MockServer.CompileHandler = _ => Task.FromResult(new CompileResult

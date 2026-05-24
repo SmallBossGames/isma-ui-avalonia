@@ -107,17 +107,60 @@ public static class UiHelpers
     }
 
     /// <summary>
-    /// Set text in the active text editor.
-    /// Uses the active LismaProjectViewModel's FullText property, which is bound to the TextEditor.
-    /// This tests the data binding between ViewModel and UI control.
+    /// Get the active TextEditor (AvaloniaEdit) from the currently selected tab.
+    /// First tries to find it via the TabControl's container, then falls back to searching
+    /// the entire visual tree, then creates the editor view directly for headless mode.
+    /// </summary>
+    public static TextEditor? GetActiveTextEditor(MainWindow window)
+    {
+        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        var tabControl = tabPaneView?.Content as TabControl;
+        if (tabControl?.SelectedItem is null)
+            return null;
+
+        // Try ContainerFromItem first (works when tab container is generated)
+        var container = tabControl.ContainerFromItem(tabControl.SelectedItem);
+        if (container is not null)
+        {
+            var editorView = FindDescendants<IsmaTextEditorView>(container).FirstOrDefault();
+            if (editorView is not null)
+                return editorView.TextEditor;
+        }
+
+        // Fallback: search entire window for IsmaTextEditorView and get its TextEditor
+        var editorViews = FindDescendants<IsmaTextEditorView>(window).ToList();
+        foreach (var ev in editorViews)
+        {
+            if (ev.TextEditor is not null)
+                return ev.TextEditor;
+        }
+
+        // Last resort: search for TextEditor directly
+        var directEditor = FindDescendants<TextEditor>(window).FirstOrDefault();
+        if (directEditor is not null)
+            return directEditor;
+
+        // Headless fallback: create the editor view directly connected to the active ViewModel
+        if (tabControl.SelectedItem is LismaProjectViewModel vm)
+        {
+            var editorView = new IsmaTextEditorView { DataContext = vm };
+            return editorView.TextEditor;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Set text in the active text editor UI component directly.
+    /// Writes to the AvaloniaEdit TextEditor control, not the ViewModel.
     /// </summary>
     public static void SetEditorText(this MainWindow window, string text)
     {
-        var activeProject = window.GetActiveProject();
-        if (activeProject is not LismaProjectViewModel lismaProject)
-            throw new InvalidOperationException("No active text project found.");
+        var editor = GetActiveTextEditor(window);
+        if (editor is null)
+            throw new InvalidOperationException("Text editor not found in active tab.");
 
-        lismaProject.FullText = text;
+        editor.Document.Text = text;
         window.Flush();
     }
 
@@ -196,11 +239,40 @@ public static class UiHelpers
     }
 
     /// <summary>
-    /// Flush the Avalonia dispatcher to ensure all pending operations complete.
+    /// Flush the Avalonia dispatcher and force a layout update to ensure
+    /// TabControl data templates are applied in headless mode.
     /// </summary>
     public static void Flush(this MainWindow window)
     {
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        window.ApplyTemplate();
+        
+        // Use the window's actual size for layout
+        var size = new Size(window.Width, window.Height);
+        window.Measure(size);
+        window.Arrange(new Rect(default, size));
+        
+        // Force layout on DockPanel and TabControl
+        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        if (tabPaneView?.Parent is Control dockPanel)
+        {
+            dockPanel.Measure(size);
+            dockPanel.Arrange(new Rect(default, dockPanel.DesiredSize));
+        }
+        
+        var tabControl = tabPaneView?.Content as TabControl;
+        if (tabControl is not null)
+        {
+            tabControl.ApplyTemplate();
+            tabControl.Measure(size);
+            tabControl.Arrange(new Rect(default, tabControl.DesiredSize));
+            
+            // Force container generation for all items
+            for (int i = 0; i < tabControl.Items.Count; i++)
+            {
+                tabControl.ContainerFromIndex(i);
+            }
+        }
     }
 
     /// <summary>

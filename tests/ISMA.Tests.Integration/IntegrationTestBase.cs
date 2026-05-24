@@ -47,6 +47,8 @@ public abstract class IntegrationTestBase : IDisposable
         // Resolve all components from the service provider (not manually constructed)
         ViewModel = Services.GetRequiredService<MainWindowViewModel>();
         Window = new MainWindow(ViewModel);
+        Window.Width = 1024;
+        Window.Height = 768;
         Window.Show();
     }
 

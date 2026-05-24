@@ -22,8 +22,7 @@ public class ValidationTests : IntegrationTestBase
         Window.ClickMenuItem("MenuNewText");
         Window.GetActiveProject().Should().NotBeNull();
 
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
-        project!.FullText = "invalid syntax {{{";
+        Window.SetEditorText("invalid syntax {{{");
 
         // Mock server to return validation errors
         MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
@@ -46,8 +45,8 @@ public class ValidationTests : IntegrationTestBase
     {
         // Create text project via UI
         Window.ClickMenuItem("MenuNewText");
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
-        project!.FullText = "invalid syntax {{{";
+        Window.GetActiveProject().Should().NotBeNull();
+        Window.SetEditorText("invalid syntax {{{");
 
         // Mock server to return validation errors
         MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult

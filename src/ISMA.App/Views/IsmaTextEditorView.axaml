@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:editors="using:AvaloniaEdit"
-             xmlns:vm="using:ISMA.ViewModels.ViewModels"
-             x:Class="ISMA.App.Views.IsmaTextEditorView"
-             x:CompileBindings="False">
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:editors="using:AvaloniaEdit"
+              xmlns:vm="using:ISMA.ViewModels.ViewModels"
+              x:Class="ISMA.App.Views.IsmaTextEditorView"
+              x:CompileBindings="False">
     <Panel>
         <editors:TextEditor x:Name="Editor"
                             x:CompileBindings="False"

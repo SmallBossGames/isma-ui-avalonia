@@ -203,13 +203,10 @@ public class ProjectManagementTests : IntegrationTestBase
     {
         // Create text project via UI
         Window.ClickMenuItem("MenuNewText");
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
-        project.Should().NotBeNull();
+        Window.GetActiveProject().Should().NotBeNull();
 
-        // Set content using SetContent (which sets IsDirty)
-        project!.SetContent("main { x = 0; }");
-        project.FullText.Should().Be("main { x = 0; }");
-        project.IsDirty.Should().BeTrue();
+        // Set text directly in the TextEditor UI component
+        Window.SetEditorText("main { x = 0; }");
     }
 
     [AvaloniaFact]

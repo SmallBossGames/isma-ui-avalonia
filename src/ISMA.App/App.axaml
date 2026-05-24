@@ -1,17 +1,28 @@
-<Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:ISMA.ViewModels.Converters"
-             x:Class="ISMA.App.App"
-             x:CompileBindings="True"
-             RequestedThemeVariant="Default">
+<Application
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:ISMA.ViewModels.Converters"
+    x:Class="ISMA.App.App"
+    x:CompileBindings="True"
+    RequestedThemeVariant="Default"
+>
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <StyleInclude Source="avares://ISMA.App/Styles/GlobalStyles.axaml"/>
+                <StyleInclude
+                    Source="avares://ISMA.App/Styles/GlobalStyles.axaml"
+                />
+                <StyleInclude
+                    Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"
+                />
             </ResourceDictionary.MergedDictionaries>
 
-            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-            <converters:ModeToVisibilityConverter x:Key="ModeToVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter
+                x:Key="BoolToVisibilityConverter"
+            />
+            <converters:ModeToVisibilityConverter
+                x:Key="ModeToVisibilityConverter"
+            />
         </ResourceDictionary>
     </Application.Resources>
 

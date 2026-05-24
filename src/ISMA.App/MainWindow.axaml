@@ -8,24 +8,24 @@
         x:DataType="vm:MainWindowViewModel"
         Title="ISMA"
         MinWidth="500" MinHeight="600">
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*,Auto">
         <StackPanel Grid.Row="0">
             <views:IsmaMenuBarView x:Name="MenuBar" />
             <views:IsmaToolBarView x:Name="ToolBar" />
         </StackPanel>
 
-          <DockPanel Grid.Row="1" LastChildFill="True">
-            <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" DockPanel.Dock="Left" />
-
-            <ContentControl x:Name="SettingsPanel" DockPanel.Dock="Right"
+        <Grid Grid.Row="1" ColumnDefinitions="*,240">
+            <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" Grid.Column="0"
+                                     HorizontalAlignment="Stretch"
+                                     VerticalAlignment="Stretch" />
+            
+            <ContentControl x:Name="SettingsPanel" Grid.Column="1"
                             AutomationProperties.AutomationId="SettingsPanel"
                             Content="{Binding SimulationParameters}"
-                            IsVisible="{Binding ShowSettings}"
-                            Width="240" />
-        </DockPanel>
+                            IsVisible="{Binding ShowSettings}" />
+        </Grid>
 
-        <Border Grid.Row="1"
-                VerticalAlignment="Bottom"
+        <Border Grid.Row="2" Height="180"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">

@@ -12,6 +12,8 @@ public partial class IsmaTextEditorView : UserControl
     private TextEditorFactory? _textEditorFactory;
     private TextEditor? _textEditor;
 
+    public TextEditor? TextEditor => _textEditor;
+
     public IsmaTextEditorView()
     {
         InitializeComponent();
@@ -36,7 +38,8 @@ public partial class IsmaTextEditorView : UserControl
 
         if (DataContext is LismaProjectViewModel vm && _textEditor is not null)
         {
-            _textEditor.Text = vm.EditorContent as string ?? "";
+            _textEditor.Text = vm.FullText;
+            vm.SetEditorInstance(_textEditor);
             _editorPlatformService?.SetFocusedEditor(_textEditor);
         }
     }
