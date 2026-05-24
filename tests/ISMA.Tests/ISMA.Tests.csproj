@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ISMA.Domain\ISMA.Domain.csproj" />
-    <ProjectReference Include="..\ISMA.ViewModels\ISMA.ViewModels.csproj" />
-    <ProjectReference Include="..\ISMA.App\ISMA.App.csproj" />
+    <ProjectReference Include="..\..\src\ISMA.Domain\ISMA.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ISMA.ViewModels\ISMA.ViewModels.csproj" />
+    <ProjectReference Include="..\..\src\ISMA.App\ISMA.App.csproj" />
   </ItemGroup>
 
   <ItemGroup>

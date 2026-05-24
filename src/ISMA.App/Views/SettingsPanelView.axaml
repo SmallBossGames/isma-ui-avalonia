@@ -14,25 +14,25 @@
 
         <TabItem Header="Initials">
             <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" />
+                <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" AutomationPrefix="Settings-CauchyInitials" />
             </Border>
         </TabItem>
 
         <TabItem Header="Integration">
             <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding IntegrationMethod}" />
+                <controls:PropertiesGrid ViewModel="{Binding IntegrationMethod}" AutomationPrefix="Settings-IntegrationMethod" />
             </Border>
         </TabItem>
 
         <TabItem Header="Event Detection">
             <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding EventDetection}" />
+                <controls:PropertiesGrid ViewModel="{Binding EventDetection}" AutomationPrefix="Settings-EventDetection" />
             </Border>
         </TabItem>
 
         <TabItem Header="Result Processing">
             <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding ResultProcessing}" />
+                <controls:PropertiesGrid ViewModel="{Binding ResultProcessing}" AutomationPrefix="Settings-ResultProcessing" />
             </Border>
         </TabItem>
     </TabControl>

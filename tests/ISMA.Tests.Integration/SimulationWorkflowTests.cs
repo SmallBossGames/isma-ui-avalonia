@@ -6,6 +6,7 @@ using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.Tests.Integration;
 
@@ -18,23 +19,24 @@ public class SimulationWorkflowTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task FullSimulationWorkflow_CompletesSuccessfully()
     {
-        // Step 1: Create new text project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
+        // Step 1: Create new text project via UI
+        Window.ClickMenuItem("MenuNewText");
         ViewModel.Projects.Should().HaveCount(1);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        Window.GetActiveProject().Should().NotBeNull();
 
-        // Step 2: Write model text using LISMA language
-        var project = ViewModel.ActiveProject as LismaProjectViewModel;
+        // Step 2: Write model text using LISMA language via UI
+        var project = Window.GetActiveProject() as LismaProjectViewModel;
         project.Should().NotBeNull();
-        project!.FullText = @"
-main {
-    x = 0;
-}
+        project!.FullText =
+            @"""
+            main {
+                x = 0;
+            }
 
-state ""initial"" (1 > 0) {
-    x = 1;
-} from main;
-";
+            state ""initial"" (1 > 0) {
+                x = 1;
+            } from main;
+            """;
         project.FullText.Should().NotBeNullOrEmpty();
 
         // Step 3: Setup simulation parameters
@@ -57,8 +59,8 @@ state ""initial"" (1 > 0) {
             ColumnNames = ImmutableArray.Create("time", "x", "y")
         });
 
-        // Step 5: Run simulation
-        await ViewModel.RunCommand.ExecuteAsync(null);
+        // Step 5: Run simulation via UI
+        Window.ClickMenuItem("MenuRun");
 
         // Step 6: Watch simulation progress
         ViewModel.SimulationService.TrackingTasks.Should().BeEmpty(); // Progress completed
@@ -69,18 +71,18 @@ state ""initial"" (1 > 0) {
 
         // Step 8: Verify project state
         ViewModel.Projects.Should().HaveCount(1);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        Window.GetActiveProject().Should().NotBeNull();
     }
 
     [AvaloniaFact]
     public async Task Simulation_FailsGracefullyOnCompileErrors()
     {
-        // Create project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
-        // Write invalid LISMA code
-        var project = ViewModel.ActiveProject as LismaProjectViewModel;
+        // Write invalid LISMA code via UI
+        var project = Window.GetActiveProject() as LismaProjectViewModel;
         project!.FullText = "invalid syntax here {{{";
 
         // Mock server to return compilation errors
@@ -92,8 +94,8 @@ state ""initial"" (1 > 0) {
             )
         });
 
-        // Run simulation (should fail at compile step)
-        await ViewModel.RunCommand.ExecuteAsync(null);
+        // Run simulation via UI (should fail at compile step)
+        Window.ClickMenuItem("MenuRun");
 
         // Verify graceful failure
         ViewModel.SimulationService.IsRunning.Should().BeFalse();
@@ -105,9 +107,9 @@ state ""initial"" (1 > 0) {
     [AvaloniaFact]
     public async Task Simulation_CanBeCancelled()
     {
-        // Create project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
         // Mock server to simulate a long-running simulation
         var cts = new System.Threading.CancellationTokenSource();
@@ -116,7 +118,7 @@ state ""initial"" (1 > 0) {
         MockServer.MonitorHandler = id => LongRunningSimulation(cts.Token);
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
-        // Start simulation
+        // Start simulation via UI
         var simulationTask = ViewModel.RunCommand.ExecuteAsync(null);
 
         // Wait for simulation to start
@@ -140,16 +142,16 @@ state ""initial"" (1 > 0) {
     {
         ViewModel.ActiveProject = null;
 
-        Action run = () => ViewModel.RunCommand.Execute(null);
+        Action run = () => Window.ClickMenuItem("MenuRun");
         run.Should().NotThrow();
     }
 
     [AvaloniaFact]
     public async Task Simulation_AlreadyRunning_DoesNotStartAnother()
     {
-        // Create project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
         // Mock server
         MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
@@ -160,19 +162,19 @@ state ""initial"" (1 > 0) {
         // Set running manually
         ViewModel.SimulationService.IsRunning = true;
 
-        // Try to run again
-        await ViewModel.RunCommand.ExecuteAsync(null);
+        // Try to run again via UI
+        Window.ClickMenuItem("MenuRun");
 
         // Should still be running (not started another)
         ViewModel.SimulationService.IsRunning.Should().BeTrue();
     }
 
-[AvaloniaFact]
+    [AvaloniaFact]
     public async Task Simulation_UsesDefaultParameters()
     {
-        // Create project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
         // Mock server
         MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
@@ -180,8 +182,8 @@ state ""initial"" (1 > 0) {
         MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
-        // Run simulation
-        await ViewModel.RunCommand.ExecuteAsync(null);
+        // Run simulation via UI
+        Window.ClickMenuItem("MenuRun");
 
         // Verify simulation was called with default parameters
         MockServer.LastRunParams.Should().NotBeNull();
@@ -192,12 +194,12 @@ state ""initial"" (1 > 0) {
     [AvaloniaFact]
     public async Task BlueprintWorkflow_ConvertsToLisma()
     {
-        // Step 1: Create new blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
+        // Step 1: Create new blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
         ViewModel.Projects.Should().HaveCount(1);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        Window.GetActiveProject().Should().NotBeNull();
 
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         // Step 2: Add states and transitions via the editor

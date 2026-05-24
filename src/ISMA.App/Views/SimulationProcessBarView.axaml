@@ -13,12 +13,14 @@
                     Margin="4"
                     Height="32">
             <Button ToolTip.Tip="Run Simulation"
+                    AutomationProperties.AutomationId="ProcessBarRun"
                     Command="{Binding RunCommand}"
                     Content="Run"
                     Width="60" Height="28"
                     Padding="0"/>
 
             <Button ToolTip.Tip="Simulation Tasks"
+                    AutomationProperties.AutomationId="ProcessBarTasks"
                     Content="Tasks"
                     Width="80" Height="28"
                     Padding="0">

@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ISMA.ViewModels.ViewModels"
+             x:Class="ISMA.App.Views.IsmaMenuBarView"
+             x:CompileBindings="True"
+             x:DataType="vm:MainWindowViewModel">
+    <Menu Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+        <Menu.KeyBindings>
+            <KeyBinding Command="{Binding NewTextCommand}" Gesture="Ctrl+N" />
+            <KeyBinding Command="{Binding NewBlueprintCommand}" Gesture="Ctrl+B" />
+            <KeyBinding Command="{Binding OpenCommand}" Gesture="Ctrl+O" />
+            <KeyBinding Command="{Binding SaveCommand}" Gesture="Ctrl+S" />
+            <KeyBinding Command="{Binding CloseCommand}" Gesture="Ctrl+W" />
+            <KeyBinding Command="{Binding CutCommand}" Gesture="Ctrl+X" />
+            <KeyBinding Command="{Binding CopyCommand}" Gesture="Ctrl+C" />
+            <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V" />
+            <KeyBinding Command="{Binding VerifyCommand}" Gesture="Ctrl+F4" />
+            <KeyBinding Command="{Binding RunCommand}" Gesture="Ctrl+F5" />
+        </Menu.KeyBindings>
+
+        <MenuItem Header="_File" AutomationProperties.AutomationId="MenuFile">
+            <MenuItem Header="_New Text" AutomationProperties.AutomationId="MenuNewText" Command="{Binding NewTextCommand}" InputGesture="Ctrl+N" />
+            <MenuItem Header="New S_tatechart" AutomationProperties.AutomationId="MenuNewBlueprint" Command="{Binding NewBlueprintCommand}" InputGesture="Ctrl+B" />
+            <MenuItem Header="_Open..." AutomationProperties.AutomationId="MenuOpen" Command="{Binding OpenCommand}" InputGesture="Ctrl+O" />
+            <MenuItem Header="_Save" AutomationProperties.AutomationId="MenuSave" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+            <MenuItem Header="Save _All" AutomationProperties.AutomationId="MenuSaveAll" Command="{Binding SaveAllCommand}" />
+            <MenuItem Header="_Close" AutomationProperties.AutomationId="MenuClose" Command="{Binding CloseCommand}" InputGesture="Ctrl+W" />
+            <MenuItem Header="Close _All" AutomationProperties.AutomationId="MenuCloseAll" Command="{Binding CloseAllCommand}" />
+            <Separator />
+            <MenuItem Header="E_xit" AutomationProperties.AutomationId="MenuExit" Command="{Binding ExitCommand}" InputGesture="Ctrl+W" />
+        </MenuItem>
+
+        <MenuItem Header="_Edit" AutomationProperties.AutomationId="MenuEdit">
+            <MenuItem Header="Cu_t" AutomationProperties.AutomationId="MenuCut" Command="{Binding CutCommand}" InputGesture="Ctrl+X" />
+            <MenuItem Header="_Copy" AutomationProperties.AutomationId="MenuCopy" Command="{Binding CopyCommand}" InputGesture="Ctrl+C" />
+            <MenuItem Header="_Paste" AutomationProperties.AutomationId="MenuPaste" Command="{Binding PasteCommand}" InputGesture="Ctrl+V" />
+        </MenuItem>
+
+        <MenuItem Header="_Simulation" AutomationProperties.AutomationId="MenuSimulation">
+            <MenuItem Header="_Verify" AutomationProperties.AutomationId="MenuVerify" Command="{Binding VerifyCommand}" InputGesture="Ctrl+F4" />
+            <MenuItem Header="_Run" AutomationProperties.AutomationId="MenuRun" Command="{Binding RunCommand}" InputGesture="Ctrl+F5" />
+            <Separator />
+            <MenuItem Header="_Store Settings" AutomationProperties.AutomationId="MenuStoreSettings" Command="{Binding StoreSettingsCommand}" />
+            <MenuItem Header="_Load Settings" AutomationProperties.AutomationId="MenuLoadSettings" Command="{Binding LoadSettingsCommand}" />
+        </MenuItem>
+    </Menu>
+</UserControl>

@@ -37,6 +37,4 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
   </ItemGroup>
 
-  
-
 </Project>

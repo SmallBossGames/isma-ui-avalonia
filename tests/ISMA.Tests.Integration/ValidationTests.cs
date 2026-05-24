@@ -5,6 +5,7 @@ using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.Tests.Integration;
 
@@ -17,11 +18,11 @@ public class ValidationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Verify_CallsServerValidation()
     {
-        // Create text project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create text project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
-        var project = ViewModel.ActiveProject as LismaProjectViewModel;
+        var project = Window.GetActiveProject() as LismaProjectViewModel;
         project!.FullText = "invalid syntax {{{";
 
         // Mock server to return validation errors
@@ -33,8 +34,8 @@ public class ValidationTests : IntegrationTestBase
             )
         });
 
-        // Execute Verify
-        await ViewModel.VerifyCommand.ExecuteAsync(null);
+        // Execute Verify via UI
+        Window.ClickMenuItem("MenuVerify");
 
         // Verify server was called
         MockServer.ValidateCalled.Should().BeTrue();
@@ -43,9 +44,9 @@ public class ValidationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Verify_DoesNotThrowOnError()
     {
-        // Create text project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        var project = ViewModel.ActiveProject as LismaProjectViewModel;
+        // Create text project via UI
+        Window.ClickMenuItem("MenuNewText");
+        var project = Window.GetActiveProject() as LismaProjectViewModel;
         project!.FullText = "invalid syntax {{{";
 
         // Mock server to return validation errors
@@ -56,8 +57,8 @@ public class ValidationTests : IntegrationTestBase
             )
         });
 
-        // Execute Verify - should not throw
-        Action verify = () => ViewModel.VerifyCommand.Execute(null);
+        // Execute Verify via UI - should not throw
+        Action verify = () => Window.ClickMenuItem("MenuVerify");
         verify.Should().NotThrow();
     }
 
@@ -66,32 +67,32 @@ public class ValidationTests : IntegrationTestBase
     {
         ViewModel.ActiveProject = null;
 
-        Action verify = () => ViewModel.VerifyCommand.Execute(null);
+        Action verify = () => Window.ClickMenuItem("MenuVerify");
         verify.Should().NotThrow();
     }
 
     [AvaloniaFact]
     public async Task Verify_DoesNotThrowWithBlueprintProject()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        Window.GetActiveProject().Should().NotBeNull();
 
-        Action verify = () => ViewModel.VerifyCommand.Execute(null);
+        Action verify = () => Window.ClickMenuItem("MenuVerify");
         verify.Should().NotThrow();
     }
 
     [AvaloniaFact]
     public async Task Verify_ServerNotAvailable_DoesNotCrash()
     {
-        // Create text project
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create text project via UI
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
 
         // Mock server to throw exception
         MockServer.CompileHandler = _ => throw new System.Exception("Server unavailable");
 
-        Action verify = () => ViewModel.VerifyCommand.Execute(null);
+        Action verify = () => Window.ClickMenuItem("MenuVerify");
         verify.Should().NotThrow();
     }
 

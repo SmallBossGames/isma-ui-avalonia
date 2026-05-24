@@ -14,10 +14,11 @@
             <views:IsmaToolBarView x:Name="ToolBar" />
         </StackPanel>
 
-        <DockPanel Grid.Row="1" LastChildFill="True">
-            <views:EditorTabPaneView x:Name="EditorTabPane" DockPanel.Dock="Left" />
+          <DockPanel Grid.Row="1" LastChildFill="True">
+            <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" DockPanel.Dock="Left" />
 
-            <ContentControl DockPanel.Dock="Right"
+            <ContentControl x:Name="SettingsPanel" DockPanel.Dock="Right"
+                            AutomationProperties.AutomationId="SettingsPanel"
                             Content="{Binding SimulationParameters}"
                             IsVisible="{Binding ShowSettings}"
                             Width="240" />
@@ -29,7 +30,7 @@
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
             <StackPanel>
-                <DataGrid x:Name="ErrorList" ItemsSource="{Binding ErrorList.Errors}"
+                <DataGrid x:Name="ErrorList" AutomationProperties.AutomationId="ErrorList" ItemsSource="{Binding ErrorList.Errors}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
                           CanUserResizeColumns="True"
