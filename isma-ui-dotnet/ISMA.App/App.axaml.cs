@@ -83,19 +83,8 @@ public partial class App : Application
             return new SimulationServerFacade(manager, socketHandler, logger);
         });
 
-        services.AddSingleton<IProjectFileService, ProjectFileService>();
-        services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
-        services.AddSingleton<ISimulationResultService, SimulationResultService>();
-        services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
-        services.AddSingleton<IModelErrorService, ModelErrorService>();
-        services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
-
-        services.AddSingleton<ErrorListViewModel>();
-        services.AddSingleton<SimulationParametersViewModel>();
-        services.AddSingleton<TasksPopOverViewModel>();
-        services.AddSingleton<SimulationServiceViewModel>();
-        services.AddSingleton<ProjectService>();
-        services.AddSingleton<MainWindowViewModel>();
+        // Use shared service collection configuration (everything except ISimulationServerFacade)
+        services.ConfigureAppServices();
 
         return services;
     }
