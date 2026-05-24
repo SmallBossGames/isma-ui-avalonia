@@ -10,53 +10,53 @@
         <StackPanel Orientation="Horizontal"
                     Spacing="2"
                     Margin="2,0">
-            <ToggleButton ToolTip.Tip="New Text Model"
-                          Command="{Binding NewTextCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="New Statechart"
-                          Command="{Binding NewBlueprintCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Open Model"
-                          Command="{Binding OpenCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Save Current"
-                          Command="{Binding SaveCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Save All"
-                          Command="{Binding SaveAllCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <Separator />
-            <ToggleButton ToolTip.Tip="Cut"
-                          Command="{Binding CutCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Copy"
-                          Command="{Binding CopyCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Paste"
-                          Command="{Binding PasteCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <Separator />
-            <ToggleButton ToolTip.Tip="Verify"
-                          Command="{Binding VerifyCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <Separator />
-            <ToggleButton ToolTip.Tip="Store Settings"
-                          Command="{Binding StoreSettingsCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
-            <ToggleButton ToolTip.Tip="Load Settings"
-                          Command="{Binding LoadSettingsCommand}">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="16" />
-            </ToggleButton>
+            <Button ToolTip.Tip="New Text Model"
+                    Command="{Binding NewTextCommand}"
+                    Content="New Text"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="New Statechart"
+                    Command="{Binding NewBlueprintCommand}"
+                    Content="New Blueprint"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Open Model"
+                    Command="{Binding OpenCommand}"
+                    Content="Open"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Save Current"
+                    Command="{Binding SaveCommand}"
+                    Content="Save"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Save All"
+                    Command="{Binding SaveAllCommand}"
+                    Content="Save All"
+                    Padding="8,4"/>
+            <Separator/>
+            <Button ToolTip.Tip="Cut"
+                    Command="{Binding CutCommand}"
+                    Content="Cut"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Copy"
+                    Command="{Binding CopyCommand}"
+                    Content="Copy"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Paste"
+                    Command="{Binding PasteCommand}"
+                    Content="Paste"
+                    Padding="8,4"/>
+            <Separator/>
+            <Button ToolTip.Tip="Verify"
+                    Command="{Binding VerifyCommand}"
+                    Content="Verify"
+                    Padding="8,4"/>
+            <Separator/>
+            <Button ToolTip.Tip="Store Settings"
+                    Command="{Binding StoreSettingsCommand}"
+                    Content="Store"
+                    Padding="8,4"/>
+            <Button ToolTip.Tip="Load Settings"
+                    Command="{Binding LoadSettingsCommand}"
+                    Content="Load"
+                    Padding="8,4"/>
         </StackPanel>
     </Border>
 </UserControl>

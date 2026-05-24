@@ -14,15 +14,14 @@
                     Height="32">
             <Button ToolTip.Tip="Run Simulation"
                     Command="{Binding RunCommand}"
-                    Width="28" Height="28"
-                    Padding="0">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
-            </Button>
+                    Content="Run"
+                    Width="60" Height="28"
+                    Padding="0"/>
 
             <Button ToolTip.Tip="Simulation Tasks"
-                    Width="28" Height="28"
+                    Content="Tasks"
+                    Width="80" Height="28"
                     Padding="0">
-                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
                 <Button.Flyout>
                     <Flyout>
                         <views:TasksPopOverView DataContext="{Binding TasksPopOver}" />

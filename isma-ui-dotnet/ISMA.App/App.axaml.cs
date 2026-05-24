@@ -1,3 +1,4 @@
+using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -8,6 +9,7 @@ using ISMA.Infrastructure.FileStorage;
 using ISMA.Infrastructure.Server;
 using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +26,8 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        ConfigureServerPaths();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             if (_services is null)
@@ -38,6 +42,32 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    private void ConfigureServerPaths()
+    {
+        var assemblyDir = Path.GetDirectoryName(typeof(App).Assembly.Location) ?? Directory.GetCurrentDirectory();
+        var configPath = Path.Combine(assemblyDir, "appsettings.json");
+
+        if (File.Exists(configPath))
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(assemblyDir)
+                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
+                .Build();
+
+            var serverPath = config["Server:ScriptPath"];
+            if (!string.IsNullOrWhiteSpace(serverPath))
+            {
+                AppContext.SetData("isma.server.script", serverPath);
+            }
+
+            var grinPath = config["Grin:ScriptPath"];
+            if (!string.IsNullOrWhiteSpace(grinPath))
+            {
+                AppContext.SetData("isma.grin.script", grinPath);
+            }
+        }
+    }
+
     internal static IServiceCollection ConfigureServiceCollection()
     {
         var services = new ServiceCollection();
@@ -45,7 +75,7 @@ public partial class App : Application
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
         services.AddSingleton<SimulationServerManager>();
-        services.AddSingleton<SimulationServerFacade>(sp =>
+        services.AddSingleton<ISimulationServerFacade>(sp =>
         {
             var manager = sp.GetRequiredService<SimulationServerManager>();
             var socketHandler = UnixSocketHandlerFactory.Create();
@@ -56,9 +86,9 @@ public partial class App : Application
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
-        services.AddSingleton<SyntaxHighlighterService>();
+        services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
-        services.AddSingleton<ISMA.App.Services.SimulationParametersService>();
+        services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
 
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
