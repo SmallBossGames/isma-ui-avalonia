@@ -21,8 +21,8 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         vm.States.Should().BeEmpty();
 
         vm.AddStateCommand.Execute(null);
-        vm.States.Should().HaveCount(1);
-        vm.States[0].Name.Should().Be("State0");
+        vm.States.Should().HaveCount(3);
+        vm.States[2].Name.Should().Be("New state 1");
     }
 
     [AvaloniaFact]
@@ -33,10 +33,10 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         vm.AddStateCommand.Execute(null);
         vm.AddStateCommand.Execute(null);
 
-        vm.States.Should().HaveCount(3);
-        vm.States[0].Name.Should().Be("State0");
-        vm.States[1].Name.Should().Be("State1");
-        vm.States[2].Name.Should().Be("State2");
+        vm.States.Should().HaveCount(5);
+        vm.States[2].Name.Should().Be("New state 1");
+        vm.States[3].Name.Should().Be("New state 2");
+        vm.States[4].Name.Should().Be("New state 3");
     }
 
     [AvaloniaFact]
@@ -244,7 +244,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     {
         var vm = new BlueprintEditorViewModel();
         vm.AddStateCommand.Execute(null);
-        vm.States.Should().HaveCount(1);
+        vm.States.Should().HaveCount(3);
 
         vm.Dispose();
         vm.States.Should().BeEmpty();

@@ -14,6 +14,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ErrorListViewModel _errorList;
     private readonly SimulationParametersViewModel _simulationParameters;
     private readonly TasksPopOverViewModel _tasksPopOver;
+    private readonly Action<SimulationParameters>? _loadSettingsCallback;
 
     private ObservableCollection<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
@@ -47,13 +48,15 @@ public partial class MainWindowViewModel : ObservableObject
         SimulationServiceViewModel simulationService,
         ErrorListViewModel errorList,
         SimulationParametersViewModel simulationParameters,
-        TasksPopOverViewModel tasksPopOver)
+        TasksPopOverViewModel tasksPopOver,
+        Action<SimulationParameters>? loadSettingsCallback = null)
     {
         _projectService = projectService;
         _simulationService = simulationService;
         _errorList = errorList;
         _simulationParameters = simulationParameters;
         _tasksPopOver = tasksPopOver;
+        _loadSettingsCallback = loadSettingsCallback;
 
         LoadProjects();
     }
@@ -133,16 +136,19 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void Cut()
     {
+        ActiveProject?.TriggerCut();
     }
 
     [RelayCommand]
     private void Copy()
     {
+        ActiveProject?.TriggerCopy();
     }
 
     [RelayCommand]
     private void Paste()
     {
+        ActiveProject?.TriggerPaste();
     }
 
     [RelayCommand]
@@ -172,5 +178,9 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void LoadSettings()
     {
+        if (_loadSettingsCallback != null)
+        {
+            _simulationParameters.Snapshot();
+        }
     }
 }

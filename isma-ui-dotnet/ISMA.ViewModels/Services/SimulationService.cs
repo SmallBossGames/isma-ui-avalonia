@@ -105,14 +105,6 @@ public partial class SimulationServiceViewModel : ObservableObject
                 inProgress.Progress = progress.EndTime > progress.StartTime
                     ? (progress.CurrentTime - progress.StartTime) / (progress.EndTime - progress.StartTime)
                     : 0.0;
-
-                if (inProgress.CanAbort)
-                {
-                    await _serverFacade.CancelSimulation(simulationId);
-                    TrackingTasks.Remove(inProgress);
-                    StatusText = "Simulation cancelled";
-                    return;
-                }
             }
 
             StatusText = "Downloading results...";
@@ -141,10 +133,12 @@ public partial class SimulationServiceViewModel : ObservableObject
         }
     }
 
-    public async Task StopSimulationAsync(InProgressSimulationViewModel simulation)
+   public async Task StopSimulationAsync(InProgressSimulationViewModel simulation)
     {
         if (simulation == null)
             return;
+
+        simulation.CanAbort = false;
 
         try
         {

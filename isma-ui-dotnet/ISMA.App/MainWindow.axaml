@@ -10,12 +10,12 @@
         MinWidth="500" MinHeight="600">
     <Grid RowDefinitions="Auto,*">
         <StackPanel Grid.Row="0">
-            <views:IsmaMenuBarView />
-            <views:IsmaToolBarView />
+            <views:IsmaMenuBarView x:Name="MenuBar" />
+            <views:IsmaToolBarView x:Name="ToolBar" />
         </StackPanel>
 
         <DockPanel Grid.Row="1" LastChildFill="True">
-            <views:EditorTabPaneView DockPanel.Dock="Left" />
+            <views:EditorTabPaneView x:Name="EditorTabPane" DockPanel.Dock="Left" />
 
             <ContentControl DockPanel.Dock="Right"
                             Content="{Binding SimulationParameters}"
@@ -29,7 +29,7 @@
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
             <StackPanel>
-                <DataGrid ItemsSource="{Binding ErrorList.Errors}"
+                <DataGrid x:Name="ErrorList" ItemsSource="{Binding ErrorList.Errors}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
                           CanUserResizeColumns="True"
@@ -65,7 +65,7 @@
                                             Binding="{Binding Message}" />
                     </DataGrid.Columns>
                 </DataGrid>
-                <views:SimulationProcessBarView />
+                <views:SimulationProcessBarView x:Name="ProcessBar" />
             </StackPanel>
         </Border>
     </Grid>

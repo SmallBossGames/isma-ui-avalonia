@@ -90,6 +90,11 @@ public static class AsyncEnumerable
         return new EmptyAsyncEnumerable<T>();
     }
 
+    public static IAsyncEnumerable<T> One<T>(T item)
+    {
+        return new OneAsyncEnumerable<T>(item);
+    }
+
     private sealed class EmptyAsyncEnumerable<T> : IAsyncEnumerable<T>
     {
         public IAsyncEnumerator<T> GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default)
@@ -102,6 +107,33 @@ public static class AsyncEnumerable
     {
         public T Current => default!;
         public ValueTask<bool> MoveNextAsync() => new(false);
+        public ValueTask DisposeAsync() => default;
+    }
+
+    private sealed class OneAsyncEnumerable<T> : IAsyncEnumerable<T>
+    {
+        private readonly T _item;
+        public OneAsyncEnumerable(T item) => _item = item;
+
+        public IAsyncEnumerator<T> GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default)
+        {
+            return new OneAsyncEnumerator<T>(_item);
+        }
+    }
+
+    private sealed class OneAsyncEnumerator<T> : IAsyncEnumerator<T>
+    {
+        private readonly T _item;
+        private bool _called;
+        public OneAsyncEnumerator(T item) => _item = item;
+
+        public T Current => _item;
+        public ValueTask<bool> MoveNextAsync()
+        {
+            if (_called) return new(false);
+            _called = true;
+            return new(true);
+        }
         public ValueTask DisposeAsync() => default;
     }
 }

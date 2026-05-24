@@ -132,13 +132,13 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task EventDetection_Has_Default_Gamma()
     {
-        ViewModel.SimulationParameters.EventDetection.Gamma.Should().Be(0.001);
+        ViewModel.SimulationParameters.EventDetection.Gamma.Should().Be(0.8);
     }
 
     [AvaloniaFact]
     public async Task EventDetection_Has_Default_Low_Border()
     {
-        ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.0);
+        ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.001);
     }
 
     [AvaloniaFact]
@@ -191,7 +191,7 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task ResultProcessing_Has_Default_Tolerance()
     {
-        ViewModel.SimulationParameters.ResultProcessing.Tolerance.Should().Be(0.0001);
+        ViewModel.SimulationParameters.ResultProcessing.Tolerance.Should().Be(0.001);
     }
 
     [AvaloniaFact]

@@ -27,7 +27,7 @@ public class BlueprintEditorViewModelTests
         viewModel.States.Should().HaveCount(3);
 
         var newState = viewModel.States[2];
-        newState.Name.Should().StartWith("State");
+        newState.Name.Should().StartWith("New state");
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public class BlueprintEditorViewModelTests
 
         mainState.Name.Should().Be("main");
         initState.Name.Should().Be("init");
-        userState.Name.Should().StartWith("State");
+        userState.Name.Should().StartWith("New state");
     }
 
     [Fact]

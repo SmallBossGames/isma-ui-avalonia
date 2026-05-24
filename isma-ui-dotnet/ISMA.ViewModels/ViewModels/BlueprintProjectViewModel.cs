@@ -139,4 +139,8 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     {
         _editorViewModel?.Dispose();
     }
+
+    public void TriggerCut() { }
+    public void TriggerCopy() { }
+    public void TriggerPaste() { }
 }

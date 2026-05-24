@@ -41,7 +41,7 @@ public class SimulationParametersService
         return true;
     }
 
-    public async Task<bool> Load(object? ownerWindow)
+    public async Task<bool> Load(object? ownerWindow, Action<SimulationParameters> applyCallback)
     {
         var control = ownerWindow as Avalonia.Visual ?? _owner as Avalonia.Visual;
         var topLevel = TopLevel.GetTopLevel(control);
@@ -60,7 +60,10 @@ public class SimulationParametersService
 
         var json = await File.ReadAllTextAsync(files[0].Path.LocalPath);
         var paramsModel = JsonSerializer.Deserialize<SimulationParameters>(json);
-        return paramsModel is not null;
+        if (paramsModel is null) return false;
+
+        applyCallback(paramsModel);
+        return true;
     }
 
     public SimulationParameters Snapshot()

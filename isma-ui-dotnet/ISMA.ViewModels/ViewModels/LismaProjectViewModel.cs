@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.Services;
 
 namespace ISMA.ViewModels.ViewModels;
 
@@ -15,6 +16,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     private readonly ITextEditorFactory _editorFactory;
     private readonly IProjectFileService _projectFileService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
+    private readonly IModelErrorService? _errorService;
     private LismaTextModel _model;
     private object? _editorInstance;
 
@@ -47,12 +49,14 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         ISimulationServerFacade serverFacade,
         ITextEditorFactory editorFactory,
         IProjectFileService projectFileService,
-        ISyntaxHighlighter syntaxHighlighter)
+        ISyntaxHighlighter syntaxHighlighter,
+        IModelErrorService? errorService = null)
     {
         _serverFacade = serverFacade;
         _editorFactory = editorFactory;
         _projectFileService = projectFileService;
         _syntaxHighlighter = syntaxHighlighter;
+        _errorService = errorService;
         _model = new LismaTextModel("", Array.Empty<CodeRegion>());
         _name = "Untitled";
         FullText = string.Empty;
@@ -64,12 +68,14 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         IProjectFileService projectFileService,
         ISyntaxHighlighter syntaxHighlighter,
         LismaTextModel model,
-        string? filePath)
+        string? filePath,
+        IModelErrorService? errorService = null)
     {
         _serverFacade = serverFacade;
         _editorFactory = editorFactory;
         _projectFileService = projectFileService;
         _syntaxHighlighter = syntaxHighlighter;
+        _errorService = errorService;
         _model = model;
         _filePath = filePath;
         _name = !string.IsNullOrEmpty(filePath) ? Path.GetFileNameWithoutExtension(filePath) : "Untitled";
@@ -94,6 +100,15 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
                 FragmentName = "Main",
                 Message = e.Message
             }).ToList();
+
+            if (_errorService != null)
+            {
+                _errorService.PutErrorList(errorInfos);
+            }
+        }
+        else if (_errorService != null)
+        {
+            _errorService.ClearErrors();
         }
     }
 

@@ -7,4 +7,7 @@ public interface IProjectViewModel : IDisposable
     object? EditorContent { get; }
     bool IsDirty { get; set; }
     event Action? NameChanged;
+    void TriggerCut();
+    void TriggerCopy();
+    void TriggerPaste();
 }

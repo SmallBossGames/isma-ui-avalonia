@@ -15,6 +15,7 @@ public sealed class ProjectService
     private readonly ITextEditorFactory _editorFactory;
     private readonly SimulationParametersService _parametersService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
+    private readonly IModelErrorService? _errorService;
 
     private readonly List<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
@@ -37,18 +38,20 @@ public sealed class ProjectService
         ISimulationServerFacade serverFacade,
         ITextEditorFactory editorFactory,
         SimulationParametersService parametersService,
-        ISyntaxHighlighter syntaxHighlighter)
+        ISyntaxHighlighter syntaxHighlighter,
+        IModelErrorService? errorService = null)
     {
         _projectFileService = projectFileService;
         _serverFacade = serverFacade;
         _editorFactory = editorFactory;
         _parametersService = parametersService;
         _syntaxHighlighter = syntaxHighlighter;
+        _errorService = errorService;
     }
 
     public async Task<IProjectViewModel?> CreateNewAsync()
     {
-        var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter);
+        var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter, _errorService);
         _projects.Add(project);
         ActiveProject = project;
         return project;
@@ -138,7 +141,8 @@ public sealed class ProjectService
             _projectFileService,
             _syntaxHighlighter,
             new ISMA.Domain.Models.LismaTextModel("", Array.Empty<ISMA.Domain.Models.CodeRegion>()),
-            path);
+            path,
+            _errorService);
         return project;
     }
 

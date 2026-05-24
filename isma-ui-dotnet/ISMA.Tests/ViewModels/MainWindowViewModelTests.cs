@@ -168,6 +168,7 @@ public class MainWindowViewModelTests
             Mock.Of<IProjectFileService>(),
             CreateSyntaxHighlighterMock().Object,
             new LismaTextModel("", Array.Empty<CodeRegion>()),
+            null,
             null);
 
         viewModel.ActiveProject = mockLismaProject.Object;

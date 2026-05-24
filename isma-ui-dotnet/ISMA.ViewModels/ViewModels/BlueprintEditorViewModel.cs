@@ -5,6 +5,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.Services;
 
 namespace ISMA.ViewModels.ViewModels;
 
@@ -16,6 +17,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     private ObservableCollection<BlueprintStateViewModel> _states = new();
     private ObservableCollection<BlueprintTransactionViewModel> _transactions = new();
     private ObservableCollection<BlueprintLoopTransactionViewModel> _loopTransactions = new();
+    private readonly NameChangingMonitor _nameMonitor = new();
 
     public ObservableCollection<BlueprintStateViewModel> States
     {
@@ -68,17 +70,26 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         SetBlueprintModel(model);
     }
 
+    public BlueprintEditorViewModel(NameChangingMonitor nameMonitor)
+    {
+        _nameMonitor = nameMonitor;
+        IsAddTransitionMode = false;
+        IsRemoveStateMode = false;
+        IsRemoveTransitionMode = false;
+    }
+
     [RelayCommand]
     private void AddState()
     {
         if (CurrentMode != BlueprintEditorMode.Default)
             return;
 
+        var newStateName = _nameMonitor.CreateNextDefaultName();
         var newState = new BlueprintStateModel
         {
             CanvasPositionX = 100 + (States.Count * 30),
             CanvasPositionY = 100 + (States.Count * 30),
-            Name = $"State{States.Count}",
+            Name = newStateName,
             Text = ""
         };
 
@@ -89,6 +100,116 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             States = _model.States.Add(newState),
             Transactions = _model.Transactions,
             LoopTransactions = _model.LoopTransactions
+        };
+
+        ReloadViews();
+    }
+
+    public void AddStateWithName(string name, double x, double y)
+    {
+        if (CurrentMode != BlueprintEditorMode.Default)
+            return;
+
+        if (!_nameMonitor.TryRegister(name))
+            return;
+
+        var newState = new BlueprintStateModel
+        {
+            CanvasPositionX = x,
+            CanvasPositionY = y,
+            Name = name,
+            Text = ""
+        };
+
+        _model = new BlueprintModel
+        {
+            Main = _model.Main,
+            Init = _model.Init,
+            States = _model.States.Add(newState),
+            Transactions = _model.Transactions,
+            LoopTransactions = _model.LoopTransactions
+        };
+
+        ReloadViews();
+    }
+
+    public void UpdateStateName(BlueprintStateViewModel state, string newName)
+    {
+        if (state.IsMain || state.IsInit)
+            return;
+
+        var oldName = state.Name;
+        if (oldName == newName)
+            return;
+
+        if (!_nameMonitor.TryRegister(newName))
+            return;
+
+        _nameMonitor.TryUnregister(oldName);
+
+        var statesArray = _model.States.ToArray();
+        for (int i = 0; i < statesArray.Length; i++)
+        {
+            if (statesArray[i].Name == oldName)
+            {
+                statesArray[i] = new BlueprintStateModel
+                {
+                    CanvasPositionX = statesArray[i].CanvasPositionX,
+                    CanvasPositionY = statesArray[i].CanvasPositionY,
+                    Name = newName,
+                    Text = statesArray[i].Text
+                };
+                break;
+            }
+        }
+
+        var transactionsArray = _model.Transactions.ToArray();
+        for (int i = 0; i < transactionsArray.Length; i++)
+        {
+            if (transactionsArray[i].StartStateName == oldName)
+            {
+                transactionsArray[i] = new BlueprintTransactionModel
+                {
+                    StartStateName = newName,
+                    EndStateName = transactionsArray[i].EndStateName,
+                    Predicate = transactionsArray[i].Predicate,
+                    Alias = transactionsArray[i].Alias
+                };
+            }
+            if (transactionsArray[i].EndStateName == oldName)
+            {
+                transactionsArray[i] = new BlueprintTransactionModel
+                {
+                    StartStateName = transactionsArray[i].StartStateName,
+                    EndStateName = newName,
+                    Predicate = transactionsArray[i].Predicate,
+                    Alias = transactionsArray[i].Alias
+                };
+            }
+        }
+
+        var loopTransactionsArray = _model.LoopTransactions.ToArray();
+        for (int i = 0; i < loopTransactionsArray.Length; i++)
+        {
+            if (loopTransactionsArray[i].StateName == oldName)
+            {
+                loopTransactionsArray[i] = new BlueprintLoopTransactionModel
+                {
+                    StateName = newName,
+                    Predicate = loopTransactionsArray[i].Predicate,
+                    Alias = loopTransactionsArray[i].Alias,
+                    Text = loopTransactionsArray[i].Text
+                };
+            }
+        }
+
+        _model = new BlueprintModel
+        {
+            Main = _model.Main,
+            Init = _model.Init,
+            States = statesArray.ToImmutableArray(),
+            Transactions = transactionsArray.ToImmutableArray(),
+            LoopTransactions = loopTransactionsArray.ToImmutableArray()
         };
 
         ReloadViews();
@@ -134,7 +255,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         if (SelectedState == null)
             return;
 
-        var newStateList = _model.States.RemoveAll(s => s.Name == SelectedState.Name);
+        var stateName = SelectedState.Name;
+        var newStateList = _model.States.RemoveAll(s => s.Name == stateName);
+
+        _nameMonitor.TryUnregister(stateName);
 
         _model = new BlueprintModel
         {
@@ -302,14 +426,25 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         Transactions.Clear();
         LoopTransactions.Clear();
 
+        _nameMonitor.Clear();
+
         if (_model.Main != null)
+        {
+            _nameMonitor.TryRegister(_model.Main.Name);
             States.Add(MapState(_model.Main, true, false));
+        }
 
         if (_model.Init != null)
+        {
+            _nameMonitor.TryRegister(_model.Init.Name);
             States.Add(MapState(_model.Init, false, true));
+        }
 
         foreach (var state in _model.States)
+        {
+            _nameMonitor.TryRegister(state.Name);
             States.Add(MapState(state, false, false));
+        }
 
         foreach (var tx in _model.Transactions)
         {
@@ -369,5 +504,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         States.Clear();
         Transactions.Clear();
         LoopTransactions.Clear();
+        _nameMonitor.Clear();
     }
 }
