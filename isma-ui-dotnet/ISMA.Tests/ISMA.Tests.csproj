@@ -3,15 +3,18 @@
   <ItemGroup>
     <ProjectReference Include="..\ISMA.Domain\ISMA.Domain.csproj" />
     <ProjectReference Include="..\ISMA.ViewModels\ISMA.ViewModels.csproj" />
+    <ProjectReference Include="..\ISMA.App\ISMA.App.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
   </ItemGroup>
 
 </Project>

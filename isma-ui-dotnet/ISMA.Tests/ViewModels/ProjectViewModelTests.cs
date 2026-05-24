@@ -1,4 +1,4 @@
-using Xunit;
+global using global::Xunit;
 using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;

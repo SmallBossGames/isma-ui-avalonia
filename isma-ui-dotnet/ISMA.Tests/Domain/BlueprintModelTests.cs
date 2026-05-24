@@ -1,4 +1,4 @@
-using Xunit;
+global using global::Xunit;
 using System.Collections.Immutable;
 using FluentAssertions;
 using ISMA.Domain.Models;

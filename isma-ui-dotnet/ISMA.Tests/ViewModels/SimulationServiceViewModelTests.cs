@@ -1,5 +1,5 @@
+global using global::Xunit;
 using System.Collections.Immutable;
-using Xunit;
 using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
