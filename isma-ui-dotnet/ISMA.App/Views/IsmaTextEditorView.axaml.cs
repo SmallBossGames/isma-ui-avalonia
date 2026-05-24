@@ -37,7 +37,7 @@ public partial class IsmaTextEditorView : UserControl
         if (DataContext is LismaProjectViewModel vm && _textEditor is not null)
         {
             _textEditor.Text = vm.EditorContent as string ?? "";
-            _editorPlatformService.SetFocusedEditor(_textEditor);
+            _editorPlatformService?.SetFocusedEditor(_textEditor);
         }
     }
 }
