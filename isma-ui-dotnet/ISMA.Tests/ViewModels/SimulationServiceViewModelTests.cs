@@ -16,9 +16,14 @@ public class SimulationServiceViewModelTests
     {
         var facade = new Mock<ISimulationServerFacade>();
         var editorFactory = new Mock<ITextEditorFactory>();
+        var fileService = new Mock<IProjectFileService>();
+        var syntax = new Mock<ISyntaxHighlighter>();
+        syntax.Setup(m => m.Highlight(It.IsAny<string>())).ReturnsAsync(Array.Empty<SyntaxTokenDto>());
         var project = new LismaProjectViewModel(
             facade.Object,
             editorFactory.Object,
+            fileService.Object,
+            syntax.Object,
             new LismaTextModel(source, Array.Empty<CodeRegion>()),
             null);
         project.Name = name;

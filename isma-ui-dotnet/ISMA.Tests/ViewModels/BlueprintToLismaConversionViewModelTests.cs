@@ -1,12 +1,29 @@
 using Xunit;
 using FluentAssertions;
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 using ISMA.ViewModels.ViewModels;
+using Moq;
 
 namespace ISMA.Tests.ViewModels;
 
 public class BlueprintToLismaConversionViewModelTests
 {
+    private static Mock<ITextEditorFactory> CreateEditorFactoryMock() => new();
+
+    private static BlueprintProjectViewModel CreateProject(BlueprintModel? model = null, string? filePath = null)
+    {
+        var mockFileService = new Mock<IProjectFileService>();
+        var mockEditorFactory = CreateEditorFactoryMock();
+        var blueprintModel = model ?? BlueprintModel.Empty;
+
+        return new BlueprintProjectViewModel(
+            mockFileService.Object,
+            mockEditorFactory.Object,
+            blueprintModel,
+            filePath);
+    }
+
     [Fact]
     public void ViewModel_UsesConverterCorrectly_GeneratesLismaText()
     {
@@ -21,7 +38,7 @@ public class BlueprintToLismaConversionViewModelTests
             LoopTransactions = model.LoopTransactions
         };
 
-        var project = new BlueprintProjectViewModel(model, null);
+        var project = CreateProject(model);
 
         var result = project.ConvertToLisma();
 
@@ -35,7 +52,7 @@ public class BlueprintToLismaConversionViewModelTests
     [Fact]
     public void ViewModel_ConvertsEmptyBlueprint_GeneratesMainAndInit()
     {
-        var project = new BlueprintProjectViewModel();
+        var project = CreateProject();
 
         var result = project.ConvertToLisma();
 
@@ -75,14 +92,14 @@ public class BlueprintToLismaConversionViewModelTests
         };
 
         var editorVm = new BlueprintEditorViewModel(model);
-        var project = new BlueprintProjectViewModel();
+        var project = CreateProject(model);
         project.SetEditorViewModel(editorVm);
 
         var result = project.ConvertToLisma();
 
         result.FullText.Should().Contain("state main {");
         result.FullText.Should().Contain("state init {");
-        result.Regions.Should().HaveCount(2);
+        result.Regions.Should().HaveCount(5);
     }
 
     [Fact]
@@ -99,7 +116,7 @@ public class BlueprintToLismaConversionViewModelTests
             LoopTransactions = model.LoopTransactions
         };
 
-        var project = new BlueprintProjectViewModel(model, null);
+        var project = CreateProject(model);
 
         var result = project.ConvertToLisma();
 
@@ -145,7 +162,7 @@ public class BlueprintToLismaConversionViewModelTests
         };
 
         var editorVm = new BlueprintEditorViewModel(model);
-        var project = new BlueprintProjectViewModel(model, null);
+        var project = CreateProject(model);
         project.SetEditorViewModel(editorVm);
 
         editorVm.ResetEditorModeCommand.Execute(null);

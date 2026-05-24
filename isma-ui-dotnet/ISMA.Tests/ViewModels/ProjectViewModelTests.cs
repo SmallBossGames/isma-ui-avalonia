@@ -1,6 +1,7 @@
 using Xunit;
 using FluentAssertions;
 using ISMA.Domain.Contracts;
+using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
 using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
@@ -10,19 +11,68 @@ namespace ISMA.Tests.ViewModels;
 
 public class ProjectViewModelTests
 {
-    [Fact]
-    public async Task CreateProject_CreatesLismaProjectViewModel()
+    private static Mock<ISyntaxHighlighter> CreateSyntaxHighlighterMock()
+    {
+        var mock = new Mock<ISyntaxHighlighter>();
+        mock.Setup(m => m.Highlight(It.IsAny<string>()))
+            .ReturnsAsync(Array.Empty<SyntaxTokenDto>());
+        return mock;
+    }
+
+    private static ProjectService CreateProjectService()
     {
         var mockFileService = new Mock<IProjectFileService>();
         var mockFacade = new Mock<ISimulationServerFacade>();
         var mockEditorFactory = new Mock<ITextEditorFactory>();
         var mockParamsService = new Mock<SimulationParametersService>();
+        var mockSyntax = CreateSyntaxHighlighterMock();
 
-        var service = new ProjectService(
+        return new ProjectService(
             mockFileService.Object,
             mockFacade.Object,
             mockEditorFactory.Object,
-            mockParamsService.Object);
+            mockParamsService.Object,
+            mockSyntax.Object);
+    }
+
+    private static LismaProjectViewModel CreateLismaProject(
+        ISimulationServerFacade? facade = null,
+        string? filePath = null,
+        LismaTextModel? model = null)
+    {
+        var mockFacade = facade ?? new Mock<ISimulationServerFacade>().Object;
+        var mockEditorFactory = new Mock<ITextEditorFactory>();
+        var mockFileService = new Mock<IProjectFileService>();
+        var mockSyntax = CreateSyntaxHighlighterMock();
+        var lismaModel = model ?? new LismaTextModel("", Array.Empty<CodeRegion>());
+
+        return new LismaProjectViewModel(
+            mockFacade,
+            mockEditorFactory.Object,
+            mockFileService.Object,
+            mockSyntax.Object,
+            lismaModel,
+            filePath);
+    }
+
+    private static BlueprintProjectViewModel CreateBlueprintProject(
+        BlueprintModel? blueprintModel = null)
+    {
+        var mockFileService = new Mock<IProjectFileService>();
+        var mockEditorFactory = new Mock<ITextEditorFactory>();
+        var model = blueprintModel ?? BlueprintModel.Empty;
+
+        return new BlueprintProjectViewModel(
+            mockFileService.Object,
+            mockEditorFactory.Object,
+            model,
+            null);
+    }
+
+    [Fact]
+    public async Task CreateProject_CreatesLismaProjectViewModel()
+    {
+        var service = CreateProjectService();
 
         var project = await service.CreateNewAsync();
 
@@ -35,16 +85,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task CreateBlueprintProject_CreatesBlueprintProjectViewModel()
     {
-        var mockFileService = new Mock<IProjectFileService>();
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockParamsService = new Mock<SimulationParametersService>();
-
-        var service = new ProjectService(
-            mockFileService.Object,
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            mockParamsService.Object);
+        var service = CreateProjectService();
 
         var project = await service.CreateNewBlueprintAsync();
 
@@ -57,16 +98,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task CloseProject_RemovesFromList()
     {
-        var mockFileService = new Mock<IProjectFileService>();
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockParamsService = new Mock<SimulationParametersService>();
-
-        var service = new ProjectService(
-            mockFileService.Object,
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            mockParamsService.Object);
+        var service = CreateProjectService();
 
         var project = await service.CreateNewAsync();
         service.Projects.Should().HaveCount(1);
@@ -81,16 +113,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task CloseProject_WhenNoActive_ReturnsFalse()
     {
-        var mockFileService = new Mock<IProjectFileService>();
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockParamsService = new Mock<SimulationParametersService>();
-
-        var service = new ProjectService(
-            mockFileService.Object,
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            mockParamsService.Object);
+        var service = CreateProjectService();
 
         var result = await service.CloseAsync();
 
@@ -100,16 +123,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task CloseAllProjects_ClosesAll()
     {
-        var mockFileService = new Mock<IProjectFileService>();
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockParamsService = new Mock<SimulationParametersService>();
-
-        var service = new ProjectService(
-            mockFileService.Object,
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            mockParamsService.Object);
+        var service = CreateProjectService();
 
         await service.CreateNewAsync();
         await service.CreateNewAsync();
@@ -124,14 +138,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task ChangeName_FiresNameChangedEvent()
     {
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-
-        var project = new LismaProjectViewModel(
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            new LismaTextModel("", Array.Empty<CodeRegion>()),
-            "/tmp/test.isma");
+        var project = CreateLismaProject(filePath: "/tmp/test.isma");
 
         bool nameChangedFired = false;
         project.NameChanged += () => nameChangedFired = true;
@@ -149,17 +156,10 @@ public class ProjectViewModelTests
     [Fact]
     public async Task SaveLismaProject_SavesToFile()
     {
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
-
         var tempFile = Path.GetTempFileName();
         File.WriteAllText(tempFile, "initial content");
 
-        var project = new LismaProjectViewModel(
-            mockFacade.Object,
-            mockEditorFactory.Object,
-            new LismaTextModel("initial content", Array.Empty<CodeRegion>()),
-            tempFile);
+        var project = CreateLismaProject(filePath: tempFile, model: new LismaTextModel("initial content", Array.Empty<CodeRegion>()));
 
         project.SetContent("new content");
 
@@ -174,7 +174,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task BlueprintProject_GetBlueprintModel_ReturnsModel()
     {
-        var project = new BlueprintProjectViewModel();
+        var project = CreateBlueprintProject();
 
         var model = project.GetBlueprintModel();
 
@@ -186,7 +186,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task BlueprintProject_ConvertToLisma_ReturnsResult()
     {
-        var project = new BlueprintProjectViewModel();
+        var project = CreateBlueprintProject();
 
         var result = project.ConvertToLisma();
 
@@ -197,7 +197,7 @@ public class ProjectViewModelTests
     [Fact]
     public async Task BlueprintProject_LoadFromFile_SetsNameAndPath()
     {
-        var project = new BlueprintProjectViewModel();
+        var project = CreateBlueprintProject();
 
         project.LoadFromFile("/home/user/project.isma");
 
@@ -209,7 +209,7 @@ public class ProjectViewModelTests
     public void ProjectViewModel_NameChanged_EventFiresOnLoadFromFile()
     {
         var eventFired = false;
-        var project = new BlueprintProjectViewModel();
+        var project = CreateBlueprintProject();
         project.NameChanged += () => eventFired = true;
 
         project.LoadFromFile("/tmp/myfile.isma");
@@ -221,13 +221,16 @@ public class ProjectViewModelTests
     [Fact]
     public void ProjectViewModel_Dispose_CleansUpEditor()
     {
-        var mockFacade = new Mock<ISimulationServerFacade>();
         var mockEditorFactory = new Mock<ITextEditorFactory>();
         var mockEditor = new Mock<object>();
+        var mockFileService = new Mock<IProjectFileService>();
+        var mockSyntax = CreateSyntaxHighlighterMock();
 
         var project = new LismaProjectViewModel(
-            mockFacade.Object,
+            new Mock<ISimulationServerFacade>().Object,
             mockEditorFactory.Object,
+            mockFileService.Object,
+            mockSyntax.Object,
             new LismaTextModel("", Array.Empty<CodeRegion>()),
             null);
 

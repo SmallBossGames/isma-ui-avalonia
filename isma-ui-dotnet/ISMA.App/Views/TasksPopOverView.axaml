@@ -11,12 +11,8 @@
             MaxWidth="420"
             Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-            BorderThickness="1">
-        <Border.BoxShadow>
-            <BoxShadow Offset="0 4 16 0"
-                       Color="#80000000"
-                       Opacity="0.5"/>
-        </Border.BoxShadow>
+            BorderThickness="1"
+            BoxShadow="0 4 16 0 #80000000">
 
         <StackPanel Spacing="12">
 
@@ -111,56 +107,39 @@
                                             Command="{Binding RemoveCommand}"
                                             VerticalAlignment="Center" />
 
-                                    <TextBlock Grid.Column="4"
-                                               x:Name="Chevron"
-                                               Text="⋯"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Margin="8,0,0,0"
-                                               VerticalAlignment="Center"
-                                               Classes="chevron"
-                                               PointerEntered="OnChevronPointerEntered"
-                                               PointerExited="OnChevronPointerExited"
-                                               PointerReleased="OnChevronPointerReleased"
-                                               IsHitTestVisible="True">
-                                        <TextBlock.Transitions>
-                                            <Transitions>
-                                                <TransformTransition Property="RotateTransform.Angle"
-                                                                     Duration="0:0:0.15" />
-                                            </Transitions>
-                                        </TextBlock.Transitions>
-                                    </TextBlock>
-
-                                    <!-- Nested Popup for Details -->
-                                    <Popup x:Name="DetailsPopup"
-                                           Placement="Bottom"
-                                           HorizontalOffset="-60"
-                                           VerticalOffset="4"
-                                           MinWidth="200">
-                                        <Border CornerRadius="4"
-                                                Padding="10"
-                                                Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
-                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                BorderThickness="1">
-                                            <Border.BoxShadow>
-                                                <BoxShadow Offset="0 2 8 0"
-                                                           Color="#60000000"
-                                                           Opacity="0.4"/>
-                                            </Border.BoxShadow>
-                                            <StackPanel Spacing="4">
-                                                <TextBlock Text="{Binding ModelName}"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="11" />
-                                                <TextBlock Text="ID: {Binding Id}"
-                                                           FontSize="10"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-                                                <TextBlock Text="File: {Binding CachedFile}"
-                                                           FontSize="10"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Popup>
+                                    <Button Grid.Column="4"
+                                            Content="⋯"
+                                            FontSize="16"
+                                            FontWeight="Bold"
+                                            Margin="8,0,0,0"
+                                            Padding="4,0"
+                                            VerticalAlignment="Center"
+                                            Classes="chevron"
+                                            IsHitTestVisible="True">
+                                        <Button.Flyout>
+                                            <Flyout>
+                                                <Border CornerRadius="4"
+                                                        Padding="10"
+                                                        Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
+                                                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                        BorderThickness="1"
+                                                        BoxShadow="0 2 8 0 #60000000">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="{Binding ModelName}"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="11" />
+                                                        <TextBlock Text="ID: {Binding Id}"
+                                                                   FontSize="10"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                                        <TextBlock Text="File: {Binding CachedFile}"
+                                                                   FontSize="10"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                    </Button>
                                 </Grid>
                             </Border>
                         </DataTemplate>

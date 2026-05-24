@@ -12,13 +12,8 @@
             Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
             BorderThickness="1"
+            BoxShadow="0 4 12 0 #D3D3D3"
             PointerExited="OnPointerExited">
-        <Border.BoxShadow>
-            <BoxShadow Offset="0 4 12 0"
-                       Color="#D3D3D3"
-                       Opacity="0.8"/>
-        </Border.BoxShadow>
-
         <StackPanel Spacing="8">
             <TextBlock Text="Edit Transition"
                        FontWeight="Bold"
@@ -32,7 +27,7 @@
                 <TextBox Text="{Binding Alias, Mode=TwoWay}"
                          FontSize="11"
                          MinHeight="28"
-                         Watermark="Enter alias..."/>
+                         PlaceholderText="Enter alias..."/>
             </StackPanel>
 
             <StackPanel Spacing="4">
@@ -44,7 +39,7 @@
                          MinHeight="60"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
-                         Watermark="Enter predicate condition..."/>
+                         PlaceholderText="Enter predicate condition..."/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal"

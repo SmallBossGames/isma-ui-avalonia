@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ISMA.ViewModels.ViewModels"
-             xmlns:controls="using:ISMA.App.Controls"
+ 
              xmlns:converters="using:ISMA.ViewModels.Converters"
              x:Class="ISMA.App.Views.BlueprintEditorView"
              x:CompileBindings="True"
@@ -17,183 +17,163 @@
         </Border>
     </Design.PreviewWith>
 
-    <BorderPane>
-        <BorderPane.Center>
-            <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto">
-                <Border Background="White"
-                        BorderBrush="#E0E0E0"
-                        BorderThickness="1"
-                        Width="1200"
-                        Height="800">
+    <DockPanel>
+        <ScrollViewer DockPanel.Dock="Left"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+            <Border Background="White"
+                    BorderBrush="#E0E0E0"
+                    BorderThickness="1"
+                    Width="1200"
+                    Height="800"
+                    BoxShadow="2 2 4 0 #4D000000">
 
-                    <!-- Canvas with states and arrows rendered by BlueprintCanvasPanel -->
-                    <controls:BlueprintCanvasPanel x:Name="Canvas"
-                                                   EditorViewModel="{Binding}"
-                                                   Width="1200"
-                                                   Height="800">
+                <ItemsControl ItemsSource="{Binding States}"
+                              Width="1200"
+                              Height="800">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BlueprintStateViewModel">
+                            <Border Width="120"
+                                    Height="60"
+                                    Background="{Binding FillColorHex}"
+                                    BorderBrush="{Binding IsSelected,
+                                        Converter={StaticResource BoolToVisibilityConverter}}"
+                                    BorderThickness="2"
+                                    CornerRadius="8"
+                                    Canvas.Left="{Binding CanvasPositionX}"
+                                    Canvas.Top="{Binding CanvasPositionY}"
+                                    BoxShadow="2 2 4 0 #4D000000">
+                                <StackPanel VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            Spacing="4">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontWeight="Bold"
+                                               FontSize="11"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Text}"
+                                               FontSize="9"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               Foreground="#666666"
+                                               MaxWidth="100"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="2"
+                                                IsVisible="{Binding IsMain}">
+                                        <TextBlock Text="Main"
+                                                   FontSize="8"
+                                                   FontWeight="Bold"
+                                                   Foreground="Green"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="2"
+                                                IsVisible="{Binding IsInit}">
+                                        <TextBlock Text="Init"
+                                                   FontSize="8"
+                                                   FontWeight="Bold"
+                                                   Foreground="Blue"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                        <!-- States rendered as child elements -->
-                        <ItemsControl ItemsSource="{Binding States}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                                    <Border Width="120"
-                                            Height="60"
-                                            Background="{Binding FillColorHex}"
-                                            BorderBrush="{Binding IsSelected,
-                                                Converter={StaticResource BoolToVisibilityConverter}}"
-                                            BorderThickness="2"
-                                            CornerRadius="8">
-                                        <Border.Effect>
-                                            <DropShadowEffect Blur="4"
-                                                              Direction="315"
-                                                              Opacity="0.3"
-                                                              ShadowDepth="2"
-                                                              Color="Black"/>
-                                        </Border.Effect>
-                                        <StackPanel VerticalAlignment="Center"
-                                                    HorizontalAlignment="Center"
-                                                    Spacing="4">
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontWeight="Bold"
-                                                       FontSize="11"
-                                                       TextAlignment="Center"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Text}"
-                                                       FontSize="9"
-                                                       TextAlignment="Center"
-                                                       TextWrapping="Wrap"
-                                                       Foreground="#666666"
-                                                       MaxWidth="100"/>
-                                            <StackPanel Orientation="Horizontal"
-                                                        Spacing="2"
-                                                        IsVisible="{Binding IsMain}">
-                                                <TextBlock Text="Main"
-                                                           FontSize="8"
-                                                           FontWeight="Bold"
-                                                           Foreground="Green"/>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal"
-                                                        Spacing="2"
-                                                        IsVisible="{Binding IsInit}">
-                                                <TextBlock Text="Init"
-                                                           FontSize="8"
-                                                           FontWeight="Bold"
-                                                           Foreground="Blue"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+            </Border>
+        </ScrollViewer>
 
-                    </controls:BlueprintCanvasPanel>
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="4"
+                        Margin="8,4">
 
-                </Border>
-            </ScrollViewer>
-        </BorderPane.Center>
+                <Button Content="+ State"
+                        ToolTip.Tip="Add State"
+                        Command="{Binding AddStateCommand}"
+                        IsVisible="{Binding CurrentMode,
+                            Converter={StaticResource ModeToVisibilityConverter},
+                            ConverterParameter=Default}">
+                    <Button.Styles>
+                        <Style Selector="Button">
+                            <Setter Property="Padding" Value="8,4"/>
+                            <Setter Property="FontSize" Value="11"/>
+                        </Style>
+                    </Button.Styles>
+                </Button>
 
-        <!-- Bottom toolbar -->
-        <BorderPane.Bottom>
-            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                    BorderThickness="0,1,0,0"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
                 <StackPanel Orientation="Horizontal"
                             Spacing="4"
-                            Margin="8,4">
-
-                    <!-- Add State button (default mode) -->
-                    <Button Content="+ State"
-                            ToolTip.Tip="Add State"
-                            Command="{Binding AddStateCommand}"
                             IsVisible="{Binding CurrentMode,
                                 Converter={StaticResource ModeToVisibilityConverter},
-                                ConverterParameter=Default}">
-                        <Button.Styles>
-                            <Style Selector="Button">
-                                <Setter Property="Padding" Value="8,4"/>
-                                <Setter Property="FontSize" Value="11"/>
-                            </Style>
-                        </Button.Styles>
-                    </Button>
-
-                    <!-- AddTransition mode indicator -->
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="4"
-                                IsVisible="{Binding CurrentMode,
-                                    Converter={StaticResource ModeToVisibilityConverter},
-                                    ConverterParameter=AddTransition}">
-                        <TextBlock Text="Click a state to set as end point:"
-                                   VerticalAlignment="Center"
-                                   FontSize="11"
-                                   Foreground="#666666"/>
-                        <Button Content="Cancel"
-                                Command="{Binding ResetEditorModeCommand}"/>
-                    </StackPanel>
-
-                    <!-- RemoveState mode indicator -->
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="4"
-                                IsVisible="{Binding CurrentMode,
-                                    Converter={StaticResource ModeToVisibilityConverter},
-                                    ConverterParameter=RemoveState}">
-                        <TextBlock Text="Click a state to remove:"
-                                   VerticalAlignment="Center"
-                                   FontSize="11"
-                                   Foreground="#666666"/>
-                        <Button Content="Cancel"
-                                Command="{Binding ResetEditorModeCommand}"/>
-                    </StackPanel>
-
-                    <!-- RemoveTransition mode indicator -->
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="4"
-                                IsVisible="{Binding CurrentMode,
-                                    Converter={StaticResource ModeToVisibilityConverter},
-                                    ConverterParameter=RemoveTransition}">
-                        <TextBlock Text="Click a transition arrow to remove:"
-                                   VerticalAlignment="Center"
-                                   FontSize="11"
-                                   Foreground="#666666"/>
-                        <Button Content="Cancel"
-                                Command="{Binding ResetEditorModeCommand}"/>
-                    </StackPanel>
-
-                    <Separator/>
-
-                    <!-- Mode toggle buttons -->
-                    <ToggleButton Content="Add Transition"
-                                  IsChecked="{Binding IsAddTransitionMode}"
-                                  ToolTip.Tip="Enter Add Transition mode"/>
-
-                    <ToggleButton Content="Remove State"
-                                  IsChecked="{Binding IsRemoveStateMode}"
-                                  ToolTip.Tip="Enter Remove State mode"/>
-
-                    <ToggleButton Content="Remove Transition"
-                                  IsChecked="{Binding IsRemoveTransitionMode}"
-                                  ToolTip.Tip="Enter Remove Transition mode"/>
-
-                    <Separator/>
-
-                    <Button Content="Remove Selected"
-                            Command="{Binding RemoveSelectedCommand}"
-                            ToolTip.Tip="Remove selected state or transition"/>
-
+                                ConverterParameter=AddTransition}">
+                    <TextBlock Text="Click a state to set as end point:"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="#666666"/>
+                    <Button Content="Cancel"
+                            Command="{Binding ResetEditorModeCommand}"/>
                 </StackPanel>
-            </Border>
-        </BorderPane.Bottom>
 
-        <!-- Edit Arrow PopOver -->
+                <StackPanel Orientation="Horizontal"
+                            Spacing="4"
+                            IsVisible="{Binding CurrentMode,
+                                Converter={StaticResource ModeToVisibilityConverter},
+                                ConverterParameter=RemoveState}">
+                    <TextBlock Text="Click a state to remove:"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="#666666"/>
+                    <Button Content="Cancel"
+                            Command="{Binding ResetEditorModeCommand}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            Spacing="4"
+                            IsVisible="{Binding CurrentMode,
+                                Converter={StaticResource ModeToVisibilityConverter},
+                                ConverterParameter=RemoveTransition}">
+                    <TextBlock Text="Click a transition arrow to remove:"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="#666666"/>
+                    <Button Content="Cancel"
+                            Command="{Binding ResetEditorModeCommand}"/>
+                </StackPanel>
+
+                <Separator/>
+
+                <ToggleButton Content="Add Transition"
+                              IsChecked="{Binding IsAddTransitionMode}"
+                              ToolTip.Tip="Enter Add Transition mode"/>
+
+                <ToggleButton Content="Remove State"
+                              IsChecked="{Binding IsRemoveStateMode}"
+                              ToolTip.Tip="Enter Remove State mode"/>
+
+                <ToggleButton Content="Remove Transition"
+                              IsChecked="{Binding IsRemoveTransitionMode}"
+                              ToolTip.Tip="Enter Remove Transition mode"/>
+
+                <Separator/>
+
+                <Button Content="Remove Selected"
+                        Command="{Binding RemoveSelectedCommand}"
+                        ToolTip.Tip="Remove selected state or transition"/>
+
+            </StackPanel>
+        </Border>
+
         <Popup x:Name="EditArrowPopup"
-               PlacementMode="Center"
-               StaysOpen="False"
-               IsOpen="False"/>
-    </BorderPane>
+               Placement="Center"
+               IsLightDismissEnabled="True" />
+    </DockPanel>
 
 </UserControl>

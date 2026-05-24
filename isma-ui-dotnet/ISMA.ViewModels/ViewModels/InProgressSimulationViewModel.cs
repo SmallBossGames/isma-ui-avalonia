@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
 
 namespace ISMA.ViewModels.ViewModels;
@@ -19,4 +20,9 @@ public partial class InProgressSimulationViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _canAbort;
+
+    [RelayCommand]
+    private void Abort()
+    {
+    }
 }

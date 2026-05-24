@@ -4,8 +4,8 @@
              x:Class="ISMA.App.Views.IsmaMenuBarView"
              x:CompileBindings="True"
              x:DataType="vm:MainWindowViewModel">
-    <MenuBar Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-        <MenuBar.InputBindings>
+    <Menu Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+        <Menu.KeyBindings>
             <KeyBinding Command="{Binding NewTextCommand}" Gesture="Ctrl+N" />
             <KeyBinding Command="{Binding NewBlueprintCommand}" Gesture="Ctrl+B" />
             <KeyBinding Command="{Binding OpenCommand}" Gesture="Ctrl+O" />
@@ -14,9 +14,9 @@
             <KeyBinding Command="{Binding CutCommand}" Gesture="Ctrl+X" />
             <KeyBinding Command="{Binding CopyCommand}" Gesture="Ctrl+C" />
             <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V" />
-            <KeyBinding Command="{Binding VerifyCommand}" Gesture="F4" Modifiers="Ctrl" />
-            <KeyBinding Command="{Binding RunCommand}" Gesture="F5" Modifiers="Ctrl" />
-        </MenuBar.InputBindings>
+            <KeyBinding Command="{Binding VerifyCommand}" Gesture="Ctrl+F4" />
+            <KeyBinding Command="{Binding RunCommand}" Gesture="Ctrl+F5" />
+        </Menu.KeyBindings>
 
         <MenuItem Header="_File">
             <MenuItem Header="_New Text" Command="{Binding NewTextCommand}" InputGesture="Ctrl+N" />
@@ -43,5 +43,5 @@
             <MenuItem Header="_Store Settings" Command="{Binding StoreSettingsCommand}" />
             <MenuItem Header="_Load Settings" Command="{Binding LoadSettingsCommand}" />
         </MenuItem>
-    </MenuBar>
+    </Menu>
 </UserControl>

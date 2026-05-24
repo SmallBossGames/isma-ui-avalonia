@@ -6,16 +6,26 @@ using ISMA.Domain.Models;
 using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
 using Moq;
+using SyntaxTokenDto = ISMA.Domain.Dtos.SyntaxTokenDto;
 
 namespace ISMA.Tests.ViewModels;
 
 public class MainWindowViewModelTests
 {
+    private static Mock<ISyntaxHighlighter> CreateSyntaxHighlighterMock()
+    {
+        var mock = new Mock<ISyntaxHighlighter>();
+        mock.Setup(m => m.Highlight(It.IsAny<string>()))
+            .ReturnsAsync(Array.Empty<SyntaxTokenDto>());
+        return mock;
+    }
+
     private static ProjectService CreateProjectService() => new(
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        new SimulationParametersService());
+        new SimulationParametersService(),
+        CreateSyntaxHighlighterMock().Object);
 
     private static SimulationServiceViewModel CreateSimulationService() => new(
         Mock.Of<ISimulationServerFacade>(),
@@ -155,6 +165,8 @@ public class MainWindowViewModelTests
         var mockLismaProject = new Mock<LismaProjectViewModel>(
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<ITextEditorFactory>(),
+            Mock.Of<IProjectFileService>(),
+            CreateSyntaxHighlighterMock().Object,
             new LismaTextModel("", Array.Empty<CodeRegion>()),
             null);
 
@@ -170,7 +182,11 @@ public class MainWindowViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        var blueprintProject = new BlueprintProjectViewModel();
+        var blueprintProject = new BlueprintProjectViewModel(
+            Mock.Of<IProjectFileService>(),
+            Mock.Of<ITextEditorFactory>(),
+            BlueprintModel.Empty,
+            null);
         viewModel.ActiveProject = blueprintProject;
 
         Action run = () => viewModel.RunCommand.Execute(null);
@@ -209,6 +225,8 @@ public class MainWindowViewModelTests
         var lismaProject = new LismaProjectViewModel(
             mockFacade.Object,
             mockEditorFactory.Object,
+            Mock.Of<IProjectFileService>(),
+            CreateSyntaxHighlighterMock().Object,
             new LismaTextModel("test content", Array.Empty<CodeRegion>()),
             null);
 
@@ -226,7 +244,11 @@ public class MainWindowViewModelTests
 
         viewModel.ActiveProject.Should().BeNull();
 
-        var project = new BlueprintProjectViewModel();
+        var project = new BlueprintProjectViewModel(
+            Mock.Of<IProjectFileService>(),
+            Mock.Of<ITextEditorFactory>(),
+            BlueprintModel.Empty,
+            null);
         viewModel.ActiveProject = project;
 
         viewModel.ActiveProject.Should().Be(project);

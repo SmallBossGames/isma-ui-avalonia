@@ -1,12 +1,10 @@
-using System;
-using System.Globalization;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.ViewModels.Converters;
 
-public static class ModeToVisibilityConverter
+public class ModeToVisibilityConverter
 {
-    public static bool Convert(BlueprintEditorMode mode, string parameter)
+    public bool Convert(BlueprintEditorMode mode, string parameter)
     {
         if (string.IsNullOrEmpty(parameter))
             return false;

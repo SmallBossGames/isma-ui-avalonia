@@ -12,10 +12,6 @@
 
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:ModeToVisibilityConverter x:Key="ModeToVisibilityConverter"/>
-            <converters:ProgressToPercentConverter x:Key="ProgressToPercentConverter"/>
-            <converters:SaveTargetConverter x:Key="SaveTargetConverter"/>
-            <converters:IntegerConverter x:Key="IntegerConverter"/>
-            <converters:DoubleConverter x:Key="DoubleConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 

@@ -8,36 +8,32 @@
         x:DataType="vm:MainWindowViewModel"
         Title="ISMA"
         MinWidth="500" MinHeight="600">
-    <BorderPane>
-        <BorderPane.Top>
-            <StackPanel>
-                <views:IsmaMenuBarView />
-                <views:IsmaToolBarView />
-            </StackPanel>
-        </BorderPane.Top>
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel Grid.Row="0">
+            <views:IsmaMenuBarView />
+            <views:IsmaToolBarView />
+        </StackPanel>
 
-        <BorderPane.Center>
-            <views:EditorTabPaneView />
-        </BorderPane.Center>
+        <DockPanel Grid.Row="1" LastChildFill="True">
+            <views:EditorTabPaneView DockPanel.Dock="Left" />
 
-        <BorderPane.Right>
-            <ContentControl Content="{Binding SimulationParameters}"
+            <ContentControl DockPanel.Dock="Right"
+                            Content="{Binding SimulationParameters}"
                             IsVisible="{Binding ShowSettings}"
-                            Width="240">
-                <ContentControl.DataTemplate>
-                    <views:SettingsPanelView />
-                </ContentControl.DataTemplate>
-            </ContentControl>
-        </BorderPane.Right>
+                            Width="240" />
+        </DockPanel>
 
-        <BorderPane.Bottom>
+        <Border Grid.Row="1"
+                VerticalAlignment="Bottom"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
             <StackPanel>
                 <DataGrid ItemsSource="{Binding ErrorList.Errors}"
-                          AutoCreateColumns="False"
+                          AutoGenerateColumns="False"
                           IsReadOnly="True"
                           CanUserResizeColumns="True"
-                          Height="150"
-                          BorderThickness="0,1,0,0">
+                          Height="150">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Width="5*" Header="Row">
                             <DataGridTemplateColumn.CellTemplate>
@@ -71,6 +67,6 @@
                 </DataGrid>
                 <views:SimulationProcessBarView />
             </StackPanel>
-        </BorderPane.Bottom>
-    </BorderPane>
+        </Border>
+    </Grid>
 </Window>

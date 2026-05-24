@@ -5,29 +5,30 @@
              x:Class="ISMA.App.Views.SimulationProcessBarView"
              x:CompileBindings="True"
              x:DataType="vm:MainWindowViewModel">
-    <StackPanel Orientation="Horizontal"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                Height="32"
-                Spacing="4"
-                Margin="4">
-        <Button ToolTip.Tip="Run Simulation"
-                Command="{Binding RunCommand}"
-                Width="28" Height="28"
-                Padding="0">
-            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
-        </Button>
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+            BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+        <StackPanel Orientation="Horizontal"
+                    Spacing="4"
+                    Margin="4"
+                    Height="32">
+            <Button ToolTip.Tip="Run Simulation"
+                    Command="{Binding RunCommand}"
+                    Width="28" Height="28"
+                    Padding="0">
+                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
+            </Button>
 
-        <Button ToolTip.Tip="Simulation Tasks"
-                Width="28" Height="28"
-                Padding="0">
-            <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
-            <Button.Flyout>
-                <Flyout>
-                    <views:TasksPopOverView DataContext="{Binding TasksPopOver}" />
-                </Flyout>
-            </Button.Flyout>
-        </Button>
-    </StackPanel>
+            <Button ToolTip.Tip="Simulation Tasks"
+                    Width="28" Height="28"
+                    Padding="0">
+                <TextBlock Text="" FontFamily="avares://ISMA.App/Assets/#MaterialDesignIcons" FontSize="18" />
+                <Button.Flyout>
+                    <Flyout>
+                        <views:TasksPopOverView DataContext="{Binding TasksPopOver}" />
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </StackPanel>
+    </Border>
 </UserControl>

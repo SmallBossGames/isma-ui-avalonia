@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="ISMA.App.Controls.PropertiesGrid"
-             x:CompileBindings="True">
+             x:Class="ISMA.App.Controls.PropertiesGrid">
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="Auto,*">
         <Grid.Styles>
             <Style Selector="TextBox">
@@ -24,6 +23,6 @@
         </Grid.Styles>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Label" />
-        <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding ControlTemplate}" />
+        <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding ControlTemplate, x:CompileBindings=False}" />
     </Grid>
 </UserControl>
