@@ -15,9 +15,7 @@
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnDefinitions="*,240">
-            <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" Grid.Column="0"
-                                     HorizontalAlignment="Stretch"
-                                     VerticalAlignment="Stretch" />
+            <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" Grid.Column="0" />
             
             <ContentControl x:Name="SettingsPanel" Grid.Column="1"
                             AutomationProperties.AutomationId="SettingsPanel"

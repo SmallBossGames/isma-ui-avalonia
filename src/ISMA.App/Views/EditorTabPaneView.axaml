@@ -6,12 +6,7 @@
               x:CompileBindings="True"
               x:DataType="vm:MainWindowViewModel">
     <TabControl ItemsSource="{Binding Projects}"
-                SelectedItem="{Binding ActiveProject}"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Background="{DynamicResource SurfaceColor}"
-                BorderBrush="{DynamicResource BorderColor}"
-                BorderThickness="1">
+                SelectedItem="{Binding ActiveProject}">
         <TabControl.ItemTemplate>
             <DataTemplate x:DataType="vm:IProjectViewModel">
                 <StackPanel Orientation="Horizontal" Spacing="4">

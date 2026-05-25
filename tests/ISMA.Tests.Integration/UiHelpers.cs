@@ -252,14 +252,8 @@ public static class UiHelpers
         window.Measure(size);
         window.Arrange(new Rect(default, size));
         
-        // Force layout on DockPanel and TabControl
+        // Force TabControl container generation
         var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
-        if (tabPaneView?.Parent is Control dockPanel)
-        {
-            dockPanel.Measure(size);
-            dockPanel.Arrange(new Rect(default, dockPanel.DesiredSize));
-        }
-        
         var tabControl = tabPaneView?.Content as TabControl;
         if (tabControl is not null)
         {
@@ -267,7 +261,6 @@ public static class UiHelpers
             tabControl.Measure(size);
             tabControl.Arrange(new Rect(default, tabControl.DesiredSize));
             
-            // Force container generation for all items
             for (int i = 0; i < tabControl.Items.Count; i++)
             {
                 tabControl.ContainerFromIndex(i);
