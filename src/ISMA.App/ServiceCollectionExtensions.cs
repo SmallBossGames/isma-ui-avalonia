@@ -15,7 +15,7 @@ namespace ISMA.App;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection ConfigureAppServices(this IServiceCollection services)
+public static IServiceCollection ConfigureAppServices(this IServiceCollection services)
     {
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
@@ -26,13 +26,15 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
-
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
         services.AddSingleton<TasksPopOverViewModel>();
         services.AddSingleton<SimulationServiceViewModel>();
         services.AddSingleton<ProjectService>();
         services.AddSingleton<MainWindowViewModel>();
+
+        // Register App layer services after ViewModels so they can be injected
+        services.AddSingleton<ISMA.App.Services.SimulationParametersService>();
 
         return services;
     }
@@ -49,24 +51,23 @@ public static class ServiceCollectionExtensions
         // PreferencesProvider - use in-memory for tests
         services.AddSingleton<PreferencesProvider>();
         
-        // SimulationServerManager - not needed in tests (server facade is mocked)
-        // services.AddSingleton<SimulationServerManager>();
-        
         // ISimulationServerFacade - already registered by the test (mocked)
         
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
-        services.AddSingleton<IModelErrorService, ModelErrorService>();
+     services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
-
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
         services.AddSingleton<TasksPopOverViewModel>();
         services.AddSingleton<SimulationServiceViewModel>();
         services.AddSingleton<ProjectService>();
         services.AddSingleton<MainWindowViewModel>();
+
+        // Register App layer services after ViewModels
+        services.AddSingleton<ISMA.App.Services.SimulationParametersService>();
 
         return services;
     }

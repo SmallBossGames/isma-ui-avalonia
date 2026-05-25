@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.ViewModels;
 using System.Text.Json;
 
 namespace ISMA.App.Services;
@@ -10,10 +10,12 @@ namespace ISMA.App.Services;
 public class SimulationParametersService
 {
     private readonly Window? _owner;
+    private readonly SimulationParametersViewModel? _parametersVm;
 
-    public SimulationParametersService(Window? owner = null)
+    public SimulationParametersService(Window? owner = null, SimulationParametersViewModel? parametersVm = null)
     {
         _owner = owner;
+        _parametersVm = parametersVm;
     }
 
     public static string[] SimplifyMethods => ["Radial-Distance", "Douglas-Peucker"];
@@ -68,18 +70,60 @@ public class SimulationParametersService
 
     public SimulationParameters Snapshot()
     {
+        if (_parametersVm == null)
+        {
+            return new SimulationParameters
+            {
+                CauchyInitials = new CauchyInitials { StartTime = 0.0, EndTime = 10.0, InitialStep = 0.1 },
+                IntegrationMethod = new IntegrationMethodParameters { Accuracy = 0.1, Server = "localhost", Port = 7890 },
+                EventDetection = new EventDetectionParameters { Gamma = 0.8, LowBorder = 0.001 },
+                ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.Memory },
+                ResultProcessing = new ResultProcessingParameters { SelectedSimplifyMethod = "Radial-Distance" }
+            };
+        }
+
         return new SimulationParameters
         {
-            CauchyInitials = new CauchyInitials { StartTime = 0.0, EndTime = 10.0, InitialStep = 0.1 },
-            IntegrationMethod = new IntegrationMethodParameters { Accuracy = 0.1, Server = "localhost", Port = 7890 },
-            EventDetection = new EventDetectionParameters { Gamma = 0.8, LowBorder = 0.001 },
-            ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.Memory },
-            ResultProcessing = new ResultProcessingParameters { SelectedSimplifyMethod = "Radial-Distance" }
+            CauchyInitials = new CauchyInitials
+            {
+                StartTime = _parametersVm.CauchyInitials.StartTime,
+                EndTime = _parametersVm.CauchyInitials.EndTime,
+                InitialStep = _parametersVm.CauchyInitials.InitialStep
+            },
+            IntegrationMethod = new IntegrationMethodParameters
+            {
+                SelectedMethod = _parametersVm.IntegrationMethod.SelectedMethod,
+                Accuracy = _parametersVm.IntegrationMethod.Accuracy,
+                IsAccuracyInUse = _parametersVm.IntegrationMethod.IsAccuracyInUse,
+                IsStableInUse = _parametersVm.IntegrationMethod.IsStableInUse,
+                IsParallelInUse = _parametersVm.IntegrationMethod.IsParallelInUse,
+                Server = _parametersVm.IntegrationMethod.Server,
+                Port = _parametersVm.IntegrationMethod.Port
+            },
+            EventDetection = new EventDetectionParameters
+            {
+                IsEventDetectionInUse = _parametersVm.EventDetection.IsEventDetectionInUse,
+                IsStepLimitInUse = _parametersVm.EventDetection.IsStepLimitInUse,
+                Gamma = _parametersVm.EventDetection.Gamma,
+                LowBorder = _parametersVm.EventDetection.LowBorder
+            },
+            ResultSaving = new ResultSavingParameters
+            {
+                SavingTarget = _parametersVm.ResultSaving.SavingTarget
+            },
+            ResultProcessing = new ResultProcessingParameters
+            {
+                IsSimplifyInUse = _parametersVm.ResultProcessing.IsSimplifyInUse,
+                SelectedSimplifyMethod = _parametersVm.ResultProcessing.SelectedSimplifyMethod,
+                Tolerance = _parametersVm.ResultProcessing.Tolerance
+            }
         };
     }
 
     public void Commit(SimulationParameters model)
     {
-        // Apply to active viewmodels - delegates to SimulationParametersViewModel
+        if (_parametersVm == null) return;
+
+        _parametersVm.Commit(model);
     }
 }

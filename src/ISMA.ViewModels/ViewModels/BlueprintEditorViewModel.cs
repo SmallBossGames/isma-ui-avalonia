@@ -304,6 +304,29 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         ReloadViews();
     }
 
+    public void AddLoop(BlueprintLoopTransactionModel loopModel)
+    {
+        // Check for existing loop on this state
+        foreach (var loop in _model.LoopTransactions)
+        {
+            if (loop.StateName == loopModel.StateName)
+            {
+                return; // Loop already exists
+            }
+        }
+
+        _model = new BlueprintModel
+        {
+            Main = _model.Main,
+            Init = _model.Init,
+            States = _model.States,
+            Transactions = _model.Transactions,
+            LoopTransactions = _model.LoopTransactions.Add(loopModel)
+        };
+
+        ReloadViews();
+    }
+
     [RelayCommand]
     private void RemoveLoop()
     {

@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ISMA.ViewModels.ViewModels"
- 
+             xmlns:controls="using:ISMA.App.Controls"
              xmlns:converters="using:ISMA.ViewModels.Converters"
              x:Class="ISMA.App.Views.BlueprintEditorView"
              x:CompileBindings="True"
@@ -18,7 +18,8 @@
     </Design.PreviewWith>
 
     <DockPanel>
-        <ScrollViewer DockPanel.Dock="Left"
+        <ScrollViewer x:Name="ScrollViewer"
+                      DockPanel.Dock="Left"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
             <Border Background="White"
@@ -28,61 +29,100 @@
                     Height="800"
                     BoxShadow="2 2 4 0 #4D000000">
 
-                <ItemsControl ItemsSource="{Binding States}"
-                              Width="1200"
-                              Height="800">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <Canvas />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                            <Border Width="120"
-                                    Height="60"
-                                    Background="{Binding FillColorHex}"
-                                    BorderBrush="{Binding IsSelected,
-                                        Converter={StaticResource BoolToVisibilityConverter}}"
-                                    BorderThickness="2"
-                                    CornerRadius="8"
-                                    Canvas.Left="{Binding CanvasPositionX}"
-                                    Canvas.Top="{Binding CanvasPositionY}"
-                                    BoxShadow="2 2 4 0 #4D000000">
-                                <StackPanel VerticalAlignment="Center"
-                                            HorizontalAlignment="Center"
-                                            Spacing="4">
-                                    <TextBlock Text="{Binding Name}"
-                                               FontWeight="Bold"
-                                               FontSize="11"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding Text}"
-                                               FontSize="9"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               Foreground="#666666"
-                                               MaxWidth="100"/>
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="2"
-                                                IsVisible="{Binding IsMain}">
-                                        <TextBlock Text="Main"
-                                                   FontSize="8"
+                <Canvas x:Name="Canvas"
+                        Width="1200"
+                        Height="800">
+
+                    <!-- Transaction arrows layer -->
+                    <ItemsControl ItemsSource="{Binding Transactions}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Width="1200" Height="800"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BlueprintTransactionViewModel">
+                                <controls:ArrowLine StartState="{Binding StartState}"
+                                                    EndState="{Binding EndState}"
+                                                    Alias="{Binding Alias}"
+                                                    Predicate="{Binding Predicate}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Loop arrows layer -->
+                    <ItemsControl ItemsSource="{Binding LoopTransactions}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Width="1200" Height="800"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
+                                <controls:LoopArrow State="{Binding State}"
+                                                    Alias="{Binding Alias}"
+                                                    Predicate="{Binding Predicate}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- States layer -->
+                    <ItemsControl ItemsSource="{Binding States}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Width="1200" Height="800"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BlueprintStateViewModel">
+                                <Border Width="120"
+                                        Height="60"
+                                        Background="{Binding FillColorHex}"
+                                        BorderBrush="{Binding IsSelected,
+                                            Converter={StaticResource BoolToVisibilityConverter}}"
+                                        BorderThickness="2"
+                                        CornerRadius="8"
+                                        Canvas.Left="{Binding CanvasPositionX}"
+                                        Canvas.Top="{Binding CanvasPositionY}"
+                                        BoxShadow="2 2 4 0 #4D000000"
+                                        PointerPressed="OnStatePointerPressed">
+                                    <StackPanel VerticalAlignment="Center"
+                                                HorizontalAlignment="Center"
+                                                Spacing="4">
+                                        <TextBlock Text="{Binding Name}"
                                                    FontWeight="Bold"
-                                                   Foreground="Green"/>
+                                                   FontSize="11"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Text}"
+                                                   FontSize="9"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="#666666"
+                                                   MaxWidth="100"/>
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="2"
+                                                    IsVisible="{Binding IsMain}">
+                                            <TextBlock Text="Main"
+                                                       FontSize="8"
+                                                       FontWeight="Bold"
+                                                       Foreground="Green"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="2"
+                                                    IsVisible="{Binding IsInit}">
+                                            <TextBlock Text="Init"
+                                                       FontSize="8"
+                                                       FontWeight="Bold"
+                                                       Foreground="Blue"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="2"
-                                                IsVisible="{Binding IsInit}">
-                                        <TextBlock Text="Init"
-                                                   FontSize="8"
-                                                   FontWeight="Bold"
-                                                   Foreground="Blue"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </Canvas>
 
             </Border>
         </ScrollViewer>
@@ -172,8 +212,11 @@
         </Border>
 
         <Popup x:Name="EditArrowPopup"
-               Placement="Center"
-               IsLightDismissEnabled="True" />
+               Placement="Pointer"
+               IsLightDismissEnabled="True"
+               VerticalOffset="10"
+               HorizontalOffset="10">
+        </Popup>
     </DockPanel>
 
 </UserControl>
