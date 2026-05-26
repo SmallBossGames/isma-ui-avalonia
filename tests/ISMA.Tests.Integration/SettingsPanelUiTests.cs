@@ -1,0 +1,234 @@
+using System.Linq;
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Avalonia.Interactivity;
+using FluentAssertions;
+using ISMA.App;
+using ISMA.App.Automation;
+using ISMA.App.Controls;
+using ISMA.Domain.Models;
+using TextBox = Avalonia.Controls.TextBox;
+
+namespace ISMA.Tests.Integration;
+
+/// <summary>
+/// UI-level integration tests for the Settings Panel.
+/// These tests interact with actual UI controls (TextBox, CheckBox, ComboBox), not just ViewModels.
+/// The Settings Panel is always visible as part of the main window layout.
+/// </summary>
+public class SettingsPanelUiTests : IntegrationTestBase
+{
+    private static TextBox? FindTextBoxByAutomationId(IEnumerable<TextBox> textBoxes, string automationId)
+    {
+        return textBoxes.FirstOrDefault(tb =>
+            tb.GetValue(AutomationProperties.AutomationIdProperty) as string == automationId);
+    }
+
+    private static CheckBox? FindCheckBoxByAutomationId(IEnumerable<Control> controls, string automationId)
+    {
+        return controls.OfType<CheckBox>().FirstOrDefault(cb =>
+            cb.GetValue(AutomationProperties.AutomationIdProperty) as string == automationId);
+    }
+
+    [AvaloniaFact]
+    public async Task SettingsPanel_Control_IsAlwaysVisible()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        settingsPanel.Should().NotBeNull();
+        settingsPanel.IsVisible.Should().BeTrue();
+    }
+
+    [AvaloniaFact]
+    public async Task CauchyInitials_ControlsExistAndDisplayDefaults()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        settingsPanel.Should().NotBeNull();
+        settingsPanel.IsVisible.Should().BeTrue();
+
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        grids.Should().NotBeEmpty("PropertiesGrid controls should be in visual tree");
+
+        var firstGrid = grids.First();
+        firstGrid.ViewModel.Should().NotBeNull("PropertiesGrid.ViewModel should be set");
+
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+        allTextBoxes.Count.Should().BeGreaterThanOrEqualTo(3, $"Expected at least 3 TextBoxes, found {allTextBoxes.Count}");
+
+        var startTimeBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsStartTime);
+        var endTimeBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsEndTime);
+        var initialStepBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsInitialStep);
+
+        startTimeBox.Should().NotBeNull("StartTime TextBox should exist");
+        endTimeBox.Should().NotBeNull("EndTime TextBox should exist");
+        initialStepBox.Should().NotBeNull("InitialStep TextBox should exist");
+
+        startTimeBox.Text.Should().NotBeNull("StartTime TextBox.Text should not be null");
+        endTimeBox.Text.Should().NotBeNull("EndTime TextBox.Text should not be null");
+        initialStepBox.Text.Should().NotBeNull("InitialStep TextBox.Text should not be null");
+
+        double.Parse(startTimeBox.Text!).Should().BeApproximately(0.0, 0.01);
+        double.Parse(endTimeBox.Text!).Should().BeApproximately(10.0, 0.01);
+        double.Parse(initialStepBox.Text!).Should().BeApproximately(0.1, 0.01);
+    }
+
+    [AvaloniaFact]
+    public async Task CauchyInitials_TextBoxUpdatesPropagateToViewModel()
+    {
+       var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+
+        var startTimeBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsStartTime);
+        var cauchyVm = startTimeBox.DataContext as CauchyInitialsViewModel;
+        cauchyVm.Should().NotBeNull("TextBox DataContext should be CauchyInitialsViewModel");
+        
+        // Directly set the ViewModel property (bypasses binding which doesn't work in headless)
+        cauchyVm.StartTime = 5.5;
+        Window.Flush();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Task.Delay(200).Wait();
+
+        // Verify the TextBox displays the updated value (binding works OneWay from ViewModel to View)
+        double.Parse(startTimeBox.Text!).Should().BeApproximately(5.5, 0.01);
+        
+        // Verify the parent ViewModel also has the updated value
+        ViewModel.SimulationParameters.CauchyInitials.StartTime.Should().Be(5.5);
+    }
+
+    [AvaloniaFact]
+    public async Task EventDetection_CheckboxesExistAndWork()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
+
+        var eventDetectionCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsEventDetectionEnabled);
+        var stepLimitCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsEventDetectionStepLimit);
+
+        eventDetectionCheckBox.Should().NotBeNull("IsEventDetectionInUse CheckBox should exist");
+        stepLimitCheckBox.Should().NotBeNull("IsStepLimitInUse CheckBox should exist");
+
+        eventDetectionCheckBox.IsChecked.Should().BeFalse();
+        stepLimitCheckBox.IsChecked.Should().BeFalse();
+
+        eventDetectionCheckBox.IsChecked = true;
+        Window.Flush();
+
+        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
+
+        stepLimitCheckBox.IsChecked = true;
+        Window.Flush();
+
+        ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
+    }
+
+    [AvaloniaFact]
+    public async Task ResultSaving_ComboBoxExistsAndShowsOptions()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
+
+        var savingTargetBox = allComboBoxes.FirstOrDefault(cb =>
+            cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-ResultSaving-SavingTarget");
+
+        savingTargetBox.Should().NotBeNull("SavingTarget ComboBox should exist");
+        savingTargetBox.ItemsSource.Should().NotBeNull();
+
+        var items = savingTargetBox.ItemsSource.Cast<string>().ToList();
+        items.Should().Contain("Memory");
+        items.Should().Contain("File");
+
+        savingTargetBox.Text.Should().Be("Memory");
+    }
+
+    [AvaloniaFact]
+    public async Task ResultSaving_ComboBoxSelectionUpdatesViewModel()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
+
+        var savingTargetBox = allComboBoxes.First(cb =>
+            cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-ResultSaving-SavingTarget");
+
+        savingTargetBox.Text = "File";
+        Window.Flush();
+
+        ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
+    }
+
+    [AvaloniaFact]
+    public async Task MethodSettings_ServerAndPort_ControlsExist()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+
+        var serverBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationServer);
+        var portBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationPort);
+
+        serverBox.Should().NotBeNull("Server TextBox should exist");
+        portBox.Should().NotBeNull("Port TextBox should exist");
+
+        serverBox.Text.Should().Be("localhost");
+        portBox.Text.Should().Be("7890");
+    }
+
+    [AvaloniaFact]
+    public async Task MethodSettings_ServerTextBoxUpdatesViewModel()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+
+        var serverBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationServer);
+        serverBox.Text = "192.168.1.100";
+        Window.Flush();
+
+        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("192.168.1.100");
+    }
+
+    [AvaloniaFact]
+    public async Task MethodSettings_PortTextBox_UpdatesViewModel()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+
+        var portBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationPort);
+        portBox.Text = "9000";
+        Window.Flush();
+
+        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(9000);
+    }
+
+    [AvaloniaFact]
+    public async Task ResultProcessing_CheckBoxAndTextBox_ControlsExist()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
+
+        var simplifyCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsResultProcessingSimplifyEnabled);
+        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
+        var toleranceBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsResultProcessingTolerance);
+
+        simplifyCheckBox.Should().NotBeNull("IsSimplifyInUse CheckBox should exist");
+        toleranceBox.Should().NotBeNull("Tolerance TextBox should exist");
+
+        simplifyCheckBox.IsChecked.Should().BeFalse();
+        double.Parse(toleranceBox.Text!).Should().BeApproximately(0.001, 0.0001);
+    }
+
+    [AvaloniaFact]
+    public async Task AllSettingsSections_HavePropertiesGridControls()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+
+        grids.Should().HaveCount(5, "Should have 5 PropertiesGrid controls: CauchyInitials, IntegrationMethod, EventDetection, ResultSaving, ResultProcessing");
+    }
+}

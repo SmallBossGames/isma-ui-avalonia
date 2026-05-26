@@ -15,7 +15,7 @@ namespace ISMA.App;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-public static IServiceCollection ConfigureAppServices(this IServiceCollection services)
+    public static IServiceCollection ConfigureAppServices(this IServiceCollection services)
     {
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
@@ -25,6 +25,8 @@ public static IServiceCollection ConfigureAppServices(this IServiceCollection se
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
+        services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
+        services.AddSingleton<EditorPlatformService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
@@ -50,6 +52,7 @@ public static IServiceCollection ConfigureAppServices(this IServiceCollection se
         
         // PreferencesProvider - use in-memory for tests
         services.AddSingleton<PreferencesProvider>();
+        services.AddSingleton<IPreferencesProvider>(sp => sp.GetRequiredService<PreferencesProvider>());
         
         // ISimulationServerFacade - already registered by the test (mocked)
         
@@ -57,7 +60,7 @@ public static IServiceCollection ConfigureAppServices(this IServiceCollection se
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
-     services.AddSingleton<IModelErrorService, ModelErrorService>();
+        services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();

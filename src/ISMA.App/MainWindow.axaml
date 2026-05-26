@@ -17,10 +17,17 @@
         <Grid Grid.Row="1" ColumnDefinitions="*,240">
             <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" Grid.Column="0" />
             
-            <ContentControl x:Name="SettingsPanel" Grid.Column="1"
-                            AutomationProperties.AutomationId="SettingsPanel"
-                            Content="{Binding SimulationParameters}"
-                            IsVisible="{Binding ShowSettings}" />
+            <ScrollViewer x:Name="SettingsPanel" Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ContentControl Content="{Binding SimulationParameters}">
+                    <ContentControl.DataTemplates>
+                        <DataTemplate x:DataType="vm:SimulationParametersViewModel">
+                            <views:SettingsPanelView />
+                        </DataTemplate>
+                    </ContentControl.DataTemplates>
+                </ContentControl>
+            </ScrollViewer>
         </Grid>
 
         <Border Grid.Row="2" Height="180"

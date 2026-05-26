@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -95,28 +97,47 @@ public partial class PropertiesGrid : UserControl
         return grid;
     }
 
-    private Control CreateValueControl(System.Reflection.PropertyInfo prop, object viewModel)
+   private Control CreateValueControl(System.Reflection.PropertyInfo prop, object viewModel)
     {
         var automationId = $"{AutomationPrefix}-{prop.Name}";
-        var binding = new Binding(prop.Name);
+        var binding = new Binding(prop.Name) 
+        { 
+            Mode = BindingMode.TwoWay,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        };
 
         if (prop.PropertyType == typeof(bool))
         {
             var checkBox = new CheckBox
             {
                 Margin = new Thickness(4, 2),
-                FontSize = 11
+                FontSize = 11,
+                DataContext = viewModel
             };
             checkBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             checkBox.Bind(CheckBox.IsCheckedProperty, binding);
             return checkBox;
+        }
+        else if (prop.PropertyType.IsEnum)
+        {
+            var comboBox = new ComboBox
+            {
+                Margin = new Thickness(4, 2),
+                FontSize = 11,
+                DataContext = viewModel
+            };
+            comboBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
+            comboBox.ItemsSource = Enum.GetValues(prop.PropertyType).Cast<object>().Select(v => v.ToString());
+            comboBox.Bind(ComboBox.TextProperty, binding);
+            return comboBox;
         }
         else if (prop.PropertyType == typeof(string))
         {
             var textBox = new TextBox
             {
                 Margin = new Thickness(4, 2),
-                FontSize = 11
+                FontSize = 11,
+                DataContext = viewModel
             };
             textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             textBox.Bind(TextBox.TextProperty, binding);
@@ -128,7 +149,8 @@ public partial class PropertiesGrid : UserControl
             var textBox = new TextBox
             {
                 Margin = new Thickness(4, 2),
-                FontSize = 11
+                FontSize = 11,
+                DataContext = viewModel
             };
             textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             textBox.Bind(TextBox.TextProperty, binding);
@@ -139,7 +161,8 @@ public partial class PropertiesGrid : UserControl
             var textBox = new TextBox
             {
                 Margin = new Thickness(4, 2),
-                FontSize = 11
+                FontSize = 11,
+                DataContext = viewModel
             };
             textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             textBox.Bind(TextBox.TextProperty, binding);

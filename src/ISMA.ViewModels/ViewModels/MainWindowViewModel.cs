@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
@@ -59,6 +60,7 @@ public partial class MainWindowViewModel : ObservableObject
         _loadSettingsCallback = loadSettingsCallback;
 
         LoadProjects();
+        RestoreLastOpenedFiles();
     }
 
     private void LoadProjects()
@@ -69,6 +71,34 @@ public partial class MainWindowViewModel : ObservableObject
             Projects.Add(project);
         }
         ActiveProject = _projectService.ActiveProject;
+    }
+
+    private async void RestoreLastOpenedFiles()
+    {
+        var lastFiles = _projectService.GetLastOpenedFiles();
+        foreach (var filePath in lastFiles)
+        {
+            try
+            {
+                if (System.IO.File.Exists(filePath))
+                {
+                    var project = await _projectService.OpenAsync(filePath);
+                    if (project != null)
+                    {
+                        Projects.Add(project);
+                    }
+                }
+            }
+            catch
+            {
+                // Skip files that can't be opened
+            }
+        }
+
+        if (Projects.Count > 0 && ActiveProject == null)
+        {
+            ActiveProject = Projects[0];
+        }
     }
 
     [RelayCommand]
@@ -101,10 +131,19 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+   [RelayCommand]
     private async Task Save()
     {
         await _projectService.SaveAsync();
+    }
+
+    [RelayCommand]
+    private async Task SaveAs()
+    {
+        if (ActiveProject != null)
+        {
+            await _projectService.SaveAsync();
+        }
     }
 
     [RelayCommand]

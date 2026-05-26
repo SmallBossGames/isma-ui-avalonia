@@ -63,3 +63,11 @@ public interface IProjectFileService
     Task<bool> SaveAs(object project);
     Task<bool> SaveAll(IList<object> projects);
 }
+
+public interface IPreferencesProvider
+{
+    Domain.Models.Preferences Load();
+    void Save(Domain.Models.Preferences preferences);
+    void CommitWindow(Domain.Models.WindowPreferences windowPreferences);
+    void CommitFiles(Domain.Models.DefaultFilesPreferences defaultFilesPreferences);
+}

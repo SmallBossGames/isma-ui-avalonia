@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Contracts;
@@ -16,6 +15,7 @@ public sealed class ProjectService
     private readonly SimulationParametersService _parametersService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
     private readonly IModelErrorService? _errorService;
+    private readonly IPreferencesProvider? _preferencesProvider;
 
     private readonly List<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
@@ -39,7 +39,8 @@ public sealed class ProjectService
         ITextEditorFactory editorFactory,
         SimulationParametersService parametersService,
         ISyntaxHighlighter syntaxHighlighter,
-        IModelErrorService? errorService = null)
+        IModelErrorService? errorService = null,
+        IPreferencesProvider? preferencesProvider = null)
     {
         _projectFileService = projectFileService;
         _serverFacade = serverFacade;
@@ -47,6 +48,7 @@ public sealed class ProjectService
         _parametersService = parametersService;
         _syntaxHighlighter = syntaxHighlighter;
         _errorService = errorService;
+        _preferencesProvider = preferencesProvider;
     }
 
     public async Task<IProjectViewModel?> CreateNewAsync()
@@ -67,7 +69,7 @@ public sealed class ProjectService
         return project;
     }
 
-   public async Task<IProjectViewModel?> OpenAsync()
+  public async Task<IProjectViewModel?> OpenAsync()
     {
         var paths = await _projectFileService.Open((object?)null);
         if (paths == null || paths.Count == 0)
@@ -79,6 +81,16 @@ public sealed class ProjectService
 
         _projects.Add(project);
         ActiveProject = project;
+        TrackOpenedFile(filePath);
+        return project;
+    }
+
+    public async Task<IProjectViewModel?> OpenAsync(string filePath)
+    {
+        var project = CreateProject(filePath, ProjectType.LismaText);
+        _projects.Add(project);
+        ActiveProject = project;
+        TrackOpenedFile(filePath);
         return project;
     }
 
@@ -164,11 +176,33 @@ public sealed class ProjectService
         };
     }
 
-    private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
+  private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
     {
         if (field == value)
             return;
 
         field = value;
+    }
+
+    private void TrackOpenedFile(string filePath)
+    {
+        if (_preferencesProvider == null) return;
+
+        var preferences = _preferencesProvider.Load();
+        var existing = preferences.DefaultFilesPreferences.LastOpenedProjectPath
+            .Where(p => p != filePath)
+            .Take(4)
+            .Prepend(filePath)
+            .ToArray();
+
+        _preferencesProvider.CommitFiles(new DefaultFilesPreferences { LastOpenedProjectPath = existing });
+    }
+
+    public IReadOnlyList<string> GetLastOpenedFiles()
+    {
+        if (_preferencesProvider == null) return Array.Empty<string>();
+
+        var preferences = _preferencesProvider.Load();
+        return preferences.DefaultFilesPreferences.LastOpenedProjectPath.ToList();
     }
 }

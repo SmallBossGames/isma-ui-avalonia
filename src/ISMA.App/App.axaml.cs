@@ -36,7 +36,18 @@ public partial class App : Application
             }
 
             var viewModel = _services.GetRequiredService<MainWindowViewModel>();
-            desktop.MainWindow = new MainWindow(viewModel);
+            var preferencesProvider = _services.GetService<IPreferencesProvider>();
+            var editorPlatformService = _services.GetService<EditorPlatformService>();
+            var mainWindow = preferencesProvider != null 
+                ? new MainWindow(viewModel, preferencesProvider) 
+                : new MainWindow(viewModel);
+            
+            if (editorPlatformService != null)
+            {
+                editorPlatformService.AttachToWindow(mainWindow);
+            }
+            
+            desktop.MainWindow = mainWindow;
         }
 
         base.OnFrameworkInitializationCompleted();

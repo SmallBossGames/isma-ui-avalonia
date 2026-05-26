@@ -9,7 +9,6 @@ namespace ISMA.App.Views;
 public partial class IsmaTextEditorView : UserControl
 {
     private EditorPlatformService? _editorPlatformService;
-    private TextEditorFactory? _textEditorFactory;
     private TextEditor? _textEditor;
 
     public TextEditor? TextEditor => _textEditor;
@@ -21,15 +20,9 @@ public partial class IsmaTextEditorView : UserControl
         _textEditor = this.FindControl<TextEditor>("Editor");
     }
 
-    public IsmaTextEditorView(EditorPlatformService editorPlatformService, TextEditorFactory textEditorFactory) : this()
+    public IsmaTextEditorView(EditorPlatformService editorPlatformService) : this()
     {
         _editorPlatformService = editorPlatformService;
-        _textEditorFactory = textEditorFactory;
-
-        if (_textEditor is not null)
-        {
-            _editorPlatformService.SetFocusedEditor(_textEditor);
-        }
     }
 
     protected override void OnDataContextChanged(EventArgs e)

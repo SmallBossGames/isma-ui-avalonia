@@ -5,35 +5,21 @@
              x:Class="ISMA.App.Views.SettingsPanelView"
              x:CompileBindings="True"
              x:DataType="vm:SimulationParametersViewModel">
-    <TabControl>
-        <TabControl.ItemsPanel>
-            <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" />
-            </ItemsPanelTemplate>
-        </TabControl.ItemsPanel>
-
-        <TabItem Header="Initials">
-            <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" AutomationPrefix="Settings-CauchyInitials" />
-            </Border>
-        </TabItem>
-
-        <TabItem Header="Integration">
-            <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding IntegrationMethod}" AutomationPrefix="Settings-IntegrationMethod" />
-            </Border>
-        </TabItem>
-
-        <TabItem Header="Event Detection">
-            <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding EventDetection}" AutomationPrefix="Settings-EventDetection" />
-            </Border>
-        </TabItem>
-
-        <TabItem Header="Result Processing">
-            <Border Width="240" Padding="8">
-                <controls:PropertiesGrid ViewModel="{Binding ResultProcessing}" AutomationPrefix="Settings-ResultProcessing" />
-            </Border>
-        </TabItem>
-    </TabControl>
+    <StackPanel>
+        <Border Width="240" Padding="8">
+            <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" AutomationPrefix="Settings-CauchyInitials" />
+        </Border>
+        <Border Width="240" Padding="8">
+            <controls:PropertiesGrid ViewModel="{Binding IntegrationMethod}" AutomationPrefix="Settings-IntegrationMethod" />
+        </Border>
+        <Border Width="240" Padding="8">
+            <controls:PropertiesGrid ViewModel="{Binding EventDetection}" AutomationPrefix="Settings-EventDetection" />
+        </Border>
+        <Border Width="240" Padding="8">
+            <controls:PropertiesGrid ViewModel="{Binding ResultSaving}" AutomationPrefix="Settings-ResultSaving" />
+        </Border>
+        <Border Width="240" Padding="8">
+            <controls:PropertiesGrid ViewModel="{Binding ResultProcessing}" AutomationPrefix="Settings-ResultProcessing" />
+        </Border>
+    </StackPanel>
 </UserControl>

@@ -212,7 +212,19 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             LoopTransactions = loopTransactionsArray.ToImmutableArray()
         };
 
-        ReloadViews();
+ReloadViews();
+    }
+
+    private bool HasDuplicateTransaction(string startState, string endState, string predicate)
+    {
+        foreach (var tx in _model.Transactions)
+        {
+            if (tx.StartStateName == startState && tx.EndStateName == endState && tx.Predicate == predicate)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     [RelayCommand]
@@ -232,14 +244,17 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             Alias = ""
         };
 
-        _model = new BlueprintModel
+        if (!HasDuplicateTransaction(SelectedState.Name, SelectedState.Name, newTx.Predicate))
         {
-            Main = _model.Main,
-            Init = _model.Init,
-            States = _model.States,
-            Transactions = _model.Transactions.Add(newTx),
-            LoopTransactions = _model.LoopTransactions
-        };
+            _model = new BlueprintModel
+            {
+                Main = _model.Main,
+                Init = _model.Init,
+                States = _model.States,
+                Transactions = _model.Transactions.Add(newTx),
+                LoopTransactions = _model.LoopTransactions
+            };
+        }
 
         CurrentMode = BlueprintEditorMode.Default;
         IsAddTransitionMode = false;
@@ -522,7 +537,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         };
     }
 
-    public void Dispose()
+  public void Dispose()
     {
         States.Clear();
         Transactions.Clear();

@@ -1,9 +1,10 @@
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ISMA.Infrastructure.FileStorage;
 
-public sealed class PreferencesProvider : IDisposable
+public sealed class PreferencesProvider : IPreferencesProvider, IDisposable
 {
     private readonly string _settingsPath;
     private readonly ILogger<PreferencesProvider>? _logger;

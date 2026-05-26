@@ -86,13 +86,7 @@ public class MainWindowIntegrationTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
-    public async Task MainWindow_ShowSettings_Is_False_Initially()
-    {
-        ViewModel.ShowSettings.Should().BeFalse();
-    }
-
-    [AvaloniaFact]
-    public async Task MainWindow_Can_Toggle_ShowSettings()
+    public async Task MainWindow_ShowSettings_Property_Exists()
     {
         ViewModel.ShowSettings.Should().BeFalse();
         ViewModel.ShowSettings = true;

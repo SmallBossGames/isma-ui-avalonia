@@ -190,7 +190,7 @@ public static class UiHelpers
     /// </summary>
     public static TextBox? GetSettingsTextBox(this MainWindow window, string propertyName)
     {
-        var settingsPanel = window.FindControl<ContentControl>(AutomationIds.SettingsPanel);
+        var settingsPanel = window.FindControl<ScrollViewer>("SettingsPanel");
         if (settingsPanel is null || !settingsPanel.IsVisible)
             return null;
 
@@ -265,6 +265,15 @@ public static class UiHelpers
             {
                 tabControl.ContainerFromIndex(i);
             }
+        }
+        
+        // Force ContentControl template application for SettingsPanel
+        var settingsPanel = window.FindControl<ContentControl>("SettingsPanel");
+        if (settingsPanel is not null && settingsPanel.IsVisible)
+        {
+            settingsPanel.ApplyTemplate();
+            settingsPanel.Measure(size);
+            settingsPanel.Arrange(new Rect(default, settingsPanel.DesiredSize));
         }
     }
 
