@@ -46,23 +46,7 @@ public class LoopArrow : Control
         set => SetValue(PredicateProperty, value);
     }
 
-    public static readonly AttachedProperty<Action<LoopArrow>?> LoopClickedProperty =
-        AvaloniaProperty.RegisterAttached<LoopArrow, Canvas, Action<LoopArrow>?>("LoopClicked");
-
-    public static void SetLoopClicked(Canvas element, Action<LoopArrow> value)
-        => element.SetValue(LoopClickedProperty, value);
-
-    public static Action<LoopArrow>? GetLoopClicked(Canvas element)
-        => element.GetValue(LoopClickedProperty);
-
-    public static readonly AttachedProperty<Action<LoopArrow>?> LoopArrowHeadClickedProperty =
-        AvaloniaProperty.RegisterAttached<LoopArrow, Canvas, Action<LoopArrow>?>("LoopArrowHeadClicked");
-
-    public static void SetLoopArrowHeadClicked(Canvas element, Action<LoopArrow> value)
-        => element.SetValue(LoopArrowHeadClickedProperty, value);
-
-    public static Action<LoopArrow>? GetLoopArrowHeadClicked(Canvas element)
-        => element.GetValue(LoopArrowHeadClickedProperty);
+  
 
     static LoopArrow()
     {
@@ -140,9 +124,6 @@ public class LoopArrow : Control
         var dy = position.Y - (circleCenter.Y - r);
         var dist = Math.Sqrt(dx * dx + dy * dy);
 
-        var canvas = FindParentCanvas();
-        if (canvas == null) return;
-
         // Check if near arrowhead
         var arrowheadAngle = Math.PI * 0.75;
         var arrowheadPos = new Point(
@@ -150,29 +131,8 @@ public class LoopArrow : Control
             circleCenter.Y + r * Math.Sin(arrowheadAngle));
         var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
 
-        var headAction = GetLoopArrowHeadClicked(canvas);
-        var clickAction = GetLoopClicked(canvas);
-
-        if (headDist < ArrowheadSize && headAction != null)
-        {
-            headAction(this);
-        }
-        else if (Math.Abs(dist - r) < 8 && clickAction != null)
-        {
-            clickAction(this);
-        }
+    
 
         e.Handled = true;
-    }
-
-  private Canvas? FindParentCanvas()
-    {
-        Avalonia.Visual? current = this;
-        while (current != null)
-        {
-            if (current is Canvas canvas) return canvas;
-            current = current.GetVisualParent();
-        }
-        return null;
     }
 }

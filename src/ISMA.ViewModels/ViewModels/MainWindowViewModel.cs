@@ -15,6 +15,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ErrorListViewModel _errorList;
     private readonly SimulationParametersViewModel _simulationParameters;
     private readonly TasksPopOverViewModel _tasksPopOver;
+    private readonly ISimulationParametersStoreService _parametersStore;
     private readonly Action<SimulationParameters>? _loadSettingsCallback;
 
     private ObservableCollection<IProjectViewModel> _projects = new();
@@ -50,6 +51,7 @@ public partial class MainWindowViewModel : ObservableObject
         ErrorListViewModel errorList,
         SimulationParametersViewModel simulationParameters,
         TasksPopOverViewModel tasksPopOver,
+        ISimulationParametersStoreService parametersStore,
         Action<SimulationParameters>? loadSettingsCallback = null)
     {
         _projectService = projectService;
@@ -57,6 +59,7 @@ public partial class MainWindowViewModel : ObservableObject
         _errorList = errorList;
         _simulationParameters = simulationParameters;
         _tasksPopOver = tasksPopOver;
+        _parametersStore = parametersStore;
         _loadSettingsCallback = loadSettingsCallback;
 
         LoadProjects();
@@ -142,7 +145,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (ActiveProject != null)
         {
-            await _projectService.SaveAsync();
+            await _projectService.SaveAsAsync();
         }
     }
 
@@ -209,17 +212,17 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void StoreSettings()
+    private async Task StoreSettings()
     {
-        _simulationParameters.Snapshot();
+        await _parametersStore.StoreAsync();
     }
 
     [RelayCommand]
-    private void LoadSettings()
+    private async Task LoadSettings()
     {
         if (_loadSettingsCallback != null)
         {
-            _simulationParameters.Snapshot();
+            await _parametersStore.LoadAsync();
         }
     }
 }

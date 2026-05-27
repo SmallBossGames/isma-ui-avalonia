@@ -55,23 +55,7 @@ public class ArrowLine : Control
         set => SetValue(PredicateProperty, value);
     }
 
-    public static readonly AttachedProperty<Action<ArrowLine>?> TransactionClickedProperty =
-        AvaloniaProperty.RegisterAttached<ArrowLine, Control, Action<ArrowLine>?>("TransactionClicked");
-
-    public static void SetTransactionClicked(Control element, Action<ArrowLine> value)
-        => element.SetValue(TransactionClickedProperty, value);
-
-    public static Action<ArrowLine>? GetTransactionClicked(Control element)
-        => element.GetValue(TransactionClickedProperty);
-
-    public static readonly AttachedProperty<Action<ArrowLine>?> ArrowHeadClickedProperty =
-        AvaloniaProperty.RegisterAttached<ArrowLine, Control, Action<ArrowLine>?>("ArrowHeadClicked");
-
-    public static void SetArrowHeadClicked(Control element, Action<ArrowLine> value)
-        => element.SetValue(ArrowHeadClickedProperty, value);
-
-    public static Action<ArrowLine>? GetArrowHeadClicked(Control element)
-        => element.GetValue(ArrowHeadClickedProperty);
+ 
 
     static ArrowLine()
     {
@@ -152,32 +136,8 @@ public class ArrowLine : Control
         var end = GetCenter(EndState);
         var distance = Math.Sqrt(Math.Pow(position.X - end.X, 2) + Math.Pow(position.Y - end.Y, 2));
 
-        var canvas = FindParentCanvas();
-        if (canvas == null) return;
-
-        var headAction = GetArrowHeadClicked(canvas);
-        var clickAction = GetTransactionClicked(canvas);
-
-        if (distance < ArrowheadSize && headAction != null)
-        {
-            headAction(this);
-        }
-        else if (clickAction != null)
-        {
-            clickAction(this);
-        }
+  
 
         e.Handled = true;
-    }
-
-  private Canvas? FindParentCanvas()
-    {
-        Avalonia.Visual? current = this;
-        while (current != null)
-        {
-            if (current is Canvas canvas) return canvas;
-            current = current.GetVisualParent();
-        }
-        return null;
     }
 }

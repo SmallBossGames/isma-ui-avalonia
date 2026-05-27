@@ -40,13 +40,15 @@ public class MainWindowViewModelTests
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
+        var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
 
         return new MainWindowViewModel(
             projectService,
             simulationService,
             errorList,
             simParams,
-            tasksPopOver);
+            tasksPopOver,
+            parametersStore);
     }
 
     [Fact]
@@ -154,13 +156,15 @@ public class MainWindowViewModelTests
             paramsService);
 
         var errorList = new ErrorListViewModel();
+        var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
 
         var viewModel = new MainWindowViewModel(
             projectService,
             mockSimulationService,
             errorList,
             simParams,
-            tasksPopOver);
+            tasksPopOver,
+            parametersStore);
 
         var mockLismaProject = new Mock<LismaProjectViewModel>(
             Mock.Of<ISimulationServerFacade>(),
@@ -215,13 +219,15 @@ public class MainWindowViewModelTests
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
+        var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
 
         var viewModel = new MainWindowViewModel(
             projectService,
             mockSimulationService.Object,
             errorList,
             simParams,
-            tasksPopOver);
+            tasksPopOver,
+            parametersStore);
 
         var lismaProject = new LismaProjectViewModel(
             mockFacade.Object,

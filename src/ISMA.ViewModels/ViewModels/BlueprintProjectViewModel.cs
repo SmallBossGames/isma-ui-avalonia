@@ -69,7 +69,7 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
         }
     }
 
-    private async Task<bool> SaveAsAsync()
+    public async Task<bool> SaveAsAsync()
     {
         return await _projectFileService.SaveAs(this);
     }

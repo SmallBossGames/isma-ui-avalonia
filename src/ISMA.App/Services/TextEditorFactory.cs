@@ -4,6 +4,10 @@ using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.Highlighting;
 using ISMA.Domain.Contracts;
+using ISMA.Domain.Dtos;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ISMA.App.Services;
 
@@ -38,10 +42,11 @@ public class TextEditorFactory : ITextEditorFactory
         return editor;
     }
 
-    public void SetSyntaxHighlighting(object editor, ISMA.Domain.Dtos.SyntaxTokenDto[] tokens, string source)
+    public void SetSyntaxHighlighting(object editor, SyntaxTokenDto[] tokens, string source)
     {
         if (editor is not TextEditor te) return;
         te.Options.HighlightCurrentLine = true;
+        // Server-driven highlighting will be implemented later
     }
 
     public void AddSearchPanel(object editor)

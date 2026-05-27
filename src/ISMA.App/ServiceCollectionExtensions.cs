@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
+        services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
         services.AddSingleton<TasksPopOverViewModel>();
@@ -62,6 +63,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
+        services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();
         services.AddSingleton<TasksPopOverViewModel>();

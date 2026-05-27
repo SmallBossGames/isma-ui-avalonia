@@ -107,6 +107,19 @@ public sealed class ProjectService
         };
     }
 
+    public async Task<bool> SaveAsAsync()
+    {
+        if (ActiveProject == null)
+            return false;
+
+        return ActiveProject switch
+        {
+            LismaProjectViewModel lisma => await lisma.SaveAsAsync(),
+            BlueprintProjectViewModel blueprint => await blueprint.SaveAsAsync(),
+            _ => false
+        };
+    }
+
     public async Task<bool> SaveAllAsync()
     {
         var results = new List<bool>();

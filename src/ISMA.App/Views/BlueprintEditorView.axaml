@@ -1,11 +1,13 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:ISMA.ViewModels.ViewModels"
-             xmlns:controls="using:ISMA.App.Controls"
-             xmlns:converters="using:ISMA.ViewModels.Converters"
-             x:Class="ISMA.App.Views.BlueprintEditorView"
-             x:CompileBindings="True"
-             x:DataType="vm:BlueprintEditorViewModel">
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:vm="using:ISMA.ViewModels.ViewModels"
+              xmlns:controls="using:ISMA.App.Controls"
+              xmlns:converters="using:ISMA.ViewModels.Converters"
+              x:Class="ISMA.App.Views.BlueprintEditorView"
+              x:CompileBindings="True"
+              x:DataType="vm:BlueprintEditorViewModel"
+              Width="1200"
+              Height="800">
 
     <Design.PreviewWith>
         <Border Background="#F5F5F5" Width="800" Height="500">
@@ -31,7 +33,10 @@
 
                 <Canvas x:Name="Canvas"
                         Width="1200"
-                        Height="800">
+                        Height="800"
+                        PointerMoved="OnCanvasPointerMoved"
+                        PointerReleased="OnCanvasPointerReleased"
+                        PointerExited="OnCanvasPointerExited">
 
                     <!-- Transaction arrows layer -->
                     <ItemsControl ItemsSource="{Binding Transactions}">
@@ -45,7 +50,8 @@
                                 <controls:ArrowLine StartState="{Binding StartState}"
                                                     EndState="{Binding EndState}"
                                                     Alias="{Binding Alias}"
-                                                    Predicate="{Binding Predicate}"/>
+                                                    Predicate="{Binding Predicate}"
+                                                    PointerPressed="OnArrowPointerPressed"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -61,7 +67,8 @@
                             <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
                                 <controls:LoopArrow State="{Binding State}"
                                                     Alias="{Binding Alias}"
-                                                    Predicate="{Binding Predicate}"/>
+                                                    Predicate="{Binding Predicate}"
+                                                    PointerPressed="OnLoopArrowPointerPressed"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -75,7 +82,8 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                                <Border Width="120"
+                                <Border x:Name="StateBorder"
+                                        Width="120"
                                         Height="60"
                                         Background="{Binding FillColorHex}"
                                         BorderBrush="{Binding IsSelected,
@@ -89,7 +97,8 @@
                                     <StackPanel VerticalAlignment="Center"
                                                 HorizontalAlignment="Center"
                                                 Spacing="4">
-                                        <TextBlock Text="{Binding Name}"
+                                        <TextBlock x:Name="StateNameTextBlock"
+                                                   Text="{Binding Name}"
                                                    FontWeight="Bold"
                                                    FontSize="11"
                                                    TextAlignment="Center"

@@ -5,6 +5,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Interactivity;
+using ISMA.App.Converters;
 
 namespace ISMA.App.Controls;
 
@@ -128,7 +129,13 @@ public partial class PropertiesGrid : UserControl
             };
             comboBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             comboBox.ItemsSource = Enum.GetValues(prop.PropertyType).Cast<object>().Select(v => v.ToString());
-            comboBox.Bind(ComboBox.TextProperty, binding);
+            var enumBinding = new Binding(prop.Name) 
+            { 
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Converter = new EnumToStringConverter(prop.PropertyType)
+            };
+            comboBox.Bind(ComboBox.TextProperty, enumBinding);
             return comboBox;
         }
         else if (prop.PropertyType == typeof(string))

@@ -2,12 +2,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
 using System.Text.Json;
 
 namespace ISMA.App.Services;
 
-public class SimulationParametersService
+public class SimulationParametersService : ISimulationParametersStoreService
 {
     private readonly Window? _owner;
     private readonly SimulationParametersViewModel? _parametersVm;
@@ -22,9 +23,9 @@ public class SimulationParametersService
 
     public string[] IntegrationMethods { get; set; } = Array.Empty<string>();
 
-    public async Task<bool> Store(object? ownerWindow)
+    public async Task<bool> StoreAsync()
     {
-        var control = ownerWindow as Avalonia.Visual ?? _owner as Avalonia.Visual;
+        var control = _owner as Avalonia.Visual;
         var topLevel = TopLevel.GetTopLevel(control);
         if (topLevel is null) return false;
 
@@ -43,9 +44,9 @@ public class SimulationParametersService
         return true;
     }
 
-    public async Task<bool> Load(object? ownerWindow, Action<SimulationParameters> applyCallback)
+    public async Task<bool> LoadAsync()
     {
-        var control = ownerWindow as Avalonia.Visual ?? _owner as Avalonia.Visual;
+        var control = _owner as Avalonia.Visual;
         var topLevel = TopLevel.GetTopLevel(control);
         if (topLevel is null) return false;
 
@@ -64,8 +65,23 @@ public class SimulationParametersService
         var paramsModel = JsonSerializer.Deserialize<SimulationParameters>(json);
         if (paramsModel is null) return false;
 
-        applyCallback(paramsModel);
+        Commit(paramsModel);
         return true;
+    }
+
+    public async Task<bool> Store(object? ownerWindow)
+    {
+        return await StoreAsync();
+    }
+
+    public async Task<bool> Load(object? ownerWindow, Action<SimulationParameters> applyCallback)
+    {
+        var result = await LoadAsync();
+        if (result && _parametersVm != null)
+        {
+            applyCallback(_parametersVm.Snapshot());
+        }
+        return result;
     }
 
     public SimulationParameters Snapshot()

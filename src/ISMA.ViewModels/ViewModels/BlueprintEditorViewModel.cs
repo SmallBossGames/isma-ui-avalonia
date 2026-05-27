@@ -364,6 +364,11 @@ ReloadViews();
     }
 
     [RelayCommand]
+    private void OpenStateTextEditor(BlueprintStateViewModel state)
+    {
+    }
+
+    [RelayCommand]
     private void RemoveSelected()
     {
         if (CurrentMode == BlueprintEditorMode.RemoveState && SelectedState != null)
