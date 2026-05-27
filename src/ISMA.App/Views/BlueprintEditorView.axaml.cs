@@ -454,12 +454,27 @@ public partial class BlueprintEditorView : UserControl
         if (vm is null || arrow.State == null) return;
 
         var loop = vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
-        if (loop != null)
+        if (loop == null) return;
+
+        var window = FindWindow();
+        if (window == null) return;
+
+        var mainWindowVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
+        if (mainWindowVm == null) return;
+
+        var projectServiceField = mainWindowVm.GetType()
+            .GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var projectService = projectServiceField?.GetValue(mainWindowVm) as ISMA.ViewModels.Services.ProjectService;
+        if (projectService == null) return;
+
+        var tabName = $"{loop.State.Name} (loop)";
+        var newProject = projectService.CreateNewTextProject(tabName);
+        newProject.SetContent(loop.Text);
+        mainWindowVm.ActiveProject = newProject;
+
+        if (newProject is ISMA.ViewModels.ViewModels.LismaProjectViewModel lismaProject)
         {
-            _editingTransaction = null;
-            _popOverViewModel!.Alias = loop.Alias;
-            _popOverViewModel.Predicate = loop.Predicate;
-            EditArrowPopup.IsOpen = true;
+            lismaProject.ContentChanged += (text) => { loop.Text = text; };
         }
     }
 

@@ -46,8 +46,16 @@ public class TextEditorFactory : ITextEditorFactory
     {
         if (editor is not TextEditor te) return;
         te.Options.HighlightCurrentLine = true;
-        // Server-driven highlighting will be implemented later
-        // TODO: Implement server token -> AvaloniaEdit colorization
+
+        var highlighting = LismaSyntaxHelper.CreateServerDriven(tokens);
+        if (highlighting != null)
+        {
+            te.SyntaxHighlighting = highlighting;
+        }
+        else
+        {
+            te.SyntaxHighlighting = LismaSyntaxHelper.GetFallbackHighlighting();
+        }
     }
 
     public void AddSearchPanel(object editor)

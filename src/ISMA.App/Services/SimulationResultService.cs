@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using ISMA.App.Views;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
@@ -97,5 +98,23 @@ public class SimulationResultService : ISimulationResultService
                 writer.WriteLine(line.ToString());
             }
         });
+    }
+
+    public async Task ShowExportDialog(CompletedSimulation simulation)
+    {
+        var topLevel = TopLevel.GetTopLevel(_owner);
+        if (topLevel is null || string.IsNullOrEmpty(simulation.CachedFile))
+            return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Export CSV",
+            FileTypeFilter = new[] { new FilePickerFileType("CSV") { Patterns = new[] { "*.csv" } } }
+        });
+
+        if (files.Count > 0)
+        {
+            await ExportToFile(simulation, files[0].Path.LocalPath);
+        }
     }
 }

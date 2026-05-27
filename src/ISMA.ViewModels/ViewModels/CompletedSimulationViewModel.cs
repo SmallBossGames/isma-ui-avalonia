@@ -48,7 +48,7 @@ public partial class CompletedSimulationViewModel : ObservableObject
     {
         if (_resultService != null && !string.IsNullOrEmpty(CachedFile))
         {
-            await _resultService.ExportToFile(_source, CachedFile);
+            await _resultService.ShowExportDialog(_source);
         }
     }
 

@@ -53,6 +53,7 @@ public interface ISimulationResultService
     void RemoveResult(CompletedSimulation simulation);
     Task ShowChart(CompletedSimulation simulation);
     Task ExportToFile(CompletedSimulation simulation, string filePath);
+    Task ShowExportDialog(CompletedSimulation simulation);
 }
 
 public interface IProjectFileService

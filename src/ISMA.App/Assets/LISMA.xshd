@@ -31,18 +31,13 @@
       <Word>false</Word>
     </Keywords>
 
-    <Span color="Comment" multiline="true">
-      <Begin>//</Begin>
+    <Span color="Comment" multiline="true" begin="//" end="\r?\n" endRegex="true">
     </Span>
 
-    <Span color="Comment" multiline="true">
-      <Begin>/*</Begin>
-      <End>*/</End>
+    <Span color="Comment" multiline="true" begin="/\*" end="\*/" beginRegex="true" endRegex="true">
     </Span>
 
-    <Span color="String">
-      <Begin>"</Begin>
-      <End>"</End>
+    <Span color="String" begin="&quot;" end="&quot;" beginRegex="false" endRegex="false">
     </Span>
 
     <Rule color="Number">

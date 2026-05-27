@@ -44,6 +44,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     public event Action? CopyRequested;
     public event Action? PasteRequested;
     public event Action? NameChanged;
+    public event Action<string>? ContentChanged;
 
     public LismaProjectViewModel(
         ISimulationServerFacade serverFacade,
@@ -117,6 +118,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         FullText = text;
         IsDirty = true;
         _model = new LismaTextModel(text, _model.Regions);
+        ContentChanged?.Invoke(text);
     }
 
     public void LoadFromFile(string path)
@@ -186,8 +188,10 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         try
         {
             var tokens = await _syntaxHighlighter.Highlight(source);
-            _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
             _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
+
+            await Task.Delay(100);
+            _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
         }
         catch
         {
