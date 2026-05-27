@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 
 namespace ISMA.ViewModels.ViewModels;
@@ -19,10 +20,14 @@ public partial class CompletedSimulationViewModel : ObservableObject
     private string _cachedFile = "";
 
     private readonly CompletedSimulation _source;
+    private readonly ISimulationResultService? _resultService;
+    private readonly TasksPopOverViewModel? _tasksPopOver;
 
-    public CompletedSimulationViewModel(CompletedSimulation source)
+    public CompletedSimulationViewModel(CompletedSimulation source, ISimulationResultService? resultService = null, TasksPopOverViewModel? tasksPopOver = null)
     {
         _source = source;
+        _resultService = resultService;
+        _tasksPopOver = tasksPopOver;
         Id = source.Id;
         ModelName = source.ModelName;
         Parameters = source.Parameters;
@@ -30,17 +35,30 @@ public partial class CompletedSimulationViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Show()
+    private async Task Show()
     {
+        if (_resultService != null && !string.IsNullOrEmpty(CachedFile))
+        {
+            await _resultService.ShowChart(_source);
+        }
     }
 
     [RelayCommand]
-    private void Export()
+    private async Task Export()
     {
+        if (_resultService != null && !string.IsNullOrEmpty(CachedFile))
+        {
+            await _resultService.ExportToFile(_source, CachedFile);
+        }
     }
 
     [RelayCommand]
     private void Remove()
     {
+        if (_resultService != null && !string.IsNullOrEmpty(CachedFile))
+        {
+            _resultService.RemoveResult(_source);
+            _tasksPopOver?.RemoveCompleted(this);
+        }
     }
 }

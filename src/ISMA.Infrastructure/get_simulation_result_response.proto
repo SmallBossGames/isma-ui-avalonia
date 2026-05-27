@@ -13,4 +13,6 @@ option java_package = "ru.nstu.isma.contracts.simulation";
 message GetSimulationResultResponse {
   // URL path for downloading the CSV file via HTTP
   string download_url = 2;
+  // Column names for the result data (DE, AE, f prefixes)
+  repeated string column_names = 3;
 }

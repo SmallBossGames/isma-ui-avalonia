@@ -54,4 +54,8 @@ message RunSimulationRequest {
   EventDetectionConfig event_detection = 8;
   // Compiled model ID (required) - obtained from LismaCompilerService.Compile
   string compiled_model_id = 9;
+  // Parallel execution configuration
+  bool is_parallel_in_use = 10;
+  string server = 11;
+  int32 port = 12;
 }

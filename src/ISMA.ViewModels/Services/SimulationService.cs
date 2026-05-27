@@ -15,6 +15,7 @@ public partial class SimulationServiceViewModel : ObservableObject
     private readonly IModelErrorService _errorService;
     private readonly ISimulationResultService _resultService;
     private readonly SimulationParametersService _parametersService;
+    private readonly TasksPopOverViewModel? _tasksPopOver;
 
     [ObservableProperty]
     private bool _isRunning;
@@ -34,12 +35,14 @@ public partial class SimulationServiceViewModel : ObservableObject
         ISimulationServerFacade serverFacade,
         IModelErrorService errorService,
         ISimulationResultService resultService,
-        SimulationParametersService parametersService)
+        SimulationParametersService parametersService,
+        TasksPopOverViewModel? tasksPopOver = null)
     {
         _serverFacade = serverFacade;
         _errorService = errorService;
         _resultService = resultService;
         _parametersService = parametersService;
+        _tasksPopOver = tasksPopOver;
     }
 
     public async Task SimulateAsync(LismaProjectViewModel project)
@@ -84,19 +87,22 @@ public partial class SimulationServiceViewModel : ObservableObject
                 IsStabilityControlInUse = snapshot.IntegrationMethod.IsStableInUse || snapshot.IntegrationMethod.IsStableAllowedInUse,
                 CompiledModelId = compileResult.ModelId,
                 EventDetectionGamma = snapshot.EventDetection.IsEventDetectionInUse ? snapshot.EventDetection.Gamma : null,
-                EventDetectionLowBorder = snapshot.EventDetection.IsEventDetectionInUse ? snapshot.EventDetection.LowBorder : null
+                EventDetectionLowBorder = snapshot.EventDetection.IsEventDetectionInUse ? snapshot.EventDetection.LowBorder : null,
+                IsParallelInUse = snapshot.IntegrationMethod.IsParallelInUse,
+                Server = snapshot.IntegrationMethod.Server,
+                Port = snapshot.IntegrationMethod.Port
             };
 
             long simulationId = await _serverFacade.RunSimulation(runParams);
 
-            var inProgress = new InProgressSimulationViewModel
-            {
-                Id = (int)simulationId,
-                ModelName = project.Name,
-                Parameters = snapshot,
-                Progress = 0.0
-            };
+            var inProgress = new InProgressSimulationViewModel(
+                (int)simulationId,
+                project.Name,
+                snapshot,
+                _serverFacade,
+                _tasksPopOver);
             TrackingTasks.Add(inProgress);
+            _tasksPopOver?.AddInProgress(inProgress);
 
             StatusText = "Monitoring simulation...";
 
@@ -121,6 +127,11 @@ public partial class SimulationServiceViewModel : ObservableObject
 
             _resultService.CommitResult(completed);
             TrackingTasks.Remove(inProgress);
+            _tasksPopOver?.RemoveInProgress(inProgress);
+
+            var completedVm = new CompletedSimulationViewModel(completed, _resultService, _tasksPopOver);
+            _tasksPopOver?.Completed.Add(completedVm);
+
             StatusText = "Simulation complete";
         }
         catch (Exception ex)
@@ -147,6 +158,7 @@ public partial class SimulationServiceViewModel : ObservableObject
         finally
         {
             TrackingTasks.Remove(simulation);
+            _tasksPopOver?.RemoveInProgress(simulation);
             StatusText = "Simulation stopped";
         }
     }

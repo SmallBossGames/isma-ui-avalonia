@@ -29,6 +29,12 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<string> _selectedYAxes = new();
 
+    [ObservableProperty]
+    private bool _okPressed;
+
+    [ObservableProperty]
+    private bool _closePressed;
+
     public SelectVariablesDialogViewModel()
     {
         AllColumns.Add("TIME");
@@ -47,6 +53,16 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
         foreach (var col in columns)
         {
             YAxisItems.Add(new NamedPickerItem { Name = col, Value = col });
+        }
+    }
+
+    public void GetSelectedYAxes(out ObservableCollection<string> axes)
+    {
+        axes = new ObservableCollection<string>();
+        foreach (var item in YAxisItems)
+        {
+            if (item.IsSelected)
+                axes.Add(item.Value);
         }
     }
 
@@ -71,10 +87,12 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
     [RelayCommand]
     private void Ok()
     {
+        OkPressed = true;
     }
 
     [RelayCommand]
     private void Close()
     {
+        ClosePressed = true;
     }
 }

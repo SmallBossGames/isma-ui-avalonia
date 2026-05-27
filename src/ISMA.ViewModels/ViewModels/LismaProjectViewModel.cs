@@ -198,6 +198,12 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     public void TriggerCopy() => CopyRequested?.Invoke();
     public void TriggerPaste() => PasteRequested?.Invoke();
 
+    public void TriggerSelectAll()
+    {
+        _editorInstance?.GetType().GetMethod("SelectAll", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+            ?.Invoke(_editorInstance, null);
+    }
+
     public void Dispose()
     {
         ResetEditor();

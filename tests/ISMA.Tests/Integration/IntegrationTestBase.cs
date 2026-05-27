@@ -38,6 +38,7 @@ public abstract class IntegrationTestBase
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
+        services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<SimulationParametersViewModel>();

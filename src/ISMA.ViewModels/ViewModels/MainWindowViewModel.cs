@@ -187,10 +187,16 @@ public partial class MainWindowViewModel : ObservableObject
         ActiveProject?.TriggerCopy();
     }
 
-    [RelayCommand]
+  [RelayCommand]
     private void Paste()
     {
         ActiveProject?.TriggerPaste();
+    }
+
+    [RelayCommand]
+    private void SelectAll()
+    {
+        ActiveProject?.TriggerSelectAll();
     }
 
     [RelayCommand]

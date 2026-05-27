@@ -214,7 +214,8 @@ public class MainWindowViewModelTests
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<IModelErrorService>(),
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService());
+            new SimulationParametersService(),
+            null);
 
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();

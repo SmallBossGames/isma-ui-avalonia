@@ -4,6 +4,7 @@ using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
 using Microsoft.Extensions.Logging;
+using System.Collections.Immutable;
 
 namespace ISMA.Infrastructure.Server;
 
@@ -56,6 +57,14 @@ public sealed class GrpcSimulationClient : IDisposable
             };
         }
 
+        // Parallel settings (will be sent when proto is regenerated)
+        if (@params.IsParallelInUse)
+        {
+            // request.IsParallelInUse = true;
+            // request.Server = @params.Server;
+            // request.Port = @params.Port;
+        }
+
         _logger?.LogInformation("Starting simulation: method={Method}, model={Model}", @params.MethodName, @params.CompiledModelId);
 
         var response = await _client.RunSimulationAsync(request, cancellationToken: ct).ConfigureAwait(false);
@@ -93,10 +102,14 @@ public sealed class GrpcSimulationClient : IDisposable
         var request = new GetSimulationResultRequest { SimulationId = simulationId };
         var response = await _client.GetSimulationResultAsync(request, cancellationToken: ct).ConfigureAwait(false);
 
+        var columnNames = response.ColumnNames.Count > 0
+            ? response.ColumnNames.ToImmutableArray()
+            : ImmutableArray<string>.Empty;
+
         return new CachedSimulationResult
         {
             File = response.DownloadUrl,
-            ColumnNames = System.Collections.Immutable.ImmutableArray<string>.Empty,
+            ColumnNames = columnNames,
         };
     }
 

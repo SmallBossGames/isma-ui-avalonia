@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using ISMA.App.Controls;
 using ISMA.ViewModels.ViewModels;
 
@@ -359,22 +361,35 @@ public partial class BlueprintEditorView : UserControl
         _previousName = null;
     }
 
-    private void OpenStateTextEditorTab(BlueprintStateViewModel state)
+   private void OpenStateTextEditorTab(BlueprintStateViewModel state)
     {
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm == null) return;
 
-        var projectVm = vm as ISMA.ViewModels.ViewModels.IProjectViewModel;
-        if (projectVm != null)
-        {
-            var textVm = projectVm as ISMA.ViewModels.ViewModels.LismaProjectViewModel;
-            if (textVm != null)
-            {
-                var newTabName = state.Name;
-                var newContent = state.Text;
-                textVm.SetContent(newContent);
-            }
-        }
+        var projectVm = DataContext as ISMA.ViewModels.ViewModels.IProjectViewModel;
+        if (projectVm == null) return;
+
+        var blueprintProject = projectVm as ISMA.ViewModels.ViewModels.BlueprintProjectViewModel;
+        if (blueprintProject == null) return;
+
+        var window = FindWindow();
+        if (window == null) return;
+
+        var mainWindowVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
+        if (mainWindowVm == null) return;
+
+        var projectServiceField = mainWindowVm.GetType().GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var projectService = projectServiceField?.GetValue(mainWindowVm) as ISMA.ViewModels.Services.ProjectService;
+        if (projectService == null) return;
+
+        var newProject = projectService.CreateNewTextProject(state.Name);
+        newProject.SetContent(state.Text);
+        mainWindowVm.ActiveProject = newProject;
+    }
+
+    private Avalonia.Controls.Window? FindWindow()
+    {
+        return this.FindAncestorOfType<Avalonia.Controls.Window>();
     }
 
     private void OnArrowClicked(object? sender, ArrowLine arrow)

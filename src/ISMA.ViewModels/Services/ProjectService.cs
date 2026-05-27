@@ -94,6 +94,14 @@ public sealed class ProjectService
         return project;
     }
 
+    public IProjectViewModel CreateNewTextProject(string name)
+    {
+        var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter, _errorService);
+        project.Name = name;
+        _projects.Add(project);
+        return project;
+    }
+
     public async Task<bool> SaveAsync()
     {
         if (ActiveProject == null)

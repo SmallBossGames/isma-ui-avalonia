@@ -143,4 +143,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     public void TriggerCut() { }
     public void TriggerCopy() { }
     public void TriggerPaste() { }
+    public void TriggerSelectAll() { }
+    public void SetContent(string content) { }
 }

@@ -49,6 +49,9 @@ public sealed class RunSimulationParams
     public string CompiledModelId { get; set; } = "";
     public double? EventDetectionGamma { get; set; }
     public double? EventDetectionLowBorder { get; set; }
+    public bool IsParallelInUse { get; set; }
+    public string Server { get; set; } = "";
+    public int Port { get; set; }
 }
 
 public sealed class SocketPaths

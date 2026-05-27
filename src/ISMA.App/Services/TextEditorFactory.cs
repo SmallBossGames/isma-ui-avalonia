@@ -47,6 +47,7 @@ public class TextEditorFactory : ITextEditorFactory
         if (editor is not TextEditor te) return;
         te.Options.HighlightCurrentLine = true;
         // Server-driven highlighting will be implemented later
+        // TODO: Implement server token -> AvaloniaEdit colorization
     }
 
     public void AddSearchPanel(object editor)

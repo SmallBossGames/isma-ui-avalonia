@@ -10,4 +10,6 @@ public interface IProjectViewModel : IDisposable
     void TriggerCut();
     void TriggerCopy();
     void TriggerPaste();
+    void TriggerSelectAll();
+    void SetContent(string content);
 }
