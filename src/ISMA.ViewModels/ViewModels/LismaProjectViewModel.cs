@@ -38,6 +38,8 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     private ObservableCollection<SyntaxTokenDto> _highlightTokens = new();
     public ObservableCollection<SyntaxTokenDto> HighlightTokens => _highlightTokens;
 
+    private int _highlightVersion;
+
     public object? EditorContent => _editorInstance;
 
     public event Action? CutRequested;
@@ -187,10 +189,15 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     {
         try
         {
+            var version = ++_highlightVersion;
             var tokens = await _syntaxHighlighter.Highlight(source);
-            _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
 
             await Task.Delay(100);
+
+            if (version != _highlightVersion)
+                return;
+
+            _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
             _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
         }
         catch

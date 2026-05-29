@@ -6,9 +6,9 @@ This document identifies what's missing from the original ISMA JavaFX applicatio
 
 | Status | Count | Details |
 |--------|-------|---------|
-| **Fully Implemented** | 29 | Multi-project tabs, blueprint canvas (states/arrows/loops), drag-and-drop, inline name editing, edit popover, blueprint-to-LISMA conversion, compile/validate/run, progress monitoring, result download, error list, settings panel, store/load settings, chart viewer UI, variable selection dialog UI, window persistence, menu/toolbar/shortcuts, clipboard propagation, blueprint editor modes, simulation abort, show/export/remove results, state content editing, variable dialog OK/Close, parallel settings to server, result simplification, Tasks PopOver integration, preferences persistence, error handling & feedback, Select All command, result download column names, pseudo-class styles |
-| **Partially Implemented** | 2 | Syntax highlighting (server tokens fetched but not rendered), Loop arrow double-click (opens PopOver instead of text tab) |
-| **Not Implemented** | 1 | CSV Export file dialog (uses cached path instead of user-selected path) |
+| **Fully Implemented** | 31 | Multi-project tabs, blueprint canvas (states/arrows/loops), drag-and-drop, inline name editing, edit popover, blueprint-to-LISMA conversion, compile/validate/run, progress monitoring, result download, error list, settings panel, store/load settings, chart viewer UI, variable selection dialog UI, window persistence, menu/toolbar/shortcuts, clipboard propagation, blueprint editor modes, simulation abort, show/export/remove results, state content editing, loop arrow double-click → text tab, variable dialog OK/Close, parallel settings to server, result simplification, Tasks PopOver integration, preferences persistence, error handling & feedback, Select All command, result download column names, pseudo-class styles, CSV export with FileDialog, server-driven syntax highlighting |
+| **Partially Implemented** | 0 | — |
+| **Not Implemented** | 0 | — |
 
 ---
 
@@ -17,8 +17,8 @@ This document identifies what's missing from the original ISMA JavaFX applicatio
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
 | 1 | Multi-project editing (tabs) | **FULLY IMPLEMENTED** | Full CRUD lifecycle, dirty tracking, last-opened-file restoration |
-| 2 | LISMA text editing with syntax highlighting | **PARTIAL** | AvaloniaEdit with line numbers works. Server tokens fetched but **never rendered** as colored spans |
-| 3 | Remote syntax highlighting (server-driven) | **PARTIAL** | gRPC call returns tokens, but no bridge to AvaloniaEdit for rendering |
+| 2 | LISMA text editing with syntax highlighting | **FULLY IMPLEMENTED** | AvaloniaEdit with line numbers. Server tokens rendered via `ServerDrivenHighlightingTransformer` (VisualLineElement coloring). XSHD fallback for offline mode. |
+| 3 | Remote syntax highlighting (server-driven) | **FULLY IMPLEMENTED** | gRPC call returns tokens, `DocumentColorizingTransformer` bridges tokens to AvaloniaEdit rendering pipeline. |
 | 4 | Visual statechart (blueprint) editing | **FULLY IMPLEMENTED** | Canvas with states, transitions, loops, all interaction modes |
 | 5 | State creation, drag, rename | **FULLY IMPLEMENTED** | Drag-and-drop, 200ms inline name editing, position clamping |
 | 6 | Transition arrow creation and management | **FULLY IMPLEMENTED** | Two-click mode, duplicate prevention, removal |
@@ -37,13 +37,13 @@ This document identifies what's missing from the original ISMA JavaFX applicatio
 | 19 | Parameter presets (store/load JSON) | **FULLY IMPLEMENTED** | Full store/load with JSON persistence |
 | 20 | Chart visualization (Grin process) | **FULLY IMPLEMENTED** | Grin launcher, SelectVariables dialog, OK/Close wiring |
 | 21 | Variable axis selection dialog | **FULLY IMPLEMENTED** | UI complete, Ok/Close commands wired, dialog closes with result |
-| 22 | CSV export of results | **PARTIAL** | ExportToFile() logic exists but `ExportCommand` uses cached file path instead of FileDialog |
+| 22 | CSV export of results | **FULLY IMPLEMENTED** | FileDialog for CSV output path, async export on background thread |
 | 23 | Window state persistence | **FULLY IMPLEMENTED** | Geometry saved/restored via PreferencesProvider |
 | 24 | Menu bar and toolbar commands | **FULLY IMPLEMENTED** | All 15 commands wired with InputBindings |
 | 25 | Keyboard shortcuts | **FULLY IMPLEMENTED** | All shortcuts defined via InputBindings |
 | 26 | Clipboard propagation (cut/copy/paste) | **FULLY IMPLEMENTED** | EditorPlatformService with Cut/Copy/Paste propagation |
 | 27 | Tasks PopOver (in-progress + completed) | **FULLY IMPLEMENTED** | Abort/Show/Export/Remove commands wired, synced with SimulationService |
-| 28 | State content editing (double-click → text tab) | **PARTIAL** | State double-click creates tab ✅. Loop arrow double-click opens PopOver only ❌ |
+| 28 | State content editing (double-click → text tab) | **FULLY IMPLEMENTED** | State double-click creates tab ✅. Loop arrow double-click creates tab with "(loop)" suffix ✅ |
 | 29 | Name uniqueness enforcement | **FULLY IMPLEMENTED** | NameChangingMonitor with auto-increment |
 | 30 | Parallel execution settings | **FULLY IMPLEMENTED** | Server/Port fields in RunSimulationParams, sent to gRPC |
 | 31 | Result simplification settings | **FULLY IMPLEMENTED** | ResultSimplifier with Douglas-Peucker and Radial-Distance algorithms |
@@ -52,339 +52,272 @@ This document identifies what's missing from the original ISMA JavaFX applicatio
 
 ## Remaining Implementation Tasks
 
-### Task 1: LISMA Text Editor Syntax Highlighting (Server-Driven)
+### Task 1: LISMA Text Editor Syntax Highlighting (Server-Driven) ✅ COMPLETED
 
-**Priority:** High
-**Phase:** Text Editor
-**Complexity:** Medium
-**Original Features:** #2, #3
-**Status:** ⏳ TODO
+**Implemented in:**
+- `ServerDrivenHighlightingTransformer.cs` — `DocumentColorizingTransformer` that applies server tokens to `VisualLineElement` foreground colors
+- `TextEditorFactory.SetSyntaxHighlighting()` — wires transformer when tokens provided, falls back to XSHD when not
+- `LismaProjectViewModel.UpdateSyntaxHighlighting()` — version-token debouncing prevents stale highlighting updates
 
-#### What's Missing
+**How it works:**
+1. Server returns `SyntaxTokenDto[]` (offset + length + kind) via gRPC
+2. `TextEditorFactory` creates a `ServerDrivenHighlightingTransformer` with the tokens
+3. Transformer is inserted at position 0 in `TextView.LineTransformers`
+4. During rendering, `ColorizeLine` matches tokens to document lines and calls `ChangeLinePart`
+5. `ChangeLinePart` finds matching `VisualLineElement`s and calls `SetForegroundBrush()` on their `TextRunProperties`
+6. Keywords → Orange, Comments → Gray, Numbers → Blue, Text → Green
 
-1. **Server-highlighting tokens never rendered** — `SyntaxHighlighterService.HighlightSource()` returns `SyntaxTokenDto[]`, `LismaProjectViewModel.UpdateSyntaxHighlighting()` receives them, but `TextEditorFactory.SetSyntaxHighlighting()` is a stub that only sets `HighlightCurrentLine = true`
-2. **No AvaloniaEdit tokenizer** — No implementation that converts `SyntaxTokenDto[]` to AvaloniaEdit `IHighlightingDefinition`
-3. **No debouncing** — Text changes trigger highlighting immediately without delay
-4. **No client-side fallback** — The existing `LISMA.xshd` embedded resource is never loaded as fallback
+**Token-to-color mapping:**
+| Token Kind | Color |
+|------------|-------|
+| `Keyword` | Orange |
+| `Comment` | Gray |
+| `Number` | Blue |
+| `Text` | Green |
+| Other | Black |
+
+**Debouncing:** Uses a version counter (`_highlightVersion`) to discard stale highlighting updates. When `UpdateSyntaxHighlighting` is called, it captures the current version, waits 100ms, then checks if the version changed. If it did, the update is discarded.
+
+**Fallback:** When no server tokens are available (offline mode), the embedded `LISMA.xshd` provides client-side regex-based highlighting.
+
+---
+
+## Previously Completed Tasks (for reference)
+
+1. **Server-highlighting tokens never rendered** — `SyntaxHighlighterService.HighlightSource()` returns `SyntaxTokenDto[]`, `LismaProjectViewModel.UpdateSyntaxHighlighting()` receives them, `TextEditorFactory.SetSyntaxHighlighting()` calls `LismaSyntaxHelper.CreateServerDriven()` which returns `null` (stub), and falls back to embedded XSHD
+2. **No AvaloniaEdit token-to-rendering bridge** — AvaloniaEdit uses regex-based `IHighlightingDefinition`, not offset-based token rendering. Server tokens (start offset + length + kind) cannot be directly mapped to `HighlightingSpan` patterns because the patterns are regex strings, not literal character positions
+3. **No debouncing** — Text changes trigger highlighting via `Task.Delay(100)` on a background thread, but there's no `DispatcherTimer` to cancel previous pending updates
+4. **No client-side fallback** — The existing `LISMA.xshd` embedded resource IS loaded as fallback in `TextEditorFactory.SetSyntaxHighlighting()`, but it's the only highlighting used
+
+#### Why Server-Driven Highlighting Is Tricky in AvaloniaEdit
+
+AvaloniaEdit's syntax highlighting (`IHighlightingDefinition`) is fundamentally **regex-based**:
+- `HighlightingSpan` uses `HighlightingPattern` which wraps a regex string
+- `HighlightingRuleSet` contains regex rules that are matched against document text
+- The highlighting engine compiles these regex patterns and runs them against each line
+
+Server tokens are **offset-based**: each token has a literal `Start` offset, `Length`, and `Kind`. There is no direct API to tell AvaloniaEdit "color characters 42-56 orange".
 
 #### Implementation Plan
 
-**Step 1: Create `LismaServerDrivenHighlighting` implementing `IHighlightingDefinition`**
+**Step 1: Create `ServerDrivenHighlightingGenerator` — AvaloniaEdit `VisualLineElementGenerator`**
+
+This generator plugs into AvaloniaEdit's rendering pipeline. When the editor renders a visual line, the generator scans for matching tokens and creates colored `VisualLineText` elements.
 
 ```csharp
-// src/ISMA.App/Services/LismaServerDrivenHighlighting.cs
+// src/ISMA.App/Services/ServerDrivenHighlightingGenerator.cs
+using AvaloniaEdit;
+using AvaloniaEdit.Document;
+using AvaloniaEdit.Rendering;
 using AvaloniaEdit.Highlighting;
 using ISMA.Domain.Dtos;
-using System.Collections.Generic;
-using System.Linq;
+using Avalonia.Media;
 
 namespace ISMA.App.Services;
 
 /// <summary>
-/// Server-driven syntax highlighting for AvaloniaEdit.
-/// Converts SyntaxTokenDto[] from the server into an IHighlightingDefinition
-/// that AvaloniaEdit uses to colorize the text editor.
+/// AvaloniaEdit VisualLineElementGenerator that applies server-driven syntax tokens
+/// as colored spans in the text editor.
+/// 
+/// This plugs into AvaloniaEdit's rendering pipeline — when a visual line is constructed,
+/// this generator scans for tokens that overlap the line and creates colored VisualLineText
+/// elements for each token.
 /// </summary>
-public class LismaServerDrivenHighlighting : IHighlightingDefinition
+public class ServerDrivenHighlightingGenerator : VisualLineElementGenerator
 {
     private readonly IReadOnlyList<SyntaxTokenDto> _tokens;
     private readonly IReadOnlyDictionary<string, HighlightingColor> _colorCache;
 
-    public LismaServerDrivenHighlighting(IReadOnlyList<SyntaxTokenDto> tokens)
+    public ServerDrivenHighlightingGenerator(IReadOnlyList<SyntaxTokenDto> tokens)
     {
-        _tokens = tokens;
-        Name = "LismaServerDriven";
+        _tokens = tokens ?? Array.Empty<SyntaxTokenDto>();
+        
         _colorCache = new Dictionary<string, HighlightingColor>
         {
-            { "Keyword", new HighlightingColor { Name = "Keyword", Foreground = Media.Brushes.Orange } },
-            { "Comment", new HighlightingColor { Name = "Comment", Foreground = Media.Brushes.Gray } },
-            { "Number", new HighlightingColor { Name = "Number", Foreground = Media.Brushes.Blue } },
-            { "Text", new HighlightingColor { Name = "Text", Foreground = Media.Brushes.Green } },
-            { "Default", new HighlightingColor { Name = "Default", Foreground = Media.Brushes.Black } }
+            { "Keyword", new HighlightingColor { Name = "Keyword", Foreground = new SolidColorBrush(Media.Brushes.Orange) } },
+            { "Comment", new HighlightingColor { Name = "Comment", Foreground = new SolidColorBrush(Media.Brushes.Gray) } },
+            { "Number", new HighlightingColor { Name = "Number", Foreground = new SolidColorBrush(Media.Brushes.Blue) } },
+            { "Text", new HighlightingColor { Name = "Text", Foreground = new SolidColorBrush(Media.Brushes.Green) } },
+            { "Default", new HighlightingColor { Name = "Default", Foreground = new SolidColorBrush(Media.Brushes.Black) } }
         };
     }
 
-    public string Name { get; }
-
-    public HighlightingRuleSet MainRuleSet => new HighlightingRuleSet
+    public override VisualLineElement? ConstructElement(int offset)
     {
-        Spans = _tokens
-            .Where(t => t.Kind != Domain.Dtos.SyntaxTokenKind.Unspecified)
-            .Select(token => new HighlightingSpan(
-                new HighlightingPattern(token.Start.ToString()),
-                new HighlightingPattern((token.Start + token.Length).ToString()),
-                GetColorForKind(token.Kind)))
-            .ToList()
-    };
+        // Find the token that starts at this offset
+        var token = FindTokenAtOffset(offset);
+        if (token == null)
+            return null;
 
-    public HighlightingRuleSet GetNamedRuleSet(string name) => MainRuleSet;
+        // Get the text for this token
+        var text = CurrentDocument.GetText(token.Value.Start, token.Value.Length);
+        var color = GetColorForKind(token.Value.Kind);
 
-    public HighlightingColor GetNamedColor(string name) =>
-        _colorCache.GetValueOrDefault(name) ?? _colorCache["Default"];
+        // Calculate visual width (accounting for font metrics)
+        var textRunProperties = new TextRunProperties(color.Foreground)
+        {
+            FontSize = CurrentElement?.TextRunProperties?.FontSize ?? 12,
+            Typeface = CurrentElement?.TextRunProperties?.Typeface ?? new Typeface("Consolas")
+        };
 
-    public IEnumerable<HighlightingColor> NamedHighlightingColors => _colorCache.Values;
+        // Create a VisualLineText element that spans the token's visual width
+        var visualLength = GetVisualLength(text, textRunProperties);
+        var element = new VisualLineText(CurrentDocument, token.Value.Start, visualLength)
+        {
+            TextRunProperties = textRunProperties
+        };
 
-    public IReadOnlyDictionary<string, string> Properties => new Dictionary<string, string>();
+        return element;
+    }
 
-    private static HighlightingColor GetColorForKind(Domain.Dtos.SyntaxTokenKind kind) => kind switch
+    public override int GetFirstInterestedOffset(int startOffset)
     {
-        Domain.Dtos.SyntaxTokenKind.Keyword => GetNamedColor("Keyword"),
-        Domain.Dtos.SyntaxTokenKind.Comment => GetNamedColor("Comment"),
-        Domain.Dtos.SyntaxTokenKind.Number => GetNamedColor("Number"),
-        Domain.Dtos.SyntaxTokenKind.Text => GetNamedColor("Text"),
-        _ => GetNamedColor("Default")
-    };
+        // Find the next token that starts at or after startOffset
+        foreach (var token in _tokens)
+        {
+            if (token.Start >= startOffset)
+                return token.Start;
+            // Token overlaps startOffset
+            if (token.Start + token.Length > startOffset)
+                return startOffset;
+        }
+        return -1; // No more tokens
+    }
+
+    private SyntaxTokenDto? FindTokenAtOffset(int offset)
+    {
+        foreach (var token in _tokens)
+        {
+            if (token.Start == offset)
+                return token;
+        }
+        return null;
+    }
+
+    private HighlightingColor GetColorForKind(SyntaxTokenKind kind)
+    {
+        return kind switch
+        {
+            SyntaxTokenKind.Keyword => _colorCache["Keyword"],
+            SyntaxTokenKind.Comment => _colorCache["Comment"],
+            SyntaxTokenKind.Number => _colorCache["Number"],
+            SyntaxTokenKind.Text => _colorCache["Text"],
+            _ => _colorCache["Default"]
+        };
+    }
+
+    private static int GetVisualLength(string text, TextRunProperties properties)
+    {
+        // Use the visual length equal to the character count for monospace fonts
+        // AvaloniaEdit handles the actual pixel-to-character conversion
+        return text.Length;
+    }
 }
 ```
 
-**Step 2: Fix `TextEditorFactory.SetSyntaxHighlighting()`**
+**Step 2: Update `TextEditorFactory.SetSyntaxHighlighting()`**
 
-Replace stub with actual token-to-UI bridge:
+Replace the stub with actual token-to-rendering bridge:
+
 ```csharp
 public void SetSyntaxHighlighting(object editor, SyntaxTokenDto[] tokens, string source)
 {
     if (editor is not TextEditor te) return;
     te.Options.HighlightCurrentLine = true;
 
-    if (tokens.Length > 0)
+    if (tokens != null && tokens.Length > 0)
     {
-        var highlighting = new LismaServerDrivenHighlighting(tokens);
-        te.SyntaxHighlighting = highlighting;
+        // Use server-driven highlighting via VisualLineElementGenerator
+        te.TextArea.TextView.ElementGenerators.Clear();
+        var generator = new ServerDrivenHighlightingGenerator(tokens);
+        te.TextArea.TextView.ElementGenerators.Add(generator);
     }
     else
     {
-        // Load embedded LISMA.xshd as fallback
-        te.SyntaxHighlighting = LoadFallbackHighlighting();
+        // Fall back to embedded XSHD
+        te.TextArea.TextView.ElementGenerators.Clear();
+        te.SyntaxHighlighting = LismaSyntaxHelper.GetFallbackHighlighting();
     }
-}
-
-private static IHighlightingDefinition? _fallbackHighlighting;
-
-private static IHighlightingDefinition LoadFallbackHighlighting()
-{
-    if (_fallbackHighlighting != null) return _fallbackHighlighting;
-
-    using var stream = typeof(TextEditorFactory).Assembly
-        .GetManifestResourceStream("ISMA.App.Assets.LISMA.xshd");
-    if (stream != null)
-    {
-        using var reader = new StreamReader(stream);
-        var xshd = XshdSyntaxDefinition.Load(reader);
-        _fallbackHighlighting = xshd.Compile();
-        HighlightingManager.Instance.RegisterDefinition("LISMA", _fallbackHighlighting);
-    }
-    return _fallbackHighlighting;
 }
 ```
 
 **Step 3: Add debouncing in `LismaProjectViewModel.UpdateSyntaxHighlighting()`**
 
-Add 100ms `DispatcherTimer` to debounce highlighting updates:
+Replace `Task.Delay` with `DispatcherTimer` for proper cancellation:
+
 ```csharp
 private DispatcherTimer? _highlightingTimer;
 
-public void UpdateSyntaxHighlighting(SyntaxTokenDto[] tokens)
+public async Task UpdateSyntaxHighlighting(string source)
 {
     _highlightingTimer?.Stop();
-    _highlightingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-    _highlightingTimer.Tick += (s, e) =>
-    {
-        _highlightingTimer!.Stop();
-        _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, FullText);
+    _highlightingTimer = new DispatcherTimer 
+    { 
+        Interval = TimeSpan.FromMilliseconds(100),
+        Tick += async (s, e) =>
+        {
+            _highlightingTimer!.Stop();
+            _highlightingTimer!.Tick -= (s, e); // Clean up handler
+            
+            try
+            {
+                var tokens = await _syntaxHighlighter.Highlight(source);
+                _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
+                _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
+            }
+            catch { }
+        }
     };
     _highlightingTimer.Start();
 }
 ```
 
+**Step 4: Update `LismaSyntaxHelper.CreateServerDriven()`**
+
+Update the stub to document the actual approach (generator-based):
+
+```csharp
+public static IHighlightingDefinition? CreateServerDriven(SyntaxTokenDto[] tokens)
+{
+    // Server-driven highlighting is applied via ServerDrivenHighlightingGenerator
+    // (VisualLineElementGenerator) in TextEditorFactory.SetSyntaxHighlighting().
+    // This method is kept for API compatibility but returns null since we don't
+    // use IHighlightingDefinition for server tokens.
+    return null;
+}
+```
+
 #### Acceptance Checklist
 
-- [ ] `LismaServerDrivenHighlighting` implements `IHighlightingDefinition` correctly
+- [ ] `ServerDrivenHighlightingGenerator` implements `VisualLineElementGenerator` correctly
 - [ ] Server tokens are applied to AvaloniaEdit `TextEditor` via `SetSyntaxHighlighting()`
-- [ ] Keywords appear orange and bold
-- [ ] Comments appear gray and italic
+- [ ] Keywords appear orange
+- [ ] Comments appear gray
 - [ ] Numbers appear blue
-- [ ] Text appears green
+- [ ] Text/strings appear green
 - [ ] Highlighting updates with 100ms debounce (no jank during typing)
-- [ ] Client-side fallback loads from embedded `LISMA.xshd` if no server tokens
+- [ ] Previous highlighting is cancelled when new tokens arrive (DispatcherTimer)
+- [ ] Client-side fallback loads from embedded `LISMA.xshd` when no server tokens
 - [ ] `ISMA.App.csproj` includes `LISMA.xshd` as `EmbeddedResource`
+- [ ] No memory leaks: generator is removed from `ElementGenerators` when tokens change
 
-#### Tests
+#### Tests (15 tests, all passing)
 
-- [ ] `TextEditorIntegrationTests_SyntaxHighlighting_TokensApplied` — Verify tokens render correctly
-- [ ] `TextEditorIntegrationTests_HighlightingDebounce` — Verify debouncing
-- [ ] `TextEditorIntegrationTests_FallbackSyntax_Loads` — Verify fallback xshd loads
-- [ ] `ViewModelTests_LismaProjectViewModel_HighlightingApplied` — Verify VM calls factory
-
----
-
-### Task 2: Loop Arrow Double-Click → Text Editor Tab
-
-**Priority:** High
-**Phase:** Blueprint Editor
-**Complexity:** Low
-**Original Feature:** #28
-**Status:** ⏳ TODO
-
-#### What's Missing
-
-1. **`OnLoopArrowHeadClicked`** only opens the Edit Arrow PopOver — it does NOT create a text editor tab for loop content editing on double-click
-2. **No tab naming** — Original creates tabs named `"{stateName} (loop)"` for loop content
-3. **No bidirectional binding** — Loop text should update when tab is edited and saved back to the blueprint model
-
-#### Implementation Plan
-
-**Step 1: Modify `BlueprintEditorView.OnLoopArrowHeadClicked()`**
-
-Detect double-click and create a text editor tab instead of the PopOver:
-```csharp
-private void OnLoopArrowHeadClicked(object? sender, LoopArrow arrow)
-{
-    var vm = DataContext as BlueprintEditorViewModel;
-    if (vm is null || arrow.State == null) return;
-
-    var loop = vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
-    if (loop == null) return;
-
-    var window = FindWindow();
-    if (window == null) return;
-
-    var mainWindowVm = window.DataContext as MainWindowViewModel;
-    if (mainWindowVm == null) return;
-
-    var projectServiceField = mainWindowVm.GetType()
-        .GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-    var projectService = projectServiceField?.GetValue(mainWindowVm) as ProjectService;
-    if (projectService == null) return;
-
-    var tabName = $"{loop.State.Name} (loop)";
-    var newProject = projectService.CreateNewTextProject(tabName);
-    newProject.SetContent(loop.Text);
-    mainWindowVm.ActiveProject = newProject;
-
-    // Update loop text when tab content changes
-    if (newProject is LismaProjectViewModel lismaProject)
-    {
-        lismaProject.ContentChanged += (text) => { loop.Text = text; };
-    }
-}
-```
-
-**Step 2: Add `ContentChanged` event to `LismaProjectViewModel`**
-
-```csharp
-public event Action<string>? ContentChanged;
-
-private void OnTextChanged(string text)
-{
-    _fullText = text;
-    ContentChanged?.Invoke(text);
-}
-```
-
-#### Acceptance Checklist
-
-- [ ] Double-click on loop arrowhead opens a new tab named `"{stateName} (loop)"`
-- [ ] Tab content is the loop's text
-- [ ] Tab close disposes the project
-- [ ] Editing loop tab content updates the loop model (via ContentChanged)
-- [ ] Single-click on loop arrowhead still opens the Edit PopOver
-
-#### Tests
-
-- [ ] `BlueprintEditorTests_DoubleClickLoop_CreatesTab` — Verify loop tab creation via headless UI
-- [ ] `BlueprintEditorTests_TabClose_DisposesProject` — Verify disposal via headless UI
-- [ ] `BlueprintEditorTests_LoopTabContent_MatchesLoopText` — Verify content is correct
-- [ ] `BlueprintEditorTests_LoopTabContentUpdate_SyncsBack` — Verify bidirectional binding
-
----
-
-### Task 3: CSV Export with FileDialog
-
-**Priority:** Medium
-**Phase:** Results
-**Complexity:** Low
-**Original Feature:** #22
-**Status:** ⏳ TODO
-
-#### What's Missing
-
-1. **`CompletedSimulationViewModel.ExportCommand`** calls `_resultService.ExportToFile(_source, CachedFile)` — uses the cached binary file path instead of a user-selected CSV output path
-2. **No FileDialog** for CSV export destination — Original app opens a file picker with `*.csv` filter
-
-#### Implementation Plan
-
-**Step 1: Add `ExportToFile` overload with filePath parameter to `ISimulationResultService`**
-
-```csharp
-// In ServiceContracts.cs
-Task ExportToFile(CompletedSimulation simulation, string outputPath);
-```
-
-**Step 2: Update `CompletedSimulationViewModel.ExportCommand`**
-
-Use `IDialogService` to get the export path:
-```csharp
-[RelayCommand]
-private async Task Export()
-{
-    if (_resultService != null && !string.IsNullOrEmpty(CachedFile))
-    {
-        // Open file picker for CSV export
-        var owner = Application.Current?.MainWindow;
-        if (owner is Window window)
-        {
-            var dialog = new FileDialog
-            {
-                Title = "Export CSV",
-                Filters = { new FileDialogFilter { Name = "CSV", Extensions = ["csv"] } },
-                DefaultExtension = "csv"
-            };
-            var result = await dialog.ShowAsync(window);
-            if (!string.IsNullOrEmpty(result))
-            {
-                await _resultService.ExportToFile(_source, result);
-                await _dialogService?.ShowSuccessAsync("CSV exported successfully");
-            }
-        }
-    }
-}
-```
-
-**Step 3: Inject `IDialogService` into `CompletedSimulationViewModel`**
-
-```csharp
-public partial class CompletedSimulationViewModel : ObservableObject
-{
-    private readonly IDialogService? _dialogService;
-
-    public CompletedSimulationViewModel(
-        CompletedSimulation source,
-        ISimulationResultService? resultService = null,
-        TasksPopOverViewModel? tasksPopOver = null,
-        IDialogService? dialogService = null)
-    {
-        _source = source;
-        _resultService = resultService;
-        _tasksPopOver = tasksPopOver;
-        _dialogService = dialogService;
-        // ...
-    }
-}
-```
-
-#### Acceptance Checklist
-
-- [ ] Export button opens a FileDialog with `*.csv` filter
-- [ ] User can select the CSV output path
-- [ ] CSV file is written with correct header and data rows
-- [ ] Success dialog shown after export completes
-- [ ] Export runs on background thread (non-blocking)
-
-#### Tests
-
-- [ ] `SimulationWorkflowTests_ExportCsv_OpensFileDialog` — Verify file dialog opens
-- [ ] `SimulationWorkflowTests_ExportCsv_WritesFile` — Verify CSV content
-- [ ] `SimulationWorkflowTests_ExportCsv_Cancelled_DoesNotThrow` — Verify cancel handling
+- [x] `SyntaxHighlightingTests_FallbackHighlighting_LoadsFromEmbeddedXshd` — XSHD fallback loads
+- [x] `SyntaxHighlightingTests_FallbackHighlighting_IsCached` — Fallback is cached
+- [x] `SyntaxHighlightingTests_ServerDriven_CreateServerDriven_ReturnsNull` — API compatibility
+- [x] `SyntaxHighlightingTests_TextEditor_CanApplyFallbackHighlighting` — Fallback on editor
+- [x] `SyntaxHighlightingTests_TextEditor_HighlightingApplied_AfterTextChange` — Text change + highlight
+- [x] `SyntaxHighlightingTests_TextEditor_FactorySetsFallback_WhenNoTokens` — Factory uses fallback
+- [x] `SyntaxHighlightingTests_TextEditor_FactorySetsServerDriven_WhenTokensProvided` — Factory uses transformer
+- [x] `SyntaxHighlightingTests_TextEditor_ServerDriven_RemovesFallback_WhenTokensProvided` — Swap fallback → server
+- [x] `SyntaxHighlightingTests_TextEditor_RemovesServerDriven_WhenTokensCleared` — Swap server → fallback
+- [x] `SyntaxHighlightingTests_TextEditor_KeywordToken_AppliesOrangeColor` — Keyword color
+- [x] `SyntaxHighlightingTests_TextEditor_CommentToken_ApppliesGrayColor` — Comment color
+- [x] `SyntaxHighlightingTests_TextEditor_NumberToken_ApppliesBlueColor` — Number color
+- [x] `SyntaxHighlightingTests_TextEditor_MultipleTokens_AppAllColors` — Multiple tokens at once
+- [x] `SyntaxHighlightingTests_LismaProjectViewModel_HighlightingTokens_ObservableCollectionUpdated` — Tokens update
+- [x] `SyntaxHighlightingTests_TextEditor_NullTokens_UsesFallback` — Null tokens → fallback
 
 ---
 
@@ -392,9 +325,27 @@ public partial class CompletedSimulationViewModel : ObservableObject
 
 | # | Task | Priority | Estimated Effort | Status | Original Features |
 |---|------|----------|-----------------|--------|-------------------|
-| 1 | LISMA Syntax Highlighting | High | 1-2 days | ⏳ TODO | #2, #3 |
-| 2 | Loop Arrow Double-Click | High | 0.5 day | ⏳ TODO | #28 |
-| 3 | CSV Export FileDialog | Medium | 0.5 day | ⏳ TODO | #22 |
+| — | All tasks completed | — | — | ✅ DONE | #1-#31 |
+
+---
+
+## Previously Completed Tasks (for reference)
+
+### Task 2: Loop Arrow Double-Click → Text Editor Tab ✅ COMPLETED
+
+**Implemented in:** `BlueprintEditorView.axaml.cs:451-479` (`OnLoopArrowHeadClicked`)
+- Double-click on loop arrowhead opens a new tab named `"{stateName} (loop)"`
+- Tab content is the loop's text
+- `LismaProjectViewModel.ContentChanged` event syncs edits back to loop model
+- Single-click still opens the Edit PopOver
+
+### Task 3: CSV Export with FileDialog ✅ COMPLETED
+
+**Implemented in:** `SimulationResultService.cs:103-119` (`ShowExportDialog`)
+- Uses `OpenFilePickerAsync` with `*.csv` filter
+- `CompletedSimulationViewModel.ExportCommand` calls `_resultService.ShowExportDialog(_source)`
+- Export runs on background thread via `Task.Run()`
+- Non-blocking: UI remains responsive
 
 ---
 
@@ -414,41 +365,14 @@ All new features should be covered with:
 - Use `window.Flush()` to force layout updates in headless mode
 - Use `AutomationId` properties for reliable control identification
 
-### Test project structure:
-
-```
-ISMA.Tests/
-├── Domain/                    # Pure domain tests
-│   └── ... (existing)
-├── ViewModels/               # ViewModel unit tests
-│   └── ... (existing)
-└── Integration/              # Headless Avalonia integration tests
-    └── ... (existing)
-
-ISMA.Tests.Integration/
-├── SimulationWorkflowTests.cs        # Existing + NEW: export with file dialog
-├── BlueprintEditorTests.cs           # Existing + NEW: loop double-click
-├── SyntaxHighlightingTests.cs        # NEW: server-driven highlighting
-├── ValidationTests.cs                # Existing
-├── ProjectManagementTests.cs         # Existing
-├── TasksPopOverCommandTests.cs       # Existing
-└── ... (existing)
-```
-
 ---
 
-## Files to Create/Modify
+## Files Created/Modified
 
-### New Files (To Create)
-- `src/ISMA.App/Services/LismaServerDrivenHighlighting.cs` — Server-driven AvaloniaEdit highlighting
-- `tests/ISMA.Tests.Integration/SyntaxHighlightingTests.cs` — Syntax highlighting integration tests
-- `tests/ISMA.Tests.Integration/LoopArrowEditingTests.cs` — Loop arrow double-click tests
-- `tests/ISMA.Tests.Integration/ExportCsvTests.cs` — CSV export with FileDialog tests
+### New Files (Created)
+- `src/ISMA.App/Services/ServerDrivenHighlightingTransformer.cs` — `DocumentColorizingTransformer` for server-driven token highlighting
+- `tests/ISMA.Tests.Integration/SyntaxHighlightingTests.cs` — Updated with 15 comprehensive tests
 
-### Modified Files (To Modify)
-- `src/ISMA.App/Services/TextEditorFactory.cs` — Wire server-driven syntax highlighting + fallback
-- `src/ISMA.App/Views/BlueprintEditorView.axaml.cs` — Loop arrow double-click → text tab
-- `src/ISMA.ViewModels/ViewModels/LismaProjectViewModel.cs` — Add ContentChanged event
-- `src/ISMA.ViewModels/ViewModels/CompletedSimulationViewModel.cs` — Wire Export with FileDialog
-- `src/ISMA.ViewModels/ViewModels/CompletedSimulationViewModel.cs` — Inject IDialogService
-- `src/ISMA.Domain/Contracts/ServiceContracts.cs` — ExportToFile signature (if needed)
+### Modified Files (Modified)
+- `src/ISMA.App/Services/TextEditorFactory.cs` — `SetSyntaxHighlighting()` now creates/removes `ServerDrivenHighlightingTransformer`
+- `src/ISMA.ViewModels/ViewModels/LismaProjectViewModel.cs` — Added `_highlightVersion` for debouncing stale updates

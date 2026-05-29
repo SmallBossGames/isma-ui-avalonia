@@ -47,13 +47,24 @@ public class TextEditorFactory : ITextEditorFactory
         if (editor is not TextEditor te) return;
         te.Options.HighlightCurrentLine = true;
 
-        var highlighting = LismaSyntaxHelper.CreateServerDriven(tokens);
-        if (highlighting != null)
+        if (tokens != null && tokens.Length > 0)
         {
-            te.SyntaxHighlighting = highlighting;
+            te.TextArea.TextView.LineTransformers
+                .OfType<ServerDrivenHighlightingTransformer>()
+                .ToList()
+                .ForEach(t => te.TextArea.TextView.LineTransformers.Remove(t));
+
+            var transformer = new ServerDrivenHighlightingTransformer(tokens);
+            te.TextArea.TextView.LineTransformers.Insert(0, transformer);
+            te.SyntaxHighlighting = null;
         }
         else
         {
+            te.TextArea.TextView.LineTransformers
+                .OfType<ServerDrivenHighlightingTransformer>()
+                .ToList()
+                .ForEach(t => te.TextArea.TextView.LineTransformers.Remove(t));
+
             te.SyntaxHighlighting = LismaSyntaxHelper.GetFallbackHighlighting();
         }
     }
