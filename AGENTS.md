@@ -69,3 +69,4 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 ## Docs
 
 Feature documentation lives in `docs/features/`. Start at `docs/features/README.md`.
+Use cases documentation lives in `docs/use-cases/`. Start at `docs/use-cases/README.md`.

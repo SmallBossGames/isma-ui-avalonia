@@ -41,6 +41,7 @@ public class MainWindowViewModelTests
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
         var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
+        var syntaxHighlighter = CreateSyntaxHighlighterMock().Object;
 
         return new MainWindowViewModel(
             projectService,
@@ -48,7 +49,9 @@ public class MainWindowViewModelTests
             errorList,
             simParams,
             tasksPopOver,
-            parametersStore);
+            parametersStore,
+            Mock.Of<IModelErrorService>(),
+            syntaxHighlighter);
     }
 
     [Fact]
@@ -157,6 +160,7 @@ public class MainWindowViewModelTests
 
         var errorList = new ErrorListViewModel();
         var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
+        var syntaxHighlighter = CreateSyntaxHighlighterMock().Object;
 
         var viewModel = new MainWindowViewModel(
             projectService,
@@ -164,7 +168,9 @@ public class MainWindowViewModelTests
             errorList,
             simParams,
             tasksPopOver,
-            parametersStore);
+            parametersStore,
+            mockErrorService.Object,
+            syntaxHighlighter);
 
         var mockLismaProject = new Mock<LismaProjectViewModel>(
             Mock.Of<ISimulationServerFacade>(),
@@ -210,9 +216,10 @@ public class MainWindowViewModelTests
 
         var mockEditorFactory = new Mock<ITextEditorFactory>();
 
+        var mockErrorService = new Mock<IModelErrorService>();
         var mockSimulationService = new Mock<SimulationServiceViewModel>(
             Mock.Of<ISimulationServerFacade>(),
-            Mock.Of<IModelErrorService>(),
+            mockErrorService.Object,
             Mock.Of<ISimulationResultService>(),
             new SimulationParametersService(),
             null);
@@ -221,6 +228,7 @@ public class MainWindowViewModelTests
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
         var parametersStore = new Mock<ISimulationParametersStoreService>().Object;
+        var syntaxHighlighter = CreateSyntaxHighlighterMock().Object;
 
         var viewModel = new MainWindowViewModel(
             projectService,
@@ -228,7 +236,9 @@ public class MainWindowViewModelTests
             errorList,
             simParams,
             tasksPopOver,
-            parametersStore);
+            parametersStore,
+            mockErrorService.Object,
+            syntaxHighlighter);
 
         var lismaProject = new LismaProjectViewModel(
             mockFacade.Object,

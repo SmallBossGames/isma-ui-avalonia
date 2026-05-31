@@ -17,6 +17,8 @@ public partial class SimulationServiceViewModel : ObservableObject
     private readonly SimulationParametersService _parametersService;
     private readonly TasksPopOverViewModel? _tasksPopOver;
 
+    public ISimulationServerFacade SimulationServerFacade => _serverFacade;
+
     [ObservableProperty]
     private bool _isRunning;
 

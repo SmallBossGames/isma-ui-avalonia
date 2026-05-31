@@ -17,6 +17,9 @@ public sealed class ProjectService
     private readonly IModelErrorService? _errorService;
     private readonly IPreferencesProvider? _preferencesProvider;
 
+    public IProjectFileService ProjectFileService => _projectFileService;
+    public ITextEditorFactory TextEditorFactory => _editorFactory;
+
     private readonly List<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
 
@@ -75,14 +78,16 @@ public sealed class ProjectService
         if (paths == null || paths.Count == 0)
             return null;
 
-        var types = await _projectFileService.Open((IList<string>)paths);
-        var filePath = paths[0];
-        IProjectViewModel project = CreateProject(filePath, types[0]);
-
-        _projects.Add(project);
-        ActiveProject = project;
-        TrackOpenedFile(filePath);
-        return project;
+        IProjectViewModel? lastProject = null;
+        foreach (var filePath in paths)
+        {
+            var project = CreateProject(filePath, ProjectType.LismaText);
+            _projects.Add(project);
+            ActiveProject = project;
+            TrackOpenedFile(filePath);
+            lastProject = project;
+        }
+        return lastProject;
     }
 
     public async Task<IProjectViewModel?> OpenAsync(string filePath)
@@ -133,13 +138,26 @@ public sealed class ProjectService
         var results = new List<bool>();
         foreach (var project in _projects)
         {
-            var result = project switch
+            bool saved;
+            if (project.IsDirty && string.IsNullOrEmpty(project.FilePath))
             {
-                LismaProjectViewModel lisma => await lisma.SaveAsync(),
-                BlueprintProjectViewModel blueprint => await blueprint.SaveAsync(),
-                _ => false
-            };
-            results.Add(result);
+                saved = project switch
+                {
+                    LismaProjectViewModel lisma => await lisma.SaveAsAsync(),
+                    BlueprintProjectViewModel blueprint => await blueprint.SaveAsAsync(),
+                    _ => false
+                };
+            }
+            else
+            {
+                saved = project switch
+                {
+                    LismaProjectViewModel lisma => await lisma.SaveAsync(),
+                    BlueprintProjectViewModel blueprint => await blueprint.SaveAsync(),
+                    _ => false
+                };
+            }
+            results.Add(saved);
         }
         return results.All(r => r);
     }

@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 using ISMA.ViewModels.Services;
 
@@ -16,6 +17,8 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SimulationParametersViewModel _simulationParameters;
     private readonly TasksPopOverViewModel _tasksPopOver;
     private readonly ISimulationParametersStoreService _parametersStore;
+    private readonly IModelErrorService _modelErrorService;
+    private readonly ISyntaxHighlighter _syntaxHighlighter;
     private readonly Action<SimulationParameters>? _loadSettingsCallback;
 
     private ObservableCollection<IProjectViewModel> _projects = new();
@@ -52,6 +55,8 @@ public partial class MainWindowViewModel : ObservableObject
         SimulationParametersViewModel simulationParameters,
         TasksPopOverViewModel tasksPopOver,
         ISimulationParametersStoreService parametersStore,
+        IModelErrorService modelErrorService,
+        ISyntaxHighlighter syntaxHighlighter,
         Action<SimulationParameters>? loadSettingsCallback = null)
     {
         _projectService = projectService;
@@ -60,6 +65,8 @@ public partial class MainWindowViewModel : ObservableObject
         _simulationParameters = simulationParameters;
         _tasksPopOver = tasksPopOver;
         _parametersStore = parametersStore;
+        _modelErrorService = modelErrorService;
+        _syntaxHighlighter = syntaxHighlighter;
         _loadSettingsCallback = loadSettingsCallback;
 
         LoadProjects();
@@ -85,11 +92,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 if (System.IO.File.Exists(filePath))
                 {
-                    var project = await _projectService.OpenAsync(filePath);
-                    if (project != null)
-                    {
-                        Projects.Add(project);
-                    }
+                    await _projectService.OpenAsync(filePath);
                 }
             }
             catch
@@ -97,6 +100,8 @@ public partial class MainWindowViewModel : ObservableObject
                 // Skip files that can't be opened
             }
         }
+
+        LoadProjects();
 
         if (Projects.Count > 0 && ActiveProject == null)
         {
@@ -215,6 +220,18 @@ public partial class MainWindowViewModel : ObservableObject
         {
             await lismaProject.ValidateAsync();
         }
+        else if (ActiveProject is BlueprintProjectViewModel blueprintProject)
+        {
+            var lismaText = blueprintProject.ConvertToLisma();
+            var tempProject = new LismaProjectViewModel(
+                _simulationService.SimulationServerFacade,
+                _projectService.TextEditorFactory,
+                _projectService.ProjectFileService,
+                _syntaxHighlighter,
+                _modelErrorService);
+            tempProject.SetContent(lismaText.FullText);
+            await tempProject.ValidateAsync();
+        }
     }
 
     [RelayCommand]
@@ -223,6 +240,18 @@ public partial class MainWindowViewModel : ObservableObject
         if (ActiveProject is LismaProjectViewModel lismaProject)
         {
             await _simulationService.SimulateAsync(lismaProject);
+        }
+        else if (ActiveProject is BlueprintProjectViewModel blueprintProject)
+        {
+            var lismaText = blueprintProject.ConvertToLisma();
+            var tempProject = new LismaProjectViewModel(
+                _simulationService.SimulationServerFacade,
+                _projectService.TextEditorFactory,
+                _projectService.ProjectFileService,
+                _syntaxHighlighter,
+                _modelErrorService);
+            tempProject.SetContent(lismaText.FullText);
+            await _simulationService.SimulateAsync(tempProject);
         }
     }
 
