@@ -55,7 +55,7 @@ public class ArrowLine : Control
         set => SetValue(PredicateProperty, value);
     }
 
- 
+
 
     static ArrowLine()
     {
@@ -111,7 +111,7 @@ public class ArrowLine : Control
             center.X - cos * halfSize - sin * halfSize * 0.5,
             center.Y - sin * halfSize + cos * halfSize * 0.5);
 
-       var polygon = new StreamGeometry();
+        var polygon = new StreamGeometry();
         using var ctx = polygon.Open();
         ctx.BeginFigure(tip, false);
         ctx.LineTo(base1, true);

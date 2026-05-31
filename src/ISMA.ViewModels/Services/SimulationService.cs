@@ -144,7 +144,7 @@ public partial class SimulationServiceViewModel : ObservableObject
         }
     }
 
-   public async Task StopSimulationAsync(InProgressSimulationViewModel simulation)
+    public async Task StopSimulationAsync(InProgressSimulationViewModel simulation)
     {
         if (simulation == null)
             return;

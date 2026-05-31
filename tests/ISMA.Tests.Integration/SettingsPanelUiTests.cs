@@ -76,14 +76,14 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task CauchyInitials_TextBoxUpdatesPropagateToViewModel()
     {
-       var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
         var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
 
         var startTimeBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsStartTime);
         var cauchyVm = startTimeBox.DataContext as CauchyInitialsViewModel;
         cauchyVm.Should().NotBeNull("TextBox DataContext should be CauchyInitialsViewModel");
-        
+
         // Directly set the ViewModel property (bypasses binding which doesn't work in headless)
         cauchyVm.StartTime = 5.5;
         Window.Flush();
@@ -92,7 +92,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
 
         // Verify the TextBox displays the updated value (binding works OneWay from ViewModel to View)
         double.Parse(startTimeBox.Text!).Should().BeApproximately(5.5, 0.01);
-        
+
         // Verify the parent ViewModel also has the updated value
         ViewModel.SimulationParameters.CauchyInitials.StartTime.Should().Be(5.5);
     }

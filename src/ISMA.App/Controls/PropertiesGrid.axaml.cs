@@ -98,11 +98,11 @@ public partial class PropertiesGrid : UserControl
         return grid;
     }
 
-   private Control CreateValueControl(System.Reflection.PropertyInfo prop, object viewModel)
+    private Control CreateValueControl(System.Reflection.PropertyInfo prop, object viewModel)
     {
         var automationId = $"{AutomationPrefix}-{prop.Name}";
-        var binding = new Binding(prop.Name) 
-        { 
+        var binding = new Binding(prop.Name)
+        {
             Mode = BindingMode.TwoWay,
             UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
         };
@@ -129,8 +129,8 @@ public partial class PropertiesGrid : UserControl
             };
             comboBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
             comboBox.ItemsSource = Enum.GetValues(prop.PropertyType).Cast<object>().Select(v => v.ToString());
-            var enumBinding = new Binding(prop.Name) 
-            { 
+            var enumBinding = new Binding(prop.Name)
+            {
                 Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
                 Converter = new EnumToStringConverter(prop.PropertyType)

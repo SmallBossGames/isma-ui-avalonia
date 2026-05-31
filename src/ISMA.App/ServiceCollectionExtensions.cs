@@ -50,13 +50,13 @@ public static class ServiceCollectionExtensions
     {
         // GrinProcessLauncher - replaced with mock in tests
         services.AddSingleton<GrinProcessLauncher>();
-        
+
         // PreferencesProvider - use in-memory for tests
         services.AddSingleton<PreferencesProvider>();
         services.AddSingleton<IPreferencesProvider>(sp => sp.GetRequiredService<PreferencesProvider>());
-        
+
         // ISimulationServerFacade - already registered by the test (mocked)
-        
+
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();

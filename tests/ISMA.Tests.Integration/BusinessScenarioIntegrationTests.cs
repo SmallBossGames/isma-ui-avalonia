@@ -256,7 +256,9 @@ public class SimulationEndToEndIntegrationTests : IntegrationTestBase
         MockServer.RunHandler = _ => Task.FromResult(1L);
         MockServer.MonitorHandler = id => AsyncEnumerable.One(new SimulationProgress
         {
-            StartTime = 0, EndTime = 10, CurrentTime = 10
+            StartTime = 0,
+            EndTime = 10,
+            CurrentTime = 10
         });
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult
         {
@@ -329,7 +331,9 @@ public class SimulationEndToEndIntegrationTests : IntegrationTestBase
         MockServer.RunHandler = _ => Task.FromResult(1L);
         MockServer.MonitorHandler = id => AsyncEnumerable.One(new SimulationProgress
         {
-            StartTime = 0, EndTime = 10, CurrentTime = 5
+            StartTime = 0,
+            EndTime = 10,
+            CurrentTime = 5
         });
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 

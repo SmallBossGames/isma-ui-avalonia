@@ -35,7 +35,7 @@ public class ResultSimplifierTests
         result.Last().X.Should().Be(9.0);
     }
 
-  [Fact]
+    [Fact]
     public void DouglasPeucker_ReducesPointCount()
     {
         var points = Enumerable.Range(0, 20).Select(i => new SimulationPoint(i, new[] { i * 2.0 }, new List<double[]> { Array.Empty<double>() })).ToList();

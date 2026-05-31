@@ -23,7 +23,7 @@ public class SelectAllCommandTests : IntegrationTestBase
         ViewModel.Projects.Should().HaveCount(1);
 
         // Verify SelectAllCommand exists and can execute
-        var selectAllMethod = typeof(MainWindowViewModel).GetMethod("SelectAll", 
+        var selectAllMethod = typeof(MainWindowViewModel).GetMethod("SelectAll",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         selectAllMethod.Should().NotBeNull("SelectAll command should exist");
     }

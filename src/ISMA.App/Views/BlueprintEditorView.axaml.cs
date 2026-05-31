@@ -361,7 +361,7 @@ public partial class BlueprintEditorView : UserControl
         _previousName = null;
     }
 
-   private void OpenStateTextEditorTab(BlueprintStateViewModel state)
+    private void OpenStateTextEditorTab(BlueprintStateViewModel state)
     {
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm == null) return;

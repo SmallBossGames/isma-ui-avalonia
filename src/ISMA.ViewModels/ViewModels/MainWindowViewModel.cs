@@ -134,7 +134,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-   [RelayCommand]
+    [RelayCommand]
     private async Task Save()
     {
         await _projectService.SaveAsync();
@@ -166,7 +166,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task CloseTab(IProjectViewModel tab)
     {
         if (tab == null) return;
-        
+
         await _projectService.CloseAsync(tab);
         LoadProjects();
     }
@@ -196,7 +196,7 @@ public partial class MainWindowViewModel : ObservableObject
         ActiveProject?.TriggerCopy();
     }
 
-  [RelayCommand]
+    [RelayCommand]
     private void Paste()
     {
         ActiveProject?.TriggerPaste();

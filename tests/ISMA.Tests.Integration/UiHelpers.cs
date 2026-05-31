@@ -21,7 +21,7 @@ namespace ISMA.Tests.Integration;
 /// </summary>
 public static class UiHelpers
 {
-   /// <summary>
+    /// <summary>
     /// Find all descendants of a control matching the specified type.
     /// </summary>
     public static IEnumerable<T> FindDescendants<T>(Control control) where T : Control
@@ -246,12 +246,12 @@ public static class UiHelpers
     {
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         window.ApplyTemplate();
-        
+
         // Use the window's actual size for layout
         var size = new Size(window.Width, window.Height);
         window.Measure(size);
         window.Arrange(new Rect(default, size));
-        
+
         // Force TabControl container generation
         var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
         var tabControl = tabPaneView?.Content as TabControl;
@@ -260,13 +260,13 @@ public static class UiHelpers
             tabControl.ApplyTemplate();
             tabControl.Measure(size);
             tabControl.Arrange(new Rect(default, tabControl.DesiredSize));
-            
+
             for (int i = 0; i < tabControl.Items.Count; i++)
             {
                 tabControl.ContainerFromIndex(i);
             }
         }
-        
+
         // Force ContentControl template application for SettingsPanel
         var settingsPanel = window.FindControl<ContentControl>("SettingsPanel");
         if (settingsPanel is not null && settingsPanel.IsVisible)

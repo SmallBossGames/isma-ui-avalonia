@@ -235,7 +235,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             LoopTransactions = loopTransactionsArray.ToImmutableArray()
         };
 
-ReloadViews();
+        ReloadViews();
     }
 
     private bool HasDuplicateTransaction(string startState, string endState, string predicate)
@@ -574,7 +574,7 @@ ReloadViews();
         };
     }
 
-  public void Dispose()
+    public void Dispose()
     {
         States.Clear();
         Transactions.Clear();

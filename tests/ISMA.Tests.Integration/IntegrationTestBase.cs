@@ -35,10 +35,10 @@ public abstract class IntegrationTestBase : IDisposable
         MockServer = new MockSimulationServerFacade();
 
         var services = new ServiceCollection();
-        
+
         // Register the mocked server facade (this is the only difference from the real app)
         services.AddSingleton<ISimulationServerFacade>(MockServer);
-        
+
         // Use the shared service collection configuration from the app
         services.ConfigureTestServices();
 

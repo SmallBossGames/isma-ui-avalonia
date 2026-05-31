@@ -69,7 +69,7 @@ public sealed class ProjectService
         return project;
     }
 
-  public async Task<IProjectViewModel?> OpenAsync()
+    public async Task<IProjectViewModel?> OpenAsync()
     {
         var paths = await _projectFileService.Open((object?)null);
         if (paths == null || paths.Count == 0)
@@ -211,7 +211,7 @@ public sealed class ProjectService
         };
     }
 
-  private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
+    private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
     {
         if (field == value)
             return;
