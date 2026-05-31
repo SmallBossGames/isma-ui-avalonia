@@ -156,6 +156,20 @@ public sealed class ProjectService
         return true;
     }
 
+    public async Task<bool> CloseAsync(IProjectViewModel project)
+    {
+        if (project == null)
+            return false;
+
+        _projects.Remove(project);
+        if (ActiveProject == project)
+        {
+            ActiveProject = _projects.Count > 0 ? _projects[_projects.Count - 1] : null;
+        }
+        project.Dispose();
+        return true;
+    }
+
     public async Task CloseAllAsync()
     {
         foreach (var project in _projects)

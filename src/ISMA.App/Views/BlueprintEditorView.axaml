@@ -83,13 +83,13 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:BlueprintStateViewModel">
                                 <Border x:Name="StateBorder"
-                                        Width="120"
-                                        Height="60"
+                                        Width="110"
+                                        Height="65"
                                         Background="{Binding FillColorHex}"
                                         BorderBrush="{Binding IsSelected,
                                             Converter={StaticResource BoolToVisibilityConverter}}"
                                         BorderThickness="2"
-                                        CornerRadius="8"
+                                        CornerRadius="10"
                                         Canvas.Left="{Binding CanvasPositionX}"
                                         Canvas.Top="{Binding CanvasPositionY}"
                                         BoxShadow="2 2 4 0 #4D000000"
@@ -100,15 +100,9 @@
                                         <TextBlock x:Name="StateNameTextBlock"
                                                    Text="{Binding Name}"
                                                    FontWeight="Bold"
-                                                   FontSize="11"
+                                                   FontSize="16"
                                                    TextAlignment="Center"
                                                    TextWrapping="Wrap"/>
-                                        <TextBlock Text="{Binding Text}"
-                                                   FontSize="9"
-                                                   TextAlignment="Center"
-                                                   TextWrapping="Wrap"
-                                                   Foreground="#666666"
-                                                   MaxWidth="100"/>
                                         <StackPanel Orientation="Horizontal"
                                                     Spacing="2"
                                                     IsVisible="{Binding IsMain}">
@@ -199,15 +193,15 @@
 
                 <Separator/>
 
-                <ToggleButton Content="Add Transition"
+                <ToggleButton Content="{Binding AddTransitionButtonContent}"
                               IsChecked="{Binding IsAddTransitionMode}"
                               ToolTip.Tip="Enter Add Transition mode"/>
 
-                <ToggleButton Content="Remove State"
+                <ToggleButton Content="{Binding RemoveStateButtonContent}"
                               IsChecked="{Binding IsRemoveStateMode}"
                               ToolTip.Tip="Enter Remove State mode"/>
 
-                <ToggleButton Content="Remove Transition"
+                <ToggleButton Content="{Binding RemoveTransitionButtonContent}"
                               IsChecked="{Binding IsRemoveTransitionMode}"
                               ToolTip.Tip="Enter Remove Transition mode"/>
 

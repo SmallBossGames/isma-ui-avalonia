@@ -21,8 +21,8 @@ public partial class BlueprintEditorView : UserControl
     private const double ArrowOffset = 10.0;
     private const double ArrowheadSize = 14.0;
     private const double LoopRadius = 40.0;
-    private const double StateWidth = 120.0;
-    private const double StateHeight = 60.0;
+    private const double StateWidth = 110.0;
+    private const double StateHeight = 65.0;
     private const double DoubleClickThreshold = 300;
     private const double SingleClickDelay = 200;
 
@@ -285,12 +285,12 @@ public partial class BlueprintEditorView : UserControl
         var textBox = new TextBox
         {
             Text = state.Name,
-            FontSize = 11,
+            FontSize = 16,
             FontWeight = Avalonia.Media.FontWeight.Bold,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Width = 100,
-            MaxWidth = 100
+            Width = 90,
+            MaxWidth = 90
         };
 
         textBox.KeyDown += (s, e) =>
@@ -312,8 +312,8 @@ public partial class BlueprintEditorView : UserControl
 
         var grid = new Grid
         {
-            Width = 120,
-            Height = 60
+            Width = 110,
+            Height = 65
         };
         grid.Children.Add(textBox);
         border.Child = grid;

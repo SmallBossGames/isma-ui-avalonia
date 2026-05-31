@@ -16,8 +16,8 @@ public class ArrowLine : Control
 {
     private const double ArrowOffset = 10.0;
     private const double ArrowheadSize = 14.0;
-    private const double StateWidth = 120;
-    private const double StateHeight = 60;
+    private const double StateWidth = 110;
+    private const double StateHeight = 65;
 
     public static readonly StyledProperty<BlueprintStateViewModel?> StartStateProperty =
         AvaloniaProperty.Register<ArrowLine, BlueprintStateViewModel?>(nameof(StartState));
@@ -129,15 +129,5 @@ public class ArrowLine : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-
-        var position = e.GetPosition(this);
-        if (EndState == null) return;
-
-        var end = GetCenter(EndState);
-        var distance = Math.Sqrt(Math.Pow(position.X - end.X, 2) + Math.Pow(position.Y - end.Y, 2));
-
-  
-
-        e.Handled = true;
     }
 }

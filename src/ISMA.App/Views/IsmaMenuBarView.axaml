@@ -11,8 +11,7 @@
             <KeyBinding Command="{Binding OpenCommand}" Gesture="Ctrl+O" />
             <KeyBinding Command="{Binding SaveCommand}" Gesture="Ctrl+S" />
             <KeyBinding Command="{Binding SaveAsCommand}" Gesture="Ctrl+Shift+S" />
-            <KeyBinding Command="{Binding CloseCommand}" Gesture="Ctrl+W" />
-            <KeyBinding Command="{Binding ExitCommand}" Gesture="Ctrl+Q" />
+            <KeyBinding Command="{Binding ExitCommand}" Gesture="Ctrl+W" />
             <KeyBinding Command="{Binding CutCommand}" Gesture="Ctrl+X" />
             <KeyBinding Command="{Binding CopyCommand}" Gesture="Ctrl+C" />
             <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V" />
@@ -27,10 +26,10 @@
             <MenuItem Header="_Save" AutomationProperties.AutomationId="MenuSave" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
             <MenuItem Header="Save _As..." AutomationProperties.AutomationId="MenuSaveAs" Command="{Binding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
             <MenuItem Header="Save _All" AutomationProperties.AutomationId="MenuSaveAll" Command="{Binding SaveAllCommand}" />
-            <MenuItem Header="_Close" AutomationProperties.AutomationId="MenuClose" Command="{Binding CloseCommand}" InputGesture="Ctrl+W" />
+            <MenuItem Header="_Close" AutomationProperties.AutomationId="MenuClose" Command="{Binding CloseCommand}" />
             <MenuItem Header="Close _All" AutomationProperties.AutomationId="MenuCloseAll" Command="{Binding CloseAllCommand}" />
             <Separator />
-            <MenuItem Header="E_xit" AutomationProperties.AutomationId="MenuExit" Command="{Binding ExitCommand}" InputGesture="Ctrl+Q" />
+            <MenuItem Header="E_xit" AutomationProperties.AutomationId="MenuExit" Command="{Binding ExitCommand}" InputGesture="Ctrl+W" />
         </MenuItem>
 
         <MenuItem Header="_Edit" AutomationProperties.AutomationId="MenuEdit">

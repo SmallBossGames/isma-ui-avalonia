@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
@@ -57,6 +58,28 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _isRemoveTransitionMode;
+
+    private string _addTransitionButtonContent = "Add Transition";
+    private string _removeStateButtonContent = "Remove State";
+    private string _removeTransitionButtonContent = "Remove Transition";
+
+    public string AddTransitionButtonContent
+    {
+        get => _addTransitionButtonContent;
+        private set => SetProperty(ref _addTransitionButtonContent, value);
+    }
+
+    public string RemoveStateButtonContent
+    {
+        get => _removeStateButtonContent;
+        private set => SetProperty(ref _removeStateButtonContent, value);
+    }
+
+    public string RemoveTransitionButtonContent
+    {
+        get => _removeTransitionButtonContent;
+        private set => SetProperty(ref _removeTransitionButtonContent, value);
+    }
 
     public BlueprintEditorViewModel()
     {
@@ -419,6 +442,9 @@ ReloadViews();
         IsAddTransitionMode = false;
         IsRemoveStateMode = false;
         IsRemoveTransitionMode = false;
+        AddTransitionButtonContent = "Add Transition";
+        RemoveStateButtonContent = "Remove State";
+        RemoveTransitionButtonContent = "Remove Transition";
     }
 
     partial void OnIsAddTransitionModeChanged(bool value)
@@ -428,10 +454,12 @@ ReloadViews();
             CurrentMode = BlueprintEditorMode.AddTransition;
             IsRemoveStateMode = false;
             IsRemoveTransitionMode = false;
+            AddTransitionButtonContent = "Stop adding transaction";
         }
         else if (CurrentMode == BlueprintEditorMode.AddTransition)
         {
             CurrentMode = BlueprintEditorMode.Default;
+            AddTransitionButtonContent = "Add Transition";
         }
     }
 
@@ -442,10 +470,12 @@ ReloadViews();
             CurrentMode = BlueprintEditorMode.RemoveState;
             IsAddTransitionMode = false;
             IsRemoveTransitionMode = false;
+            RemoveStateButtonContent = "Stop remove state";
         }
         else if (CurrentMode == BlueprintEditorMode.RemoveState)
         {
             CurrentMode = BlueprintEditorMode.Default;
+            RemoveStateButtonContent = "Remove State";
         }
     }
 
@@ -456,10 +486,12 @@ ReloadViews();
             CurrentMode = BlueprintEditorMode.RemoveTransition;
             IsAddTransitionMode = false;
             IsRemoveStateMode = false;
+            RemoveTransitionButtonContent = "Stop remove transition";
         }
         else if (CurrentMode == BlueprintEditorMode.RemoveTransition)
         {
             CurrentMode = BlueprintEditorMode.Default;
+            RemoveTransitionButtonContent = "Remove Transition";
         }
     }
 

@@ -1,357 +1,396 @@
 # ISMA UI Avalonia — Gap Analysis & Implementation Plan
 
-This document identifies what's missing from the original ISMA JavaFX application that hasn't been fully implemented in the Avalonia migration, along with detailed implementation plans and acceptance checklists.
+This document identifies what's missing or incomplete from the original ISMA JavaFX application that hasn't been fully implemented in the Avalonia migration, along with detailed implementation plans and acceptance checklists.
 
 ## Current Status Summary
 
+The original ISMA JavaFX application has **31 business features** (per `06-ux-reference.md` Feature Matrix). The Avalonia migration has implemented the core architecture and most features, but several UI/UX details are incomplete or incorrect compared to the original specification.
+
 | Status | Count | Details |
 |--------|-------|---------|
-| **Fully Implemented** | 31 | Multi-project tabs, blueprint canvas (states/arrows/loops), drag-and-drop, inline name editing, edit popover, blueprint-to-LISMA conversion, compile/validate/run, progress monitoring, result download, error list, settings panel, store/load settings, chart viewer UI, variable selection dialog UI, window persistence, menu/toolbar/shortcuts, clipboard propagation, blueprint editor modes, simulation abort, show/export/remove results, state content editing, loop arrow double-click → text tab, variable dialog OK/Close, parallel settings to server, result simplification, Tasks PopOver integration, preferences persistence, error handling & feedback, Select All command, result download column names, pseudo-class styles, CSV export with FileDialog, server-driven syntax highlighting |
-| **Partially Implemented** | 0 | — |
-| **Not Implemented** | 0 | — |
+| **Core Architecture** | ✅ Complete | All 5 layers (Domain, Infrastructure, ViewModels, App, Tests), DI, MVVM, gRPC |
+| **Domain Models** | ✅ Complete | All models, DTOs, contracts, BlueprintToLismaConverter, ResultSimplifier |
+| **Infrastructure** | ✅ Complete | Server communication, Unix sockets, binary file reader, Grin launcher, preferences |
+| **ViewModels** | ✅ Complete | All ViewModels, services, converters, NameChangingMonitor |
+| **UI Shell** | ✅ Complete | MainWindow, MenuBar, ToolBar, SettingsPanel, ErrorList, ProcessBar |
+| **Text Editor** | ✅ Complete | AvaloniaEdit with line numbers, server-driven syntax highlighting |
+| **Blueprint Editor** | ⚠️ Partial | Canvas rendering, drag, states, arrows, loops, modes — but visual specs incorrect |
+| **Simulation Flow** | ✅ Complete | Compile → Run → Monitor → Download → Commit pipeline |
+| **Tasks PopOver** | ⚠️ Partial | In-progress + Completed sections work, but missing Details PopOver |
+| **File Operations** | ✅ Complete | Open/Save/SaveAs/SaveAll with FileDialog |
+| **Tests** | ⚠️ Partial | Unit tests for Domain/ViewModels, integration tests for some flows — need more UI coverage |
+| **Missing/Incomplete** | **8 items** | See details below |
 
 ---
 
-## Feature-by-Feature Status (Original 31 Features)
+## Gap Analysis: Missing or Incomplete Features
 
-| # | Feature | Status | Notes |
-|---|---------|--------|-------|
-| 1 | Multi-project editing (tabs) | **FULLY IMPLEMENTED** | Full CRUD lifecycle, dirty tracking, last-opened-file restoration |
-| 2 | LISMA text editing with syntax highlighting | **FULLY IMPLEMENTED** | AvaloniaEdit with line numbers. Server tokens rendered via `ServerDrivenHighlightingTransformer` (VisualLineElement coloring). XSHD fallback for offline mode. |
-| 3 | Remote syntax highlighting (server-driven) | **FULLY IMPLEMENTED** | gRPC call returns tokens, `DocumentColorizingTransformer` bridges tokens to AvaloniaEdit rendering pipeline. |
-| 4 | Visual statechart (blueprint) editing | **FULLY IMPLEMENTED** | Canvas with states, transitions, loops, all interaction modes |
-| 5 | State creation, drag, rename | **FULLY IMPLEMENTED** | Drag-and-drop, 200ms inline name editing, position clamping |
-| 6 | Transition arrow creation and management | **FULLY IMPLEMENTED** | Two-click mode, duplicate prevention, removal |
-| 7 | Loop transition arrows | **FULLY IMPLEMENTED** | Circle (r=40) with arrowhead, duplicate prevention |
-| 8 | Edit arrow PopOver (alias/predicate) | **FULLY IMPLEMENTED** | Bidirectional binding, auto-dismiss on mouse exit |
-| 9 | Inline state name editing | **FULLY IMPLEMENTED** | 200ms timer, drag disambiguation, uniqueness validation |
-| 10 | Blueprint-to-LISMA conversion | **FULLY IMPLEMENTED** | Full converter with pseudo-state pattern for loops |
-| 11 | Model compilation (via gRPC) | **FULLY IMPLEMENTED** | Full compile pipeline with error reporting |
-| 12 | Model validation (Verify) | **FULLY IMPLEMENTED** | Full verify flow with error list display |
-| 13 | Simulation execution (via gRPC) | **FULLY IMPLEMENTED** | Full pipeline: compile → run → monitor → download → commit |
-| 14 | Real-time progress monitoring | **FULLY IMPLEMENTED** | gRPC streaming progress updates to Tasks PopOver |
-| 15 | Simulation cancellation | **FULLY IMPLEMENTED** | `InProgressSimulationViewModel.AbortCommand` wired to `CancelSimulation` |
-| 16 | Result download and caching | **FULLY IMPLEMENTED** | Binary download to temp cache. Column names populated from gRPC response. |
-| 17 | Error list display | **FULLY IMPLEMENTED** | DataGrid with Row/Position/Fragment/Message columns |
-| 18 | Simulation parameters configuration | **FULLY IMPLEMENTED** | All 5 sections auto-generated via PropertiesGrid |
-| 19 | Parameter presets (store/load JSON) | **FULLY IMPLEMENTED** | Full store/load with JSON persistence |
-| 20 | Chart visualization (Grin process) | **FULLY IMPLEMENTED** | Grin launcher, SelectVariables dialog, OK/Close wiring |
-| 21 | Variable axis selection dialog | **FULLY IMPLEMENTED** | UI complete, Ok/Close commands wired, dialog closes with result |
-| 22 | CSV export of results | **FULLY IMPLEMENTED** | FileDialog for CSV output path, async export on background thread |
-| 23 | Window state persistence | **FULLY IMPLEMENTED** | Geometry saved/restored via PreferencesProvider |
-| 24 | Menu bar and toolbar commands | **FULLY IMPLEMENTED** | All 15 commands wired with InputBindings |
-| 25 | Keyboard shortcuts | **FULLY IMPLEMENTED** | All shortcuts defined via InputBindings |
-| 26 | Clipboard propagation (cut/copy/paste) | **FULLY IMPLEMENTED** | EditorPlatformService with Cut/Copy/Paste propagation |
-| 27 | Tasks PopOver (in-progress + completed) | **FULLY IMPLEMENTED** | Abort/Show/Export/Remove commands wired, synced with SimulationService |
-| 28 | State content editing (double-click → text tab) | **FULLY IMPLEMENTED** | State double-click creates tab ✅. Loop arrow double-click creates tab with "(loop)" suffix ✅ |
-| 29 | Name uniqueness enforcement | **FULLY IMPLEMENTED** | NameChangingMonitor with auto-increment |
-| 30 | Parallel execution settings | **FULLY IMPLEMENTED** | Server/Port fields in RunSimulationParams, sent to gRPC |
-| 31 | Result simplification settings | **FULLY IMPLEMENTED** | ResultSimplifier with Douglas-Peucker and Radial-Distance algorithms |
+### Gap 1: Blueprint Editor — State Box Dimensions and Colors Incorrect
+
+**Original spec** (`07-blueprint-editor-ux.md` §3, §17-18):
+- User states: `Width=110`, `Height=65`, `arcWidth=20`, `arcHeight=20`, fill=`#F08080` (CORAL)
+- Main/Init states: `Width=110`, `Height=60`, fill=`#90EE90` (LIGHTGREEN) / `#ADD8E6` (LIGHTBLUE)
+
+**Current implementation** (`BlueprintEditorView.axaml:85-96`, `BlueprintEditorView.axaml.cs:24-25`, `ArrowLine.cs:19-20`, `LoopArrow.cs:19-20`):
+- States: `Width="120"`, `Height="60"`, `CornerRadius="8"` (not 20px arc)
+- Constants: `StateWidth = 120.0`, `StateHeight = 60.0` (used in ArrowLine and LoopArrow hit testing)
+- Fill colors: Set from ViewModel hex strings, but hardcoded dimensions are wrong
+
+**Impact:** States appear too wide and too short. Corner rounding is too subtle. Arrow geometry calculations are off by 10px in width and 5px in height, causing arrows to connect to wrong positions.
+
+**Priority:** HIGH — affects all blueprint editing interactions
 
 ---
 
-## Remaining Implementation Tasks
+### Gap 2: Blueprint Editor — Tab Close Buttons Missing
 
-### Task 1: LISMA Text Editor Syntax Highlighting (Server-Driven) ✅ COMPLETED
+**Original spec** (`06-ux-reference.md` §Editor Area — Tab-based Project Management):
+- "Tab close: Clicking the close button (X) on a tab closes that project"
 
-**Implemented in:**
-- `ServerDrivenHighlightingTransformer.cs` — `DocumentColorizingTransformer` that applies server tokens to `VisualLineElement` foreground colors
-- `TextEditorFactory.SetSyntaxHighlighting()` — wires transformer when tokens provided, falls back to XSHD when not
-- `LismaProjectViewModel.UpdateSyntaxHighlighting()` — version-token debouncing prevents stale highlighting updates
+**Current implementation** (`EditorTabPaneView.axaml:8-27`):
+- `TabControl` with `ItemsSource="{Binding Projects}"` and `SelectedItem="{Binding ActiveProject}"`
+- Tab header shows name + dirty indicator asterisk
+- **No close button (X) on individual tabs**
+- Tab closing is only available via File → Close menu or Ctrl+W
 
-**How it works:**
-1. Server returns `SyntaxTokenDto[]` (offset + length + kind) via gRPC
-2. `TextEditorFactory` creates a `ServerDrivenHighlightingTransformer` with the tokens
-3. Transformer is inserted at position 0 in `TextView.LineTransformers`
-4. During rendering, `ColorizeLine` matches tokens to document lines and calls `ChangeLinePart`
-5. `ChangeLinePart` finds matching `VisualLineElement`s and calls `SetForegroundBrush()` on their `TextRunProperties`
-6. Keywords → Orange, Comments → Gray, Numbers → Blue, Text → Green
+**Impact:** Users cannot close tabs directly from the tab bar, which is the standard UX pattern for tabbed interfaces.
 
-**Token-to-color mapping:**
-| Token Kind | Color |
-|------------|-------|
-| `Keyword` | Orange |
-| `Comment` | Gray |
-| `Number` | Blue |
-| `Text` | Green |
-| Other | Black |
-
-**Debouncing:** Uses a version counter (`_highlightVersion`) to discard stale highlighting updates. When `UpdateSyntaxHighlighting` is called, it captures the current version, waits 100ms, then checks if the version changed. If it did, the update is discarded.
-
-**Fallback:** When no server tokens are available (offline mode), the embedded `LISMA.xshd` provides client-side regex-based highlighting.
+**Priority:** HIGH — core UX pattern missing
 
 ---
 
-## Previously Completed Tasks (for reference)
+### Gap 3: Keyboard Shortcuts Mismatch with Original Spec
 
-1. **Server-highlighting tokens never rendered** — `SyntaxHighlighterService.HighlightSource()` returns `SyntaxTokenDto[]`, `LismaProjectViewModel.UpdateSyntaxHighlighting()` receives them, `TextEditorFactory.SetSyntaxHighlighting()` calls `LismaSyntaxHelper.CreateServerDriven()` which returns `null` (stub), and falls back to embedded XSHD
-2. **No AvaloniaEdit token-to-rendering bridge** — AvaloniaEdit uses regex-based `IHighlightingDefinition`, not offset-based token rendering. Server tokens (start offset + length + kind) cannot be directly mapped to `HighlightingSpan` patterns because the patterns are regex strings, not literal character positions
-3. **No debouncing** — Text changes trigger highlighting via `Task.Delay(100)` on a background thread, but there's no `DispatcherTimer` to cancel previous pending updates
-4. **No client-side fallback** — The existing `LISMA.xshd` embedded resource IS loaded as fallback in `TextEditorFactory.SetSyntaxHighlighting()`, but it's the only highlighting used
+**Original spec** (`06-ux-reference.md` §Keyboard Shortcuts Reference):
+- `Ctrl+W` / `Cmd+W` → **Exit** application
+- No explicit mention of `Ctrl+Q`
 
-#### Why Server-Driven Highlighting Is Tricky in AvaloniaEdit
+**Current implementation** (`IsmaMenuBarView.axaml:14-15`):
+- `Ctrl+W` → `CloseCommand` (closes active tab, NOT exit)
+- `Ctrl+Q` → `ExitCommand` (exits application)
 
-AvaloniaEdit's syntax highlighting (`IHighlightingDefinition`) is fundamentally **regex-based**:
-- `HighlightingSpan` uses `HighlightingPattern` which wraps a regex string
-- `HighlightingRuleSet` contains regex rules that are matched against document text
-- The highlighting engine compiles these regex patterns and runs them against each line
+**Impact:** The keyboard shortcut `Ctrl+W` has a different meaning than the original app. In the original, Ctrl+W exits the app. In the current implementation, Ctrl+W closes the active tab. This is a regression.
 
-Server tokens are **offset-based**: each token has a literal `Start` offset, `Length`, and `Kind`. There is no direct API to tell AvaloniaEdit "color characters 42-56 orange".
+**Priority:** MEDIUM — breaks muscle memory from original app
 
-#### Implementation Plan
+---
 
-**Step 1: Create `ServerDrivenHighlightingGenerator` — AvaloniaEdit `VisualLineElementGenerator`**
+### Gap 4: Blueprint Editor Toolbar — Toggle Buttons Don't Show State Labels
 
-This generator plugs into AvaloniaEdit's rendering pipeline. When the editor renders a visual line, the generator scans for matching tokens and creates colored `VisualLineText` elements.
+**Original spec** (`07-blueprint-editor-ux.md` §7.2):
+- "New transition" / "Stop adding transaction" — text changes based on mode
+- "Remove state" / "Stop remove state" — text changes based on mode
+- "Remove transition" / "Stop remove transition" — text changes based on mode
 
-```csharp
-// src/ISMA.App/Services/ServerDrivenHighlightingGenerator.cs
-using AvaloniaEdit;
-using AvaloniaEdit.Document;
-using AvaloniaEdit.Rendering;
-using AvaloniaEdit.Highlighting;
-using ISMA.Domain.Dtos;
-using Avalonia.Media;
+**Current implementation** (`BlueprintEditorView.axaml:202-212`):
+- `ToggleButton Content="Add Transition"` — static text, no mode-dependent label
+- `ToggleButton Content="Remove State"` — static text
+- `ToggleButton Content="Remove Transition"` — static text
+- The mode-dependent visibility panels (lines 162-198) show helper text but don't change button labels
 
-namespace ISMA.App.Services;
+**Impact:** Users can't tell from the button text whether a toggle mode is active. The original app clearly shows "Stop adding transaction" when in add-transaction mode.
 
-/// <summary>
-/// AvaloniaEdit VisualLineElementGenerator that applies server-driven syntax tokens
-/// as colored spans in the text editor.
-/// 
-/// This plugs into AvaloniaEdit's rendering pipeline — when a visual line is constructed,
-/// this generator scans for tokens that overlap the line and creates colored VisualLineText
-/// elements for each token.
-/// </summary>
-public class ServerDrivenHighlightingGenerator : VisualLineElementGenerator
-{
-    private readonly IReadOnlyList<SyntaxTokenDto> _tokens;
-    private readonly IReadOnlyDictionary<string, HighlightingColor> _colorCache;
+**Priority:** MEDIUM — reduces usability of toolbar
 
-    public ServerDrivenHighlightingGenerator(IReadOnlyList<SyntaxTokenDto> tokens)
-    {
-        _tokens = tokens ?? Array.Empty<SyntaxTokenDto>();
-        
-        _colorCache = new Dictionary<string, HighlightingColor>
-        {
-            { "Keyword", new HighlightingColor { Name = "Keyword", Foreground = new SolidColorBrush(Media.Brushes.Orange) } },
-            { "Comment", new HighlightingColor { Name = "Comment", Foreground = new SolidColorBrush(Media.Brushes.Gray) } },
-            { "Number", new HighlightingColor { Name = "Number", Foreground = new SolidColorBrush(Media.Brushes.Blue) } },
-            { "Text", new HighlightingColor { Name = "Text", Foreground = new SolidColorBrush(Media.Brushes.Green) } },
-            { "Default", new HighlightingColor { Name = "Default", Foreground = new SolidColorBrush(Media.Brushes.Black) } }
-        };
-    }
+---
 
-    public override VisualLineElement? ConstructElement(int offset)
-    {
-        // Find the token that starts at this offset
-        var token = FindTokenAtOffset(offset);
-        if (token == null)
-            return null;
+### Gap 5: ArrowLine and LoopArrow — Pointer Hit Testing Incomplete
 
-        // Get the text for this token
-        var text = CurrentDocument.GetText(token.Value.Start, token.Value.Length);
-        var color = GetColorForKind(token.Value.Kind);
+**Original spec** (`07-blueprint-editor-ux.md` §4.5, §5.4):
+- Arrow body click in remove mode → remove arrow
+- Arrowhead single-click → open EditArrowPopOver
+- Loop body click in remove mode → remove loop
+- Loop arrowhead single-click → open EditArrowPopOver
 
-        // Calculate visual width (accounting for font metrics)
-        var textRunProperties = new TextRunProperties(color.Foreground)
-        {
-            FontSize = CurrentElement?.TextRunProperties?.FontSize ?? 12,
-            Typeface = CurrentElement?.TextRunProperties?.Typeface ?? new Typeface("Consolas")
-        };
+**Current implementation:**
+- `ArrowLine.cs:129-142` — `OnPointerPressed` calculates head distance but does nothing with it (empty body after distance check)
+- `LoopArrow.cs:112-137` — `OnPointerPressed` calculates head distance and circle distance but does nothing with them (empty body after calculations)
+- `BlueprintEditorView.axaml.cs:210-268` — The event handlers here (`OnArrowPointerPressed`, `OnLoopArrowPointerPressed`) do the actual work, but the controls themselves don't raise events properly
 
-        // Create a VisualLineText element that spans the token's visual width
-        var visualLength = GetVisualLength(text, textRunProperties);
-        var element = new VisualLineText(CurrentDocument, token.Value.Start, visualLength)
-        {
-            TextRunProperties = textRunProperties
-        };
+**Impact:** The ArrowLine and LoopArrow controls compute hit test distances but don't propagate them. The BlueprintEditorView.axaml.cs handlers work around this by receiving the control references and doing their own calculations. This is fragile and duplicates logic.
 
-        return element;
-    }
+**Priority:** MEDIUM — causes unreliable arrow click detection
 
-    public override int GetFirstInterestedOffset(int startOffset)
-    {
-        // Find the next token that starts at or after startOffset
-        foreach (var token in _tokens)
-        {
-            if (token.Start >= startOffset)
-                return token.Start;
-            // Token overlaps startOffset
-            if (token.Start + token.Length > startOffset)
-                return startOffset;
-        }
-        return -1; // No more tokens
-    }
+---
 
-    private SyntaxTokenDto? FindTokenAtOffset(int offset)
-    {
-        foreach (var token in _tokens)
-        {
-            if (token.Start == offset)
-                return token;
-        }
-        return null;
-    }
+### Gap 6: Tasks PopOver — Missing Details PopOver for Simulation Metadata
 
-    private HighlightingColor GetColorForKind(SyntaxTokenKind kind)
-    {
-        return kind switch
-        {
-            SyntaxTokenKind.Keyword => _colorCache["Keyword"],
-            SyntaxTokenKind.Comment => _colorCache["Comment"],
-            SyntaxTokenKind.Number => _colorCache["Number"],
-            SyntaxTokenKind.Text => _colorCache["Text"],
-            _ => _colorCache["Default"]
-        };
-    }
+**Original spec** (`06-ux-reference.md` §Tasks PopOver — Details PopOver (nested)):
+- "Details button: Chevron icon (⋯) — opens a nested PopOver with simulation metadata"
+- Fields: Model name, Cauchy initials (Start, End, Initial step), Integration method (name, accuracy, stability), Statistics (simulation time)
 
-    private static int GetVisualLength(string text, TextRunProperties properties)
-    {
-        // Use the visual length equal to the character count for monospace fonts
-        // AvaloniaEdit handles the actual pixel-to-character conversion
-        return text.Length;
-    }
-}
-```
+**Current implementation** (`TasksPopOverView.axaml`):
+- Completed items have Show, Export, Remove buttons
+- **No Details/chevron button**
+- No nested PopOver for simulation metadata
 
-**Step 2: Update `TextEditorFactory.SetSyntaxHighlighting()`**
+**Impact:** Users cannot view simulation metadata (parameters used, timing) from the Tasks PopOver.
 
-Replace the stub with actual token-to-rendering bridge:
+**Priority:** MEDIUM — missing UX feature from original
 
-```csharp
-public void SetSyntaxHighlighting(object editor, SyntaxTokenDto[] tokens, string source)
-{
-    if (editor is not TextEditor te) return;
-    te.Options.HighlightCurrentLine = true;
+---
 
-    if (tokens != null && tokens.Length > 0)
-    {
-        // Use server-driven highlighting via VisualLineElementGenerator
-        te.TextArea.TextView.ElementGenerators.Clear();
-        var generator = new ServerDrivenHighlightingGenerator(tokens);
-        te.TextArea.TextView.ElementGenerators.Add(generator);
-    }
-    else
-    {
-        // Fall back to embedded XSHD
-        te.TextArea.TextView.ElementGenerators.Clear();
-        te.SyntaxHighlighting = LismaSyntaxHelper.GetFallbackHighlighting();
-    }
-}
-```
+### Gap 7: State Content Preview Text in Blueprint Canvas
 
-**Step 3: Add debouncing in `LismaProjectViewModel.UpdateSyntaxHighlighting()`**
+**Original spec** (`07-blueprint-editor-ux.md` §3.1):
+- State boxes show only the state name, centered
+- No content text preview on the canvas
 
-Replace `Task.Delay` with `DispatcherTimer` for proper cancellation:
+**Current implementation** (`BlueprintEditorView.axaml:106-111`):
+- Shows a second `TextBlock` with `Text="{Binding Text}"` below the name
+- FontSize=9, Foreground=#666666, MaxWidth=100, wrapped
 
-```csharp
-private DispatcherTimer? _highlightingTimer;
+**Impact:** The canvas shows state content text preview, which the original does NOT have. This clutters the canvas view and wasn't in the original design.
 
-public async Task UpdateSyntaxHighlighting(string source)
-{
-    _highlightingTimer?.Stop();
-    _highlightingTimer = new DispatcherTimer 
-    { 
-        Interval = TimeSpan.FromMilliseconds(100),
-        Tick += async (s, e) =>
-        {
-            _highlightingTimer!.Stop();
-            _highlightingTimer!.Tick -= (s, e); // Clean up handler
-            
-            try
-            {
-                var tokens = await _syntaxHighlighter.Highlight(source);
-                _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
-                _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
-            }
-            catch { }
-        }
-    };
-    _highlightingTimer.Start();
-}
-```
+**Priority:** LOW — cosmetic difference, not a bug per se
 
-**Step 4: Update `LismaSyntaxHelper.CreateServerDriven()`**
+---
 
-Update the stub to document the actual approach (generator-based):
+### Gap 8: Integration Test Coverage Gaps
 
-```csharp
-public static IHighlightingDefinition? CreateServerDriven(SyntaxTokenDto[] tokens)
-{
-    // Server-driven highlighting is applied via ServerDrivenHighlightingGenerator
-    // (VisualLineElementGenerator) in TextEditorFactory.SetSyntaxHighlighting().
-    // This method is kept for API compatibility but returns null since we don't
-    // use IHighlightingDefinition for server tokens.
-    return null;
-}
-```
+**What's tested:**
+- Blueprint editor VM operations (add/remove states, transitions, modes)
+- Simulation workflow (full pipeline with mocked server)
+- Syntax highlighting (fallback + server-driven)
+- CSV export
+- Settings panel UI
+- Project management
+- Validation
 
-#### Acceptance Checklist
+**What's NOT tested (per original feature matrix):**
+- Tab close button interactions
+- State drag-and-drop with arrow reconnection
+- Inline name editing (200ms timer, drag disambiguation)
+- Arrow click detection (body vs head)
+- Edit Arrow PopOver open/close/binding
+- Loop arrow double-click → text tab
+- Blueprint-to-LISMA conversion with visual canvas state
+- Tasks PopOver Details PopOver
+- Window geometry save/restore
+- Menu bar command execution through full UI tree
 
-- [ ] `ServerDrivenHighlightingGenerator` implements `VisualLineElementGenerator` correctly
-- [ ] Server tokens are applied to AvaloniaEdit `TextEditor` via `SetSyntaxHighlighting()`
-- [ ] Keywords appear orange
-- [ ] Comments appear gray
-- [ ] Numbers appear blue
-- [ ] Text/strings appear green
-- [ ] Highlighting updates with 100ms debounce (no jank during typing)
-- [ ] Previous highlighting is cancelled when new tokens arrive (DispatcherTimer)
-- [ ] Client-side fallback loads from embedded `LISMA.xshd` when no server tokens
-- [ ] `ISMA.App.csproj` includes `LISMA.xshd` as `EmbeddedResource`
-- [ ] No memory leaks: generator is removed from `ElementGenerators` when tokens change
+**Priority:** HIGH — critical interactions lack UI-level test coverage
 
-#### Tests (15 tests, all passing)
+---
 
-- [x] `SyntaxHighlightingTests_FallbackHighlighting_LoadsFromEmbeddedXshd` — XSHD fallback loads
-- [x] `SyntaxHighlightingTests_FallbackHighlighting_IsCached` — Fallback is cached
-- [x] `SyntaxHighlightingTests_ServerDriven_CreateServerDriven_ReturnsNull` — API compatibility
-- [x] `SyntaxHighlightingTests_TextEditor_CanApplyFallbackHighlighting` — Fallback on editor
-- [x] `SyntaxHighlightingTests_TextEditor_HighlightingApplied_AfterTextChange` — Text change + highlight
-- [x] `SyntaxHighlightingTests_TextEditor_FactorySetsFallback_WhenNoTokens` — Factory uses fallback
-- [x] `SyntaxHighlightingTests_TextEditor_FactorySetsServerDriven_WhenTokensProvided` — Factory uses transformer
-- [x] `SyntaxHighlightingTests_TextEditor_ServerDriven_RemovesFallback_WhenTokensProvided` — Swap fallback → server
-- [x] `SyntaxHighlightingTests_TextEditor_RemovesServerDriven_WhenTokensCleared` — Swap server → fallback
-- [x] `SyntaxHighlightingTests_TextEditor_KeywordToken_AppliesOrangeColor` — Keyword color
-- [x] `SyntaxHighlightingTests_TextEditor_CommentToken_ApppliesGrayColor` — Comment color
-- [x] `SyntaxHighlightingTests_TextEditor_NumberToken_ApppliesBlueColor` — Number color
-- [x] `SyntaxHighlightingTests_TextEditor_MultipleTokens_AppAllColors` — Multiple tokens at once
-- [x] `SyntaxHighlightingTests_LismaProjectViewModel_HighlightingTokens_ObservableCollectionUpdated` — Tokens update
-- [x] `SyntaxHighlightingTests_TextEditor_NullTokens_UsesFallback` — Null tokens → fallback
+## Implementation Plans
+
+### Task 1: Fix Blueprint Editor State Dimensions and Colors
+
+**Files to modify:**
+- `src/ISMA.App/Views/BlueprintEditorView.axaml` — state Border dimensions and CornerRadius
+- `src/ISMA.App/Views/BlueprintEditorView.axaml.cs` — StateWidth/StateHeight constants
+- `src/ISMA.App/Controls/ArrowLine.cs` — StateWidth/StateHeight constants
+- `src/ISMA.App/Controls/LoopArrow.cs` — StateWidth/StateHeight constants
+- `src/ISMA.ViewModels/ViewModels/BlueprintStateViewModel.cs` — FillColorHex values
+
+**Implementation:**
+1. Change state Border in AXAML: `Width="110" Height="65" CornerRadius="10"` (CornerRadius 10 = 20px arc diameter in Avalonia)
+2. Update constants: `StateWidth = 110.0`, `StateHeight = 60.0` for Main/Init, `StateHeight = 65.0` for user states
+3. Update ArrowLine/LoopArrow constants to match
+4. Ensure fill colors match: Main=`#90EE90`, Init=`#ADD8E6`, User=`#F08080`
+
+**Acceptance Checklist:**
+- [ ] State boxes are 110px wide × 65px high (user states)
+- [ ] Main/Init states are 110px wide × 60px high
+- [ ] Corner rounding is visible (CornerRadius=10 in Avalonia = 20px arc)
+- [ ] Main state fill is #90EE90 (LightGreen)
+- [ ] Init state fill is #ADD8E6 (LightBlue)
+- [ ] User states fill is #F08080 (Coral)
+- [ ] Arrow lines connect to correct state centers
+- [ ] Loop arrows are centered on states correctly
+- [ ] `BlueprintEditorTests_CanvasStateDimensions_MatchOriginalSpec` passes
+
+---
+
+### Task 2: Add Tab Close Buttons to EditorTabPaneView
+
+**Files to modify:**
+- `src/ISMA.App/Views/EditorTabPaneView.axaml` — add close button to tab header
+
+**Implementation:**
+1. In `TabControl.ItemTemplate`, add a `PathIcon` or `Button` with an "X" glyph next to the name TextBlock
+2. Wire the close button's `Command` to a command that closes the specific tab
+3. Since `TabControl` doesn't support per-tab commands natively, use a custom approach:
+   - Add a `Button` in the DataTemplate with `Command="{Binding $parent[TabControl].DataContext.CloseCommand}"`
+   - Pass the specific project via `CommandParameter="{Binding}"`
+   - In `MainWindowViewModel`, add a `CloseTabCommand(IProjectViewModel tab)` that finds and closes the specific project
+
+**Acceptance Checklist:**
+- [ ] Each tab has an X close button in the header
+- [ ] Clicking X closes that specific tab
+- [ ] Dirty indicator (*) still shows when present
+- [ ] Tab close disposes project resources
+- [ ] `EditorTabPaneTests_TabCloseButton_ClosesSpecificTab` passes
+- [ ] `EditorTabPaneTests_TabCloseButton_DisposesProject` passes
+
+---
+
+### Task 3: Fix Keyboard Shortcuts
+
+**Files to modify:**
+- `src/ISMA.App/Views/IsmaMenuBarView.axaml` — swap Ctrl+W and Ctrl+Q
+- `src/ISMA.ViewModels/ViewModels/MainWindowViewModel.cs` — verify command names
+
+**Implementation:**
+1. Change `Ctrl+W` from `CloseCommand` to `ExitCommand`
+2. Change `Ctrl+Q` from `ExitCommand` to `CloseCommand`
+3. Update menu item `InputGesture` attributes accordingly
+4. Per original spec: `Ctrl+W` = Exit, `Ctrl+Q` is not originally specified — use `Ctrl+W` for Exit and keep `Ctrl+Shift+W` or no shortcut for Close
+
+**Acceptance Checklist:**
+- [ ] `Ctrl+W` exits the application (same as original)
+- [ ] `Ctrl+Q` closes the active tab (or remove this shortcut)
+- [ ] All other shortcuts unchanged (Ctrl+N, Ctrl+B, Ctrl+O, Ctrl+S, Ctrl+X, Ctrl+C, Ctrl+V, Ctrl+F4, Ctrl+F5)
+- [ ] `KeyboardShortcutsTests_ExitUsesCtrlW` passes
+
+---
+
+### Task 4: Fix Blueprint Editor Toolbar Toggle Buttons
+
+**Files to modify:**
+- `src/ISMA.App/Views/BlueprintEditorView.axaml` — toggle button content
+
+**Implementation:**
+1. Bind toggle button `Content` to a computed property on `BlueprintEditorViewModel`:
+   - `AddTransitionButtonContent` → "Add Transition" or "Stop adding transaction"
+   - `RemoveStateButtonContent` → "Remove State" or "Stop remove state"
+   - `RemoveTransitionButtonContent` → "Remove Transition" or "Stop remove transition"
+2. Add these properties to `BlueprintEditorViewModel` using `[Computed]` from CommunityToolkit.Mvvm
+
+**Acceptance Checklist:**
+- [ ] "Add Transition" button shows "Stop adding transaction" when mode is active
+- [ ] "Remove State" button shows "Stop remove state" when mode is active
+- [ ] "Remove Transition" button shows "Stop remove transition" when mode is active
+- [ ] Button text updates immediately on mode change
+- [ ] `BlueprintEditorTests_ToggleButtonLabels_UpdateWithMode` passes
+
+---
+
+### Task 5: Fix ArrowLine and LoopArrow Pointer Hit Testing
+
+**Files to modify:**
+- `src/ISMA.App/Controls/ArrowLine.cs` — complete OnPointerPressed
+- `src/ISMA.App/Controls/LoopArrow.cs` — complete OnPointerPressed
+
+**Implementation:**
+1. Add `PointerPressedRoutedEvent` to both controls
+2. Define routed event args with hit test info (isHead, position)
+3. In `OnPointerPressed`, compute distance to arrowhead and raise the routed event
+4. In `BlueprintEditorView.axaml`, subscribe to the routed events instead of doing manual calculations
+
+**Acceptance Checklist:**
+- [ ] ArrowLine correctly identifies arrowhead clicks vs body clicks
+- [ ] LoopArrow correctly identifies arrowhead clicks vs body clicks
+- [ ] Routed events propagate to parent handlers
+- [ ] No duplicate hit test logic between controls and code-behind
+- [ ] `ArrowHitTestTests_ArrowBodyClick_Detected` passes
+- [ ] `ArrowHitTestTests_ArrowHeadClick_Detected` passes
+- [ ] `ArrowHitTestTests_LoopBodyClick_Detected` passes
+- [ ] `ArrowHitTestTests_LoopHeadClick_Detected` passes
+
+---
+
+### Task 6: Add Tasks PopOver Details PopOver
+
+**Files to create/modify:**
+- `src/ISMA.App/Views/TasksPopOverView.axaml` — add chevron button and nested Popup
+- `src/ISMA.ViewModels/ViewModels/CompletedSimulationViewModel.cs` — add ShowDetailsCommand
+- `src/ISMA.App/Views/DetailsPopOverView.axaml` — new view for simulation metadata
+
+**Implementation:**
+1. Add a "⋯" button next to Remove in each completed item
+2. Create a `DetailsPopOverView` showing: Model name, Cauchy initials, Integration method, Statistics
+3. Use Avalonia `Popup` with `IsLightDismissEnabled=True`
+4. Bind to `CompletedSimulationViewModel` properties
+
+**Acceptance Checklist:**
+- [ ] Chevron (⋯) button appears on completed simulation items
+- [ ] Clicking opens a nested PopOver with simulation metadata
+- [ ] Metadata shows: Model name, Start/End/Step, Method, Accuracy, Stability, Simulation time
+- [ ] PopOver dismisses on light dismiss (click outside)
+- [ ] `TasksPopOverTests_DetailsPopOver_ShowsMetadata` passes
+
+---
+
+### Task 7: Remove State Content Preview from Canvas
+
+**Files to modify:**
+- `src/ISMA.App/Views/BlueprintEditorView.axaml` — remove the TextBlock showing state text
+
+**Implementation:**
+1. Remove the second `TextBlock` (lines 106-111) that shows `{Binding Text}` below the state name
+2. Keep only the state name `TextBlock`
+
+**Acceptance Checklist:**
+- [ ] State boxes show only the name on the canvas
+- [ ] No content text preview visible
+- [ ] Double-click still opens text editor tab
+
+---
+
+### Task 8: Write Integration Tests for Missing UI Interactions
+
+**Files to create:**
+- `tests/ISMA.Tests.Integration/BlueprintEditorUiTests.cs` — UI-level blueprint editor tests
+- `tests/ISMA.Tests.Integration/TabCloseTests.cs` — tab close button tests
+- `tests/ISMA.Tests.Integration/KeyboardShortcutsTests.cs` — keyboard shortcut tests
+- `tests/ISMA.Tests.Integration/ArrowHitTestTests.cs` — arrow click detection tests
+- `tests/ISMA.Tests.Integration/DetailsPopOverTests.cs` — details popover tests
+
+**Implementation:**
+1. Use existing `IntegrationTestBase` pattern (headless Avalonia with mocked server)
+2. Use `UiHelpers` for UI interactions (click buttons, set text, find controls)
+3. Test through actual UI control tree, not just ViewModels
+4. Use `window.Flush()` to force layout updates in headless mode
+
+**Acceptance Checklist:**
+- [ ] `BlueprintEditorUiTests_StateDrag_RepositionsStateAndUpdatesArrows` — drag state, verify position + arrow reconnection
+- [ ] `BlueprintEditorUiTests_InlineNameEdit_RenamesState` — single-click, type name, verify rename
+- [ ] `BlueprintEditorUiTests_TransitionCreation_TwoClicks_CreatesArrow` — add transition mode, click two states
+- [ ] `BlueprintEditorUiTests_LoopCreation_SameStateTwice_CreatesLoop` — add transition, click same state twice
+- [ ] `TabCloseTests_TabCloseButton_ClosesTabAndDisposes` — click X on tab, verify tab count decreases
+- [ ] `KeyboardShortcutsTests_ExitWithCtrlW_ExitsApp` — Ctrl+W triggers exit
+- [ ] `ArrowHitTestTests_ArrowHeadClick_OpensPopOver` — click arrowhead, verify PopOver opens
+- [ ] `ArrowHitTestTests_ArrowBodyClickInRemoveMode_RemovesArrow` — remove mode + click arrow body
+- [ ] `DetailsPopOverTests_ChevronClick_ShowsMetadata` — click chevron, verify metadata visible
+- [ ] All new tests pass: `dotnet test ISMA.Tests.Integration` 100% green
 
 ---
 
 ## Implementation Priority Order
 
-| # | Task | Priority | Estimated Effort | Status | Original Features |
-|---|------|----------|-----------------|--------|-------------------|
-| — | All tasks completed | — | — | ✅ DONE | #1-#31 |
+| # | Task | Priority | Effort | Depends On |
+|---|------|----------|--------|------------|
+| 1 | Fix state dimensions/colors | HIGH | 1h | — |
+| 2 | Add tab close buttons | HIGH | 2h | — |
+| 3 | Fix keyboard shortcuts | MEDIUM | 30m | — |
+| 4 | Fix toggle button labels | MEDIUM | 1h | — |
+| 5 | Fix arrow hit testing | MEDIUM | 2h | Task 1 |
+| 6 | Add Details PopOver | MEDIUM | 2h | — |
+| 7 | Remove state content preview | LOW | 15m | — |
+| 8 | Write integration tests | HIGH | 4h | Tasks 1-6 |
+
+**Total estimated effort: ~13 hours**
 
 ---
 
 ## Previously Completed Tasks (for reference)
 
-### Task 2: Loop Arrow Double-Click → Text Editor Tab ✅ COMPLETED
+### Server-Driven Syntax Highlighting ✅ COMPLETED
+Implemented via `ServerDrivenHighlightingTransformer` — `DocumentColorizingTransformer` that applies server tokens to AvaloniaEdit rendering pipeline.
 
-**Implemented in:** `BlueprintEditorView.axaml.cs:451-479` (`OnLoopArrowHeadClicked`)
-- Double-click on loop arrowhead opens a new tab named `"{stateName} (loop)"`
-- Tab content is the loop's text
-- `LismaProjectViewModel.ContentChanged` event syncs edits back to loop model
-- Single-click still opens the Edit PopOver
+### Loop Arrow Double-Click → Text Editor Tab ✅ COMPLETED
+Implemented in `BlueprintEditorView.axaml.cs:451-479` (`OnLoopArrowHeadClicked`).
 
-### Task 3: CSV Export with FileDialog ✅ COMPLETED
-
-**Implemented in:** `SimulationResultService.cs:103-119` (`ShowExportDialog`)
-- Uses `OpenFilePickerAsync` with `*.csv` filter
-- `CompletedSimulationViewModel.ExportCommand` calls `_resultService.ShowExportDialog(_source)`
-- Export runs on background thread via `Task.Run()`
-- Non-blocking: UI remains responsive
+### CSV Export with FileDialog ✅ COMPLETED
+Implemented in `SimulationResultService.cs` — `ShowExportDialog` with FileDialog + async export.
 
 ---
 
 ## Testing Strategy
 
-All new features should be covered with:
+All new features and fixes should be covered with:
 
 1. **Unit tests** (`ISMA.Tests`) — ViewModel logic, domain logic, service logic
 2. **Integration tests** (`ISMA.Tests.Integration`) — End-to-end business flows with real UI components
@@ -364,15 +403,4 @@ All new features should be covered with:
 - Test through the actual UI control tree, not just ViewModels
 - Use `window.Flush()` to force layout updates in headless mode
 - Use `AutomationId` properties for reliable control identification
-
----
-
-## Files Created/Modified
-
-### New Files (Created)
-- `src/ISMA.App/Services/ServerDrivenHighlightingTransformer.cs` — `DocumentColorizingTransformer` for server-driven token highlighting
-- `tests/ISMA.Tests.Integration/SyntaxHighlightingTests.cs` — Updated with 15 comprehensive tests
-
-### Modified Files (Modified)
-- `src/ISMA.App/Services/TextEditorFactory.cs` — `SetSyntaxHighlighting()` now creates/removes `ServerDrivenHighlightingTransformer`
-- `src/ISMA.ViewModels/ViewModels/LismaProjectViewModel.cs` — Added `_highlightVersion` for debouncing stale updates
+- Prefer testing through real UI components over ViewModel-only tests

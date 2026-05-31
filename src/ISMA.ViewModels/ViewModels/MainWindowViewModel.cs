@@ -163,6 +163,15 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task CloseTab(IProjectViewModel tab)
+    {
+        if (tab == null) return;
+        
+        await _projectService.CloseAsync(tab);
+        LoadProjects();
+    }
+
+    [RelayCommand]
     private async Task CloseAll()
     {
         await _projectService.CloseAllAsync();

@@ -120,21 +120,55 @@
                                             <Flyout>
                                                 <Border CornerRadius="4"
                                                         Padding="10"
+                                                        MinWidth="220"
                                                         Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
                                                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                         BorderThickness="1"
                                                         BoxShadow="0 2 8 0 #60000000">
-                                                    <StackPanel Spacing="4">
+                                                    <StackPanel Spacing="6">
                                                         <TextBlock Text="{Binding ModelName}"
                                                                    FontWeight="SemiBold"
-                                                                   FontSize="11" />
-                                                        <TextBlock Text="ID: {Binding Id}"
+                                                                   FontSize="12" />
+                                                        
+                                                        <TextBlock Text="Cauchy Initials"
+                                                                   FontWeight="SemiBold"
                                                                    FontSize="10"
-                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-                                                        <TextBlock Text="File: {Binding CachedFile}"
+                                                                   Margin="0,4,0,2"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Start:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.CauchyInitials.StartTime, StringFormat='{}{0:F2}'}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="End:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.CauchyInitials.EndTime, StringFormat='{}{0:F2}'}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Step:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.CauchyInitials.InitialStep, StringFormat='{}{0:F3}'}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        
+                                                        <TextBlock Text="Integration Method"
+                                                                   FontWeight="SemiBold"
                                                                    FontSize="10"
-                                                                   TextTrimming="CharacterEllipsis"
-                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                                                   Margin="0,4,0,2"
+                                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Method:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.IntegrationMethod.SelectedMethod}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Accurate:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.IntegrationMethod.IsAccuracyInUse}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Accuracy:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.IntegrationMethod.Accuracy, StringFormat='{}{0:F3}'}" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="Stable:" FontSize="10"/>
+                                                            <TextBlock Text="{Binding Parameters.IntegrationMethod.IsStableInUse}" FontSize="10"/>
+                                                        </StackPanel>
                                                     </StackPanel>
                                                 </Border>
                                             </Flyout>

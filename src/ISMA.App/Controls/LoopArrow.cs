@@ -16,8 +16,8 @@ public class LoopArrow : Control
 {
     private const double LoopRadius = 40.0;
     private const double ArrowheadSize = 14.0;
-    private const double StateWidth = 120;
-    private const double StateHeight = 60;
+    private const double StateWidth = 110;
+    private const double StateHeight = 65;
 
     public static readonly StyledProperty<BlueprintStateViewModel?> StateProperty =
         AvaloniaProperty.Register<LoopArrow, BlueprintStateViewModel?>(nameof(State));
@@ -112,27 +112,5 @@ public class LoopArrow : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-
-        if (State == null) return;
-
-        var position = e.GetPosition(this);
-        var center = GetCenter(State);
-        var r = LoopRadius;
-        var circleCenter = new Point(center.X + r, center.Y - r);
-
-        var dx = position.X - (circleCenter.X + r);
-        var dy = position.Y - (circleCenter.Y - r);
-        var dist = Math.Sqrt(dx * dx + dy * dy);
-
-        // Check if near arrowhead
-        var arrowheadAngle = Math.PI * 0.75;
-        var arrowheadPos = new Point(
-            circleCenter.X + r * Math.Cos(arrowheadAngle),
-            circleCenter.Y + r * Math.Sin(arrowheadAngle));
-        var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
-
-    
-
-        e.Handled = true;
     }
 }
