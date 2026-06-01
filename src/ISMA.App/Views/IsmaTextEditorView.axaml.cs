@@ -20,6 +20,26 @@ public partial class IsmaTextEditorView : UserControl
         _textEditor = this.FindControl<TextEditor>("Editor");
     }
 
+    private void OnCutClicked(object? sender, RoutedEventArgs e)
+    {
+        _textEditor?.Cut();
+    }
+
+    private void OnCopyClicked(object? sender, RoutedEventArgs e)
+    {
+        _textEditor?.Copy();
+    }
+
+    private void OnPasteClicked(object? sender, RoutedEventArgs e)
+    {
+        _textEditor?.Paste();
+    }
+
+    private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
+    {
+        _textEditor?.SelectAll();
+    }
+
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);

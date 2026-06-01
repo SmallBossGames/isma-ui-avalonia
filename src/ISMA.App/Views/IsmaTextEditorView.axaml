@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-              xmlns:editors="using:AvaloniaEdit"
-              xmlns:vm="using:ISMA.ViewModels.ViewModels"
-              x:Class="ISMA.App.Views.IsmaTextEditorView"
-              x:CompileBindings="False">
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:editors="using:AvaloniaEdit"
+               xmlns:vm="using:ISMA.ViewModels.ViewModels"
+               x:Class="ISMA.App.Views.IsmaTextEditorView"
+               x:CompileBindings="False">
     <Panel>
         <editors:TextEditor x:Name="Editor"
                             x:CompileBindings="False"
@@ -17,20 +17,12 @@
                             WordWrap="False"
                             DataContext="{Binding}">
             <editors:TextEditor.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Cut"
-                              Command="{Binding CutCommand}"
-                              InputGesture="Ctrl+X" />
-                    <MenuItem Header="Copy"
-                              Command="{Binding CopyCommand}"
-                              InputGesture="Ctrl+C" />
-                    <MenuItem Header="Paste"
-                              Command="{Binding PasteCommand}"
-                              InputGesture="Ctrl+V" />
+                <ContextMenu x:Name="ContextMenu">
+                    <MenuItem Header="Cut" Click="OnCutClicked" />
+                    <MenuItem Header="Copy" Click="OnCopyClicked" />
+                    <MenuItem Header="Paste" Click="OnPasteClicked" />
                     <Separator />
-                    <MenuItem Header="Select All"
-                              Command="{Binding SelectAllCommand}"
-                              InputGesture="Ctrl+A" />
+                    <MenuItem Header="Select All" Click="OnSelectAllClicked" />
                     <MenuItem Header="Find and Replace"
                               Command="{Binding FindReplaceCommand}" />
                 </ContextMenu>
