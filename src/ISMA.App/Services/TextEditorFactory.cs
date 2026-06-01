@@ -6,7 +6,6 @@ using AvaloniaEdit.Highlighting;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace ISMA.App.Services;
@@ -47,25 +46,22 @@ public class TextEditorFactory : ITextEditorFactory
         if (editor is not TextEditor te) return;
         te.Options.HighlightCurrentLine = true;
 
+        var fallback = LismaSyntaxHelper.GetFallbackHighlighting();
+
+        te.TextArea.TextView.LineTransformers
+            .OfType<ServerDrivenHighlightingTransformer>()
+            .ToList()
+            .ForEach(t => te.TextArea.TextView.LineTransformers.Remove(t));
+
         if (tokens != null && tokens.Length > 0)
         {
-            te.TextArea.TextView.LineTransformers
-                .OfType<ServerDrivenHighlightingTransformer>()
-                .ToList()
-                .ForEach(t => te.TextArea.TextView.LineTransformers.Remove(t));
-
             var transformer = new ServerDrivenHighlightingTransformer(tokens);
             te.TextArea.TextView.LineTransformers.Insert(0, transformer);
-            te.SyntaxHighlighting = null;
+            te.SyntaxHighlighting = fallback;
         }
         else
         {
-            te.TextArea.TextView.LineTransformers
-                .OfType<ServerDrivenHighlightingTransformer>()
-                .ToList()
-                .ForEach(t => te.TextArea.TextView.LineTransformers.Remove(t));
-
-            te.SyntaxHighlighting = LismaSyntaxHelper.GetFallbackHighlighting();
+            te.SyntaxHighlighting = fallback;
         }
     }
 
@@ -85,7 +81,6 @@ public class TextEditorFactory : ITextEditorFactory
         if (editor is TextEditor te)
         {
             te.TextChanged -= null!;
-            te.Text = "";
             te.SyntaxHighlighting = null;
         }
     }

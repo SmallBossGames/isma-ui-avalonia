@@ -86,6 +86,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         IsAddTransitionMode = false;
         IsRemoveStateMode = false;
         IsRemoveTransitionMode = false;
+        SetBlueprintModel(BlueprintModel.Empty);
     }
 
     public BlueprintEditorViewModel(BlueprintModel model)
@@ -556,10 +557,17 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     private BlueprintStateViewModel MapState(BlueprintStateModel model, bool isMain, bool isInit)
     {
         var fillColorHex = "#F08080";
+        var stateHeight = 65.0;
         if (isMain)
+        {
             fillColorHex = "#90EE90";
+            stateHeight = 60.0;
+        }
         else if (isInit)
+        {
             fillColorHex = "#ADD8E6";
+            stateHeight = 60.0;
+        }
 
         return new BlueprintStateViewModel
         {
@@ -570,7 +578,8 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsEditable = true,
             IsMain = isMain,
             IsInit = isInit,
-            FillColorHex = fillColorHex
+            FillColorHex = fillColorHex,
+            StateHeight = stateHeight
         };
     }
 

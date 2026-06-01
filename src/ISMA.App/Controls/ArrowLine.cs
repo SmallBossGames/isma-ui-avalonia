@@ -10,6 +10,30 @@ using ISMA.ViewModels.ViewModels;
 namespace ISMA.App.Controls;
 
 /// <summary>
+/// Hit test result for arrow controls.
+/// </summary>
+public class ArrowHitTestResult
+{
+    public bool IsArrowHead { get; set; }
+    public bool IsArrowBody { get; set; }
+}
+
+/// <summary>
+/// Event args for arrow hit test results.
+/// </summary>
+public class ArrowHitTestEventArgs : EventArgs
+{
+    public ArrowHitTestResult Result { get; }
+    public Point ClickPosition { get; }
+
+    public ArrowHitTestEventArgs(ArrowHitTestResult result, Point clickPosition)
+    {
+        Result = result;
+        ClickPosition = clickPosition;
+    }
+}
+
+/// <summary>
 /// Renders a transition arrow line between two states with arrowhead and label.
 /// </summary>
 public class ArrowLine : Control
@@ -55,7 +79,15 @@ public class ArrowLine : Control
         set => SetValue(PredicateProperty, value);
     }
 
+    /// <summary>
+    /// Raised when the arrowhead is clicked.
+    /// </summary>
+    public event EventHandler<ArrowHitTestEventArgs>? ArrowHeadClicked;
 
+    /// <summary>
+    /// Raised when the arrow body is clicked.
+    /// </summary>
+    public event EventHandler<ArrowHitTestEventArgs>? ArrowBodyClicked;
 
     static ArrowLine()
     {
@@ -123,11 +155,44 @@ public class ArrowLine : Control
 
     private Point GetCenter(BlueprintStateViewModel state)
     {
-        return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + StateHeight / 2);
+        var height = state.StateHeight > 0 ? state.StateHeight : StateHeight;
+        return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + height / 2);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+
+        if (EndState == null) return;
+
+        var position = e.GetPosition(this);
+        var end = GetCenter(EndState);
+
+        // Calculate arrowhead position (endOffset)
+        var start = GetCenter(StartState);
+        var direction = end - start;
+        var length = Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
+        
+        if (length < 1.0) return;
+
+        var unitDir = new Vector(direction.X / length, direction.Y / length);
+        var endOffset = end - unitDir * (length - ArrowOffset);
+
+        var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - endOffset.X, 2) + Math.Pow(position.Y - endOffset.Y, 2));
+
+        var result = new ArrowHitTestResult();
+        
+        if (distanceToArrowhead < ArrowheadSize)
+        {
+            result.IsArrowHead = true;
+            ArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(position.X, position.Y)));
+        }
+        else
+        {
+            result.IsArrowBody = true;
+            ArrowBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(position.X, position.Y)));
+        }
+
+        e.Handled = true;
     }
 }

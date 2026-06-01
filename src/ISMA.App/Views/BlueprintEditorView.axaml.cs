@@ -18,9 +18,6 @@ public partial class BlueprintEditorView : UserControl
     private EditArrowPopOverView? _popOverView;
     private EditArrowPopOverViewModel? _popOverViewModel;
     private BlueprintTransactionViewModel? _editingTransaction;
-    private const double ArrowOffset = 10.0;
-    private const double ArrowheadSize = 14.0;
-    private const double LoopRadius = 40.0;
     private const double StateWidth = 110.0;
     private const double StateHeight = 65.0;
     private const double DoubleClickThreshold = 300;
@@ -207,70 +204,42 @@ public partial class BlueprintEditorView : UserControl
         }
     }
 
-    private void OnArrowPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnArrowHeadClicked(object? sender, ArrowHitTestEventArgs e)
+    {
+        if (sender is not ArrowLine arrow) return;
+        OnArrowHeadClicked(arrow, arrow);
+    }
+
+    private void OnArrowBodyClicked(object? sender, ArrowHitTestEventArgs e)
     {
         if (sender is not ArrowLine arrow) return;
 
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        var position = e.GetPosition(arrow);
-        if (arrow.EndState == null) return;
-
-        var end = GetCenter(arrow.EndState);
-        var distance = Math.Sqrt(Math.Pow(position.X - end.X, 2) + Math.Pow(position.Y - end.Y, 2));
-
-        if (distance < ArrowheadSize)
-        {
-            OnArrowHeadClicked(arrow, arrow);
-        }
-        else if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
         {
             OnArrowClicked(arrow, arrow);
         }
-
-        e.Handled = true;
     }
 
-    private void OnLoopArrowPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnLoopArrowHeadClickedEvent(object? sender, ArrowHitTestEventArgs e)
+    {
+        if (sender is not LoopArrow arrow) return;
+        OnLoopArrowHeadClicked(arrow, arrow);
+    }
+
+    private void OnLoopBodyClicked(object? sender, ArrowHitTestEventArgs e)
     {
         if (sender is not LoopArrow arrow) return;
 
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        if (arrow.State == null) return;
-
-        var position = e.GetPosition(arrow);
-        var center = GetCenter(arrow.State);
-        var r = LoopRadius;
-        var circleCenter = new Point(center.X + r, center.Y - r);
-
-        var dx = position.X - (circleCenter.X + r);
-        var dy = position.Y - (circleCenter.Y - r);
-        var dist = Math.Sqrt(dx * dx + dy * dy);
-
-        var arrowheadAngle = Math.PI * 0.75;
-        var arrowheadPos = new Point(
-            circleCenter.X + r * Math.Cos(arrowheadAngle),
-            circleCenter.Y + r * Math.Sin(arrowheadAngle));
-        var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
-
-        if (headDist < ArrowheadSize)
-        {
-            OnLoopArrowHeadClicked(arrow, arrow);
-        }
-        else if (Math.Abs(dist - r) < 8 && vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
         {
             OnLoopClicked(arrow, arrow);
         }
-
-        e.Handled = true;
-    }
-
-    private Point GetCenter(BlueprintStateViewModel state)
-    {
-        return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + StateHeight / 2);
     }
 
     private void OpenInlineNameEditor(Border border, BlueprintStateViewModel state, PointerPoint point)
@@ -313,7 +282,7 @@ public partial class BlueprintEditorView : UserControl
         var grid = new Grid
         {
             Width = 110,
-            Height = 65
+            Height = state.StateHeight > 0 ? state.StateHeight : 65
         };
         grid.Children.Add(textBox);
         border.Child = grid;
@@ -385,6 +354,7 @@ public partial class BlueprintEditorView : UserControl
         var newProject = projectService.CreateNewTextProject(state.Name);
         newProject.SetContent(state.Text);
         mainWindowVm.ActiveProject = newProject;
+        mainWindowVm.SyncProjects();
     }
 
     private Avalonia.Controls.Window? FindWindow()
@@ -471,6 +441,7 @@ public partial class BlueprintEditorView : UserControl
         var newProject = projectService.CreateNewTextProject(tabName);
         newProject.SetContent(loop.Text);
         mainWindowVm.ActiveProject = newProject;
+        mainWindowVm.SyncProjects();
 
         if (newProject is ISMA.ViewModels.ViewModels.LismaProjectViewModel lismaProject)
         {

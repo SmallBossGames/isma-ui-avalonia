@@ -118,7 +118,8 @@ public class SyntaxHighlightingTests : IntegrationTestBase
         };
 
         factory!.SetSyntaxHighlighting(editor!, tokens, "state \"Main\"");
-        editor!.SyntaxHighlighting.Should().BeNull();
+        editor!.SyntaxHighlighting.Should().NotBeNull();
+        editor.SyntaxHighlighting!.Name.Should().Be("LISMA");
 
         var transformer = editor.TextArea.TextView.LineTransformers
             .OfType<ServerDrivenHighlightingTransformer>()
@@ -127,7 +128,7 @@ public class SyntaxHighlightingTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
-    public async Task TextEditor_ServerDriven_RemovesFallback_WhenTokensProvided()
+    public async Task TextEditor_ServerDriven_KeepsFallback_WhenTokensProvided()
     {
         Window.ClickMenuItem("MenuNewText");
 
@@ -141,14 +142,15 @@ public class SyntaxHighlightingTests : IntegrationTestBase
         factory!.SetSyntaxHighlighting(editor!, Array.Empty<SyntaxTokenDto>(), "test");
         editor!.SyntaxHighlighting.Should().NotBeNull();
 
-        // Then set server tokens
+        // Then set server tokens - fallback should still be present as base
         var tokens = new[]
         {
             new SyntaxTokenDto { Start = 0, Length = 5, Kind = SyntaxTokenKind.Keyword }
         };
         factory.SetSyntaxHighlighting(editor!, tokens, "state");
 
-        editor.SyntaxHighlighting.Should().BeNull();
+        editor.SyntaxHighlighting.Should().NotBeNull();
+        editor.SyntaxHighlighting!.Name.Should().Be("LISMA");
 
         var transformer = editor.TextArea.TextView.LineTransformers
             .OfType<ServerDrivenHighlightingTransformer>()
@@ -167,13 +169,13 @@ public class SyntaxHighlightingTests : IntegrationTestBase
         var editor = UiHelpers.GetActiveTextEditor(Window);
         editor.Should().NotBeNull();
 
-        // Set server tokens
+        // Set server tokens - fallback is still present
         var tokens = new[]
         {
             new SyntaxTokenDto { Start = 0, Length = 5, Kind = SyntaxTokenKind.Keyword }
         };
         factory!.SetSyntaxHighlighting(editor!, tokens, "state");
-        editor!.SyntaxHighlighting.Should().BeNull();
+        editor!.SyntaxHighlighting.Should().NotBeNull();
 
         // Clear tokens
         factory.SetSyntaxHighlighting(editor!, Array.Empty<SyntaxTokenDto>(), "test");

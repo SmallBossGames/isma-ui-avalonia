@@ -8,6 +8,19 @@
         x:DataType="vm:MainWindowViewModel"
         Title="ISMA"
         MinWidth="500" MinHeight="600">
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding NewTextCommand}" Gesture="Ctrl+N" />
+        <KeyBinding Command="{Binding NewBlueprintCommand}" Gesture="Ctrl+B" />
+        <KeyBinding Command="{Binding OpenCommand}" Gesture="Ctrl+O" />
+        <KeyBinding Command="{Binding SaveCommand}" Gesture="Ctrl+S" />
+        <KeyBinding Command="{Binding SaveAsCommand}" Gesture="Ctrl+Shift+S" />
+        <KeyBinding Command="{Binding ExitCommand}" Gesture="Ctrl+W" />
+        <KeyBinding Command="{Binding CutCommand}" Gesture="Ctrl+X" />
+        <KeyBinding Command="{Binding CopyCommand}" Gesture="Ctrl+C" />
+        <KeyBinding Command="{Binding PasteCommand}" Gesture="Ctrl+V" />
+        <KeyBinding Command="{Binding VerifyCommand}" Gesture="Ctrl+F4" />
+        <KeyBinding Command="{Binding RunCommand}" Gesture="Ctrl+F5" />
+    </Window.KeyBindings>
     <Grid RowDefinitions="Auto,*,Auto">
         <StackPanel Grid.Row="0">
             <views:IsmaMenuBarView x:Name="MenuBar" />

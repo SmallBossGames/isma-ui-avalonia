@@ -46,7 +46,7 @@ internal sealed class LinuxUnixSocketHandler : IUnixSocketHandler
     public GrpcChannel CreateGrpcChannel(string address, ILogger? logger = null)
     {
         var handler = new UnixSocketHttpHandler(address);
-        return GrpcChannel.ForAddress($"http://{address}", new GrpcChannelOptions { HttpHandler = handler });
+        return GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler });
     }
 
     public HttpClient CreateHttpClient(string address)
@@ -68,7 +68,7 @@ internal sealed class WindowsNamedPipeHandler : IUnixSocketHandler
     public GrpcChannel CreateGrpcChannel(string address, ILogger? logger = null)
     {
         var handler = new NamedPipeHttpHandler(_pipeName);
-        return GrpcChannel.ForAddress($"http://{address}", new GrpcChannelOptions { HttpHandler = handler });
+        return GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler });
     }
 
     public HttpClient CreateHttpClient(string address)
@@ -106,7 +106,7 @@ internal sealed class MacUnixSocketHandler : IUnixSocketHandler
     public GrpcChannel CreateGrpcChannel(string address, ILogger? logger = null)
     {
         var handler = new UnixSocketHttpHandler(address);
-        return GrpcChannel.ForAddress($"http://{address}", new GrpcChannelOptions { HttpHandler = handler });
+        return GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler });
     }
 
     public HttpClient CreateHttpClient(string address)

@@ -73,7 +73,7 @@ public partial class MainWindowViewModel : ObservableObject
         RestoreLastOpenedFiles();
     }
 
-    private void LoadProjects()
+    public void SyncProjects()
     {
         Projects.Clear();
         foreach (var project in _projectService.Projects)
@@ -81,6 +81,11 @@ public partial class MainWindowViewModel : ObservableObject
             Projects.Add(project);
         }
         ActiveProject = _projectService.ActiveProject;
+    }
+
+    private void LoadProjects()
+    {
+        SyncProjects();
     }
 
     private async void RestoreLastOpenedFiles()

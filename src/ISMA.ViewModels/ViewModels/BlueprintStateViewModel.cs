@@ -30,4 +30,7 @@ public partial class BlueprintStateViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSelected;
+
+    [ObservableProperty]
+    private double _stateHeight;
 }

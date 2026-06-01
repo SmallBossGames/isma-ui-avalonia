@@ -51,7 +51,8 @@
                                                     EndState="{Binding EndState}"
                                                     Alias="{Binding Alias}"
                                                     Predicate="{Binding Predicate}"
-                                                    PointerPressed="OnArrowPointerPressed"/>
+                                                    ArrowHeadClicked="OnArrowHeadClicked"
+                                                    ArrowBodyClicked="OnArrowBodyClicked"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -68,7 +69,8 @@
                                 <controls:LoopArrow State="{Binding State}"
                                                     Alias="{Binding Alias}"
                                                     Predicate="{Binding Predicate}"
-                                                    PointerPressed="OnLoopArrowPointerPressed"/>
+                                                    LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
+                                                    LoopBodyClicked="OnLoopBodyClicked"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -83,9 +85,9 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:BlueprintStateViewModel">
                                 <Border x:Name="StateBorder"
-                                        Width="110"
-                                        Height="65"
-                                        Background="{Binding FillColorHex}"
+                                         Width="110"
+                                         Height="{Binding StateHeight}"
+                                         Background="{Binding FillColorHex}"
                                         BorderBrush="{Binding IsSelected,
                                             Converter={StaticResource BoolToVisibilityConverter}}"
                                         BorderThickness="2"
@@ -94,32 +96,13 @@
                                         Canvas.Top="{Binding CanvasPositionY}"
                                         BoxShadow="2 2 4 0 #4D000000"
                                         PointerPressed="OnStatePointerPressed">
-                                    <StackPanel VerticalAlignment="Center"
-                                                HorizontalAlignment="Center"
-                                                Spacing="4">
-                                        <TextBlock x:Name="StateNameTextBlock"
-                                                   Text="{Binding Name}"
-                                                   FontWeight="Bold"
-                                                   FontSize="16"
-                                                   TextAlignment="Center"
-                                                   TextWrapping="Wrap"/>
-                                        <StackPanel Orientation="Horizontal"
-                                                    Spacing="2"
-                                                    IsVisible="{Binding IsMain}">
-                                            <TextBlock Text="Main"
-                                                       FontSize="8"
-                                                       FontWeight="Bold"
-                                                       Foreground="Green"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal"
-                                                    Spacing="2"
-                                                    IsVisible="{Binding IsInit}">
-                                            <TextBlock Text="Init"
-                                                       FontSize="8"
-                                                       FontWeight="Bold"
-                                                       Foreground="Blue"/>
-                                        </StackPanel>
-                                    </StackPanel>
+                                    <TextBlock Text="{Binding Name}"
+                                               FontWeight="Bold"
+                                               FontSize="16"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

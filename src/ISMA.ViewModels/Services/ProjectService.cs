@@ -104,6 +104,7 @@ public sealed class ProjectService
         var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter, _errorService);
         project.Name = name;
         _projects.Add(project);
+        ActiveProject = project;
         return project;
     }
 

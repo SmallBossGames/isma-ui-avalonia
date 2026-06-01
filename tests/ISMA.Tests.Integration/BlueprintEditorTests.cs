@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using ISMA.Domain.Conversion;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.Tests.Integration;
 
