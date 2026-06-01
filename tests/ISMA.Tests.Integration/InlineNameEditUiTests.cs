@@ -44,14 +44,14 @@ public class InlineNameEditUiTests : IntegrationTestBase
         // Add two user states
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
-        
+
         var state1 = editorVm.States[2]; // New state 1
         var state2 = editorVm.States[3]; // New state 2
 
         // Try to rename state2 to state1's name (should fail via UpdateStateName)
         editorVm.UpdateStateName(state2, state1.Name);
         state2.Name.Should().NotBe(state1.Name);
-        
+
         // State count should remain the same
         editorVm.States.Should().HaveCount(4); // Main, Init, New state 1, New state 2
     }

@@ -61,7 +61,7 @@ public class EditorPlatformService
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.KeyModifiers != KeyModifiers.Control) return;
+        if ((e.KeyModifiers & KeyModifiers.Control) == 0) return;
 
         var focused = e.Source as TextEditor;
         if (focused is null) return;

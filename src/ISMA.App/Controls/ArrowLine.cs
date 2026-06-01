@@ -172,7 +172,7 @@ public class ArrowLine : Control
         var start = GetCenter(StartState);
         var direction = end - start;
         var length = Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
-        
+
         if (length < 1.0) return;
 
         var unitDir = new Vector(direction.X / length, direction.Y / length);
@@ -181,7 +181,7 @@ public class ArrowLine : Control
         var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - endOffset.X, 2) + Math.Pow(position.Y - endOffset.Y, 2));
 
         var result = new ArrowHitTestResult();
-        
+
         if (distanceToArrowhead < ArrowheadSize)
         {
             result.IsArrowHead = true;

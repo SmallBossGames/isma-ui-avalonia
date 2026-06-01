@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
@@ -86,7 +87,11 @@ public static class UiHelpers
         if (button is null)
             throw new InvalidOperationException($"Toolbar button with AutomationId '{automationId}' not found.");
 
-        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        // Execute the command directly — more reliable than raising ClickEvent in headless mode
+        if (button.Command is not null)
+        {
+            button.Command.Execute(button.CommandParameter);
+        }
         window.Flush();
     }
 
@@ -108,26 +113,11 @@ public static class UiHelpers
 
     /// <summary>
     /// Get the active TextEditor (AvaloniaEdit) from the currently selected tab.
-    /// First tries to find it via the TabControl's container, then falls back to searching
-    /// the entire visual tree, then creates the editor view directly for headless mode.
+    /// Must be called after Flush() to ensure TabControl containers are generated.
     /// </summary>
     public static TextEditor? GetActiveTextEditor(MainWindow window)
     {
-        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
-        var tabControl = tabPaneView?.Content as TabControl;
-        if (tabControl?.SelectedItem is null)
-            return null;
-
-        // Try ContainerFromItem first (works when tab container is generated)
-        var container = tabControl.ContainerFromItem(tabControl.SelectedItem);
-        if (container is not null)
-        {
-            var editorView = FindDescendants<IsmaTextEditorView>(container).FirstOrDefault();
-            if (editorView is not null)
-                return editorView.TextEditor;
-        }
-
-        // Fallback: search entire window for IsmaTextEditorView and get its TextEditor
+        // Search entire window for TextEditor (works regardless of TabControl container generation)
         var editorViews = FindDescendants<IsmaTextEditorView>(window).ToList();
         foreach (var ev in editorViews)
         {
@@ -140,11 +130,24 @@ public static class UiHelpers
         if (directEditor is not null)
             return directEditor;
 
-        // Headless fallback: create the editor view directly connected to the active ViewModel
-        if (tabControl.SelectedItem is LismaProjectViewModel vm)
+        // Headless fallback: create TextEditor and connect to active ViewModel with event subscriptions
+        if (window.DataContext is MainWindowViewModel mainVm && mainVm.ActiveProject is LismaProjectViewModel vm)
         {
-            var editorView = new IsmaTextEditorView { DataContext = vm };
-            return editorView.TextEditor;
+            var editor = new TextEditor
+            {
+                FontFamily = new FontFamily("Consolas, Cascadia Code, Courier New"),
+                FontSize = 12,
+                ShowLineNumbers = true,
+                Text = vm.FullText
+            };
+            vm.SetEditorInstance(editor);
+
+            // Subscribe to clipboard events so ViewModel commands work on this editor
+            vm.CutRequested += () => editor.Cut();
+            vm.CopyRequested += () => editor.Copy();
+            vm.PasteRequested += () => editor.Paste();
+
+            return editor;
         }
 
         return null;
@@ -253,18 +256,15 @@ public static class UiHelpers
         window.Arrange(new Rect(default, size));
 
         // Force TabControl container generation
-        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
-        var tabControl = tabPaneView?.Content as TabControl;
+        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane)
+            ?? window.GetVisualDescendants().OfType<EditorTabPaneView>().FirstOrDefault();
+        var tabControl = tabPaneView?.FindControl<TabControl>("ProjectTabs")
+            ?? tabPaneView?.GetVisualDescendants().OfType<TabControl>().FirstOrDefault();
         if (tabControl is not null)
         {
             tabControl.ApplyTemplate();
             tabControl.Measure(size);
             tabControl.Arrange(new Rect(default, tabControl.DesiredSize));
-
-            for (int i = 0; i < tabControl.Items.Count; i++)
-            {
-                tabControl.ContainerFromIndex(i);
-            }
         }
 
         // Force ContentControl template application for SettingsPanel

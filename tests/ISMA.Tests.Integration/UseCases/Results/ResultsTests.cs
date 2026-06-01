@@ -26,7 +26,9 @@ public class ResultsVisualizationTests : IntegrationTestBase
         MockServer.RunHandler = _ => Task.FromResult(1L);
         MockServer.MonitorHandler = _ => AsyncEnumerable.One(new SimulationProgress
         {
-            StartTime = 0, EndTime = 10, CurrentTime = 10
+            StartTime = 0,
+            EndTime = 10,
+            CurrentTime = 10
         });
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult
         {
