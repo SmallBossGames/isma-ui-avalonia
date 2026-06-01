@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Grpc.Net.Client;
-using Isma.Contracts.Simulation;
+using Isma.Contracts.V1.CompilerService;
 using ISMA.Domain.Dtos;
 using Microsoft.Extensions.Logging;
 

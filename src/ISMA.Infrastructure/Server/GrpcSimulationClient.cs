@@ -1,5 +1,5 @@
 using Grpc.Net.Client;
-using Isma.Contracts.Simulation;
+using Isma.Contracts.V1.SimulationService;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
@@ -102,14 +102,10 @@ public sealed class GrpcSimulationClient : IDisposable
         var request = new GetSimulationResultRequest { SimulationId = simulationId };
         var response = await _client.GetSimulationResultAsync(request, cancellationToken: ct).ConfigureAwait(false);
 
-        var columnNames = response.ColumnNames.Count > 0
-            ? response.ColumnNames.ToImmutableArray()
-            : ImmutableArray<string>.Empty;
-
         return new CachedSimulationResult
         {
             File = response.DownloadUrl,
-            ColumnNames = columnNames,
+            ColumnNames = ImmutableArray<string>.Empty,
         };
     }
 
