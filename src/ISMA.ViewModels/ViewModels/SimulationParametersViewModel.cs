@@ -49,15 +49,11 @@ public partial class SimulationParametersViewModel : ObservableObject
             Accuracy = parameters.IntegrationMethod.Accuracy,
             IsAccuracyInUse = parameters.IntegrationMethod.IsAccuracyInUse,
             IsStableAllowedInUse = parameters.IntegrationMethod.IsStableAllowedInUse,
-            IsStableInUse = parameters.IntegrationMethod.IsStableInUse,
-            IsParallelInUse = parameters.IntegrationMethod.IsParallelInUse,
-            Server = parameters.IntegrationMethod.Server,
-            Port = parameters.IntegrationMethod.Port
+            IsStableInUse = parameters.IntegrationMethod.IsStableInUse
         };
 
         EventDetection = new EventDetectionViewModel
         {
-            IsEventDetectionInUse = parameters.EventDetection.IsEventDetectionInUse,
             IsStepLimitInUse = parameters.EventDetection.IsStepLimitInUse,
             Gamma = parameters.EventDetection.Gamma,
             LowBorder = parameters.EventDetection.LowBorder
@@ -92,14 +88,10 @@ public partial class SimulationParametersViewModel : ObservableObject
                 Accuracy = IntegrationMethod.Accuracy,
                 IsAccuracyInUse = IntegrationMethod.IsAccuracyInUse,
                 IsStableAllowedInUse = IntegrationMethod.IsStableAllowedInUse,
-                IsStableInUse = IntegrationMethod.IsStableInUse,
-                IsParallelInUse = IntegrationMethod.IsParallelInUse,
-                Server = IntegrationMethod.Server,
-                Port = IntegrationMethod.Port
+                IsStableInUse = IntegrationMethod.IsStableInUse
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = EventDetection.IsEventDetectionInUse,
                 IsStepLimitInUse = EventDetection.IsStepLimitInUse,
                 Gamma = EventDetection.Gamma,
                 LowBorder = EventDetection.LowBorder
@@ -132,15 +124,11 @@ public partial class SimulationParametersViewModel : ObservableObject
             Accuracy = parameters.IntegrationMethod.Accuracy,
             IsAccuracyInUse = parameters.IntegrationMethod.IsAccuracyInUse,
             IsStableAllowedInUse = parameters.IntegrationMethod.IsStableAllowedInUse,
-            IsStableInUse = parameters.IntegrationMethod.IsStableInUse,
-            IsParallelInUse = parameters.IntegrationMethod.IsParallelInUse,
-            Server = parameters.IntegrationMethod.Server,
-            Port = parameters.IntegrationMethod.Port
+            IsStableInUse = parameters.IntegrationMethod.IsStableInUse
         };
 
         EventDetection = new EventDetectionViewModel
         {
-            IsEventDetectionInUse = parameters.EventDetection.IsEventDetectionInUse,
             IsStepLimitInUse = parameters.EventDetection.IsStepLimitInUse,
             Gamma = parameters.EventDetection.Gamma,
             LowBorder = parameters.EventDetection.LowBorder

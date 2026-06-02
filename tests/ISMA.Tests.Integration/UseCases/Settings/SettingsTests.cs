@@ -50,7 +50,7 @@ public class ConfigureSettingsTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC13_EventDetection_DefaultValues()
     {
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeFalse();
+        ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeFalse();
         ViewModel.SimulationParameters.EventDetection.Gamma.Should().Be(0.8);
         ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.001);
     }
@@ -58,11 +58,11 @@ public class ConfigureSettingsTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC13_EventDetection_CanBeEnabled()
     {
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse = true;
+        ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse = true;
         ViewModel.SimulationParameters.EventDetection.Gamma = 0.5;
         ViewModel.SimulationParameters.EventDetection.LowBorder = 0.01;
 
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
+        ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
         ViewModel.SimulationParameters.EventDetection.Gamma.Should().Be(0.5);
         ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.01);
     }
@@ -88,8 +88,6 @@ public class ConfigureSettingsTests : IntegrationTestBase
     public async Task UC13_IntegrationMethod_DefaultValues()
     {
         ViewModel.SimulationParameters.IntegrationMethod.Accuracy.Should().Be(0.1);
-        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("localhost");
-        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(7890);
     }
 }
 

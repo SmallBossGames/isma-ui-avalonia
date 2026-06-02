@@ -91,7 +91,7 @@ public class SimulationParametersService : ISimulationParametersStoreService
             return new SimulationParameters
             {
                 CauchyInitials = new CauchyInitials { StartTime = 0.0, EndTime = 10.0, InitialStep = 0.1 },
-                IntegrationMethod = new IntegrationMethodParameters { Accuracy = 0.1, Server = "localhost", Port = 7890 },
+                IntegrationMethod = new IntegrationMethodParameters { Accuracy = 0.1 },
                 EventDetection = new EventDetectionParameters { Gamma = 0.8, LowBorder = 0.001 },
                 ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.Memory },
                 ResultProcessing = new ResultProcessingParameters { SelectedSimplifyMethod = "Radial-Distance" }
@@ -111,14 +111,10 @@ public class SimulationParametersService : ISimulationParametersStoreService
                 SelectedMethod = _parametersVm.IntegrationMethod.SelectedMethod,
                 Accuracy = _parametersVm.IntegrationMethod.Accuracy,
                 IsAccuracyInUse = _parametersVm.IntegrationMethod.IsAccuracyInUse,
-                IsStableInUse = _parametersVm.IntegrationMethod.IsStableInUse,
-                IsParallelInUse = _parametersVm.IntegrationMethod.IsParallelInUse,
-                Server = _parametersVm.IntegrationMethod.Server,
-                Port = _parametersVm.IntegrationMethod.Port
+                IsStableInUse = _parametersVm.IntegrationMethod.IsStableInUse
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = _parametersVm.EventDetection.IsEventDetectionInUse,
                 IsStepLimitInUse = _parametersVm.EventDetection.IsStepLimitInUse,
                 Gamma = _parametersVm.EventDetection.Gamma,
                 LowBorder = _parametersVm.EventDetection.LowBorder

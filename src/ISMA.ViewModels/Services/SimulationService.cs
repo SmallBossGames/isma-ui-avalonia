@@ -88,11 +88,8 @@ public partial class SimulationServiceViewModel : ObservableObject
                 IsAccuracyInUse = snapshot.IntegrationMethod.IsAccuracyInUse,
                 IsStabilityControlInUse = snapshot.IntegrationMethod.IsStableInUse || snapshot.IntegrationMethod.IsStableAllowedInUse,
                 CompiledModelId = compileResult.ModelId,
-                EventDetectionGamma = snapshot.EventDetection.IsEventDetectionInUse ? snapshot.EventDetection.Gamma : null,
-                EventDetectionLowBorder = snapshot.EventDetection.IsEventDetectionInUse ? snapshot.EventDetection.LowBorder : null,
-                IsParallelInUse = snapshot.IntegrationMethod.IsParallelInUse,
-                Server = snapshot.IntegrationMethod.Server,
-                Port = snapshot.IntegrationMethod.Port
+                EventDetectionGamma = snapshot.EventDetection.IsStepLimitInUse ? snapshot.EventDetection.Gamma : null,
+                EventDetectionLowBorder = snapshot.EventDetection.IsStepLimitInUse ? snapshot.EventDetection.LowBorder : null
             };
 
             long simulationId = await _serverFacade.RunSimulation(runParams);

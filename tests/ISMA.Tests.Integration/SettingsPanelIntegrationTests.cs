@@ -105,23 +105,7 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
         ViewModel.SimulationParameters.IntegrationMethod.Accuracy.Should().Be(0.00001);
     }
 
-    [AvaloniaFact]
-    public async Task MethodSettings_Has_Default_Server()
-    {
-        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("localhost");
-    }
-
-    [AvaloniaFact]
-    public async Task MethodSettings_Has_Default_Port()
-    {
-        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(7890);
-    }
-
-    [AvaloniaFact]
-    public async Task EventDetection_Has_Default_Is_Event_Detection_In_Use()
-    {
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeFalse();
-    }
+    
 
     [AvaloniaFact]
     public async Task EventDetection_Has_Default_Is_Step_Limit_In_Use()
@@ -139,13 +123,6 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
     public async Task EventDetection_Has_Default_Low_Border()
     {
         ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.001);
-    }
-
-    [AvaloniaFact]
-    public async Task EventDetection_Can_Enable_Event_Detection()
-    {
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse = true;
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
     }
 
     [AvaloniaFact]
@@ -227,7 +204,7 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
         {
             CauchyInitials = new CauchyInitials { StartTime = 1.0, EndTime = 100.0, InitialStep = 0.001 },
             IntegrationMethod = new IntegrationMethodParameters { SelectedMethod = "Rk4", Accuracy = 0.00001 },
-            EventDetection = new EventDetectionParameters { IsEventDetectionInUse = true, Gamma = 0.01 },
+            EventDetection = new EventDetectionParameters { IsStepLimitInUse = true, Gamma = 0.01 },
             ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.File },
             ResultProcessing = new ResultProcessingParameters { IsSimplifyInUse = true, Tolerance = 0.00001 }
         };

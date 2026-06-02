@@ -24,14 +24,10 @@ public class SimulationParametersTests
                 Accuracy = 0.001,
                 IsAccuracyInUse = true,
                 IsStableAllowedInUse = true,
-                IsStableInUse = false,
-                IsParallelInUse = true,
-                Server = "remote-server",
-                Port = 8080
+                IsStableInUse = false
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = true,
                 IsStepLimitInUse = true,
                 Gamma = 0.9,
                 LowBorder = 0.01
@@ -65,10 +61,6 @@ public class SimulationParametersTests
         deserialized.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         deserialized.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         deserialized.IntegrationMethod.IsStableInUse.Should().BeFalse();
-        deserialized.IntegrationMethod.IsParallelInUse.Should().BeTrue();
-        deserialized.IntegrationMethod.Server.Should().Be("remote-server");
-        deserialized.IntegrationMethod.Port.Should().Be(8080);
-        deserialized.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         deserialized.EventDetection.IsStepLimitInUse.Should().BeTrue();
         deserialized.EventDetection.Gamma.Should().Be(0.9);
         deserialized.EventDetection.LowBorder.Should().Be(0.01);
@@ -92,11 +84,7 @@ public class SimulationParametersTests
         parameters.IntegrationMethod.IsAccuracyInUse.Should().BeFalse();
         parameters.IntegrationMethod.IsStableAllowedInUse.Should().BeFalse();
         parameters.IntegrationMethod.IsStableInUse.Should().BeFalse();
-        parameters.IntegrationMethod.IsParallelInUse.Should().BeFalse();
-        parameters.IntegrationMethod.Server.Should().Be("localhost");
-        parameters.IntegrationMethod.Port.Should().Be(7890);
 
-        parameters.EventDetection.IsEventDetectionInUse.Should().BeFalse();
         parameters.EventDetection.IsStepLimitInUse.Should().BeFalse();
         parameters.EventDetection.Gamma.Should().Be(0.8);
         parameters.EventDetection.LowBorder.Should().Be(0.001);
@@ -126,20 +114,14 @@ public class SimulationParametersTests
 
         parameters.IntegrationMethod.SelectedMethod = "Euler";
         parameters.IntegrationMethod.Accuracy = 0.01;
-        parameters.IntegrationMethod.Server = "test-server";
-        parameters.IntegrationMethod.Port = 9999;
 
         parameters.IntegrationMethod.SelectedMethod.Should().Be("Euler");
         parameters.IntegrationMethod.Accuracy.Should().Be(0.01);
-        parameters.IntegrationMethod.Server.Should().Be("test-server");
-        parameters.IntegrationMethod.Port.Should().Be(9999);
 
-        parameters.EventDetection.IsEventDetectionInUse = true;
         parameters.EventDetection.IsStepLimitInUse = true;
         parameters.EventDetection.Gamma = 0.5;
         parameters.EventDetection.LowBorder = 0.1;
 
-        parameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         parameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
         parameters.EventDetection.Gamma.Should().Be(0.5);
         parameters.EventDetection.LowBorder.Should().Be(0.1);

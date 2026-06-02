@@ -14,14 +14,14 @@ public sealed class CompilationError
 public sealed class CompileResult
 {
     public string ModelId { get; set; } = "";
-    public ImmutableArray<CompilationError> Errors { get; set; } = ImmutableArray<CompilationError>.Empty;
-    public ImmutableArray<string> Warnings { get; set; } = ImmutableArray<string>.Empty;
+    public ImmutableArray<CompilationError> Errors { get; set; } = [];
+    public ImmutableArray<string> Warnings { get; set; } = [];
 }
 
 public sealed class ValidationResult
 {
-    public ImmutableArray<CompilationError> Errors { get; set; } = ImmutableArray<CompilationError>.Empty;
-    public ImmutableArray<string> Warnings { get; set; } = ImmutableArray<string>.Empty;
+    public ImmutableArray<CompilationError> Errors { get; set; } = [];
+    public ImmutableArray<string> Warnings { get; set; } = [];
 }
 
 public sealed class SyntaxTokenDto
@@ -49,9 +49,6 @@ public sealed class RunSimulationParams
     public string CompiledModelId { get; set; } = "";
     public double? EventDetectionGamma { get; set; }
     public double? EventDetectionLowBorder { get; set; }
-    public bool IsParallelInUse { get; set; }
-    public string Server { get; set; } = "";
-    public int Port { get; set; }
 }
 
 public sealed class SocketPaths

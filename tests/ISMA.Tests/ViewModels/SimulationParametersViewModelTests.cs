@@ -20,10 +20,6 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.IsAccuracyInUse = true;
         viewModel.IntegrationMethod.IsStableAllowedInUse = true;
         viewModel.IntegrationMethod.IsStableInUse = true;
-        viewModel.IntegrationMethod.IsParallelInUse = true;
-        viewModel.IntegrationMethod.Server = "myserver";
-        viewModel.IntegrationMethod.Port = 9999;
-        viewModel.EventDetection.IsEventDetectionInUse = true;
         viewModel.EventDetection.IsStepLimitInUse = true;
         viewModel.EventDetection.Gamma = 0.9;
         viewModel.EventDetection.LowBorder = 0.05;
@@ -42,10 +38,6 @@ public class SimulationParametersViewModelTests
         snapshot.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         snapshot.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         snapshot.IntegrationMethod.IsStableInUse.Should().BeTrue();
-        snapshot.IntegrationMethod.IsParallelInUse.Should().BeTrue();
-        snapshot.IntegrationMethod.Server.Should().Be("myserver");
-        snapshot.IntegrationMethod.Port.Should().Be(9999);
-        snapshot.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         snapshot.EventDetection.IsStepLimitInUse.Should().BeTrue();
         snapshot.EventDetection.Gamma.Should().Be(0.9);
         snapshot.EventDetection.LowBorder.Should().Be(0.05);
@@ -68,9 +60,7 @@ public class SimulationParametersViewModelTests
         snapshot.IntegrationMethod.SelectedMethod.Should().Be("");
         snapshot.IntegrationMethod.Accuracy.Should().Be(0.1);
         snapshot.IntegrationMethod.IsAccuracyInUse.Should().BeFalse();
-        snapshot.IntegrationMethod.Server.Should().Be("localhost");
-        snapshot.IntegrationMethod.Port.Should().Be(7890);
-        snapshot.EventDetection.IsEventDetectionInUse.Should().BeFalse();
+        snapshot.EventDetection.IsStepLimitInUse.Should().BeFalse();
         snapshot.EventDetection.Gamma.Should().Be(0.8);
         snapshot.EventDetection.LowBorder.Should().Be(0.001);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.Memory);
@@ -98,14 +88,10 @@ public class SimulationParametersViewModelTests
                 Accuracy = 0.05,
                 IsAccuracyInUse = true,
                 IsStableAllowedInUse = true,
-                IsStableInUse = true,
-                IsParallelInUse = true,
-                Server = "commit-server",
-                Port = 5555
+                IsStableInUse = true
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = true,
                 IsStepLimitInUse = true,
                 Gamma = 0.7,
                 LowBorder = 0.02
@@ -132,10 +118,6 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
-        viewModel.IntegrationMethod.IsParallelInUse.Should().BeTrue();
-        viewModel.IntegrationMethod.Server.Should().Be("commit-server");
-        viewModel.IntegrationMethod.Port.Should().Be(5555);
-        viewModel.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         viewModel.EventDetection.IsStepLimitInUse.Should().BeTrue();
         viewModel.EventDetection.Gamma.Should().Be(0.7);
         viewModel.EventDetection.LowBorder.Should().Be(0.02);
@@ -162,14 +144,10 @@ public class SimulationParametersViewModelTests
                 Accuracy = 0.01,
                 IsAccuracyInUse = true,
                 IsStableAllowedInUse = false,
-                IsStableInUse = true,
-                IsParallelInUse = false,
-                Server = "constructor-server",
-                Port = 4444
+                IsStableInUse = true
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = true,
                 IsStepLimitInUse = false,
                 Gamma = 0.6,
                 LowBorder = 0.03
@@ -196,10 +174,6 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableAllowedInUse.Should().BeFalse();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
-        viewModel.IntegrationMethod.IsParallelInUse.Should().BeFalse();
-        viewModel.IntegrationMethod.Server.Should().Be("constructor-server");
-        viewModel.IntegrationMethod.Port.Should().Be(4444);
-        viewModel.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         viewModel.EventDetection.IsStepLimitInUse.Should().BeFalse();
         viewModel.EventDetection.Gamma.Should().Be(0.6);
         viewModel.EventDetection.LowBorder.Should().Be(0.03);

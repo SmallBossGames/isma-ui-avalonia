@@ -48,8 +48,6 @@ public class SettingsTests : IntegrationTestBase
     public async Task IntegrationMethod_DefaultValues_AreCorrect()
     {
         ViewModel.SimulationParameters.IntegrationMethod.Accuracy.Should().Be(0.1);
-        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("localhost");
-        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(7890);
     }
 
     [AvaloniaFact]
@@ -57,13 +55,9 @@ public class SettingsTests : IntegrationTestBase
     {
         ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod = "RK4";
         ViewModel.SimulationParameters.IntegrationMethod.Accuracy = 0.001;
-        ViewModel.SimulationParameters.IntegrationMethod.Server = "127.0.0.1";
-        ViewModel.SimulationParameters.IntegrationMethod.Port = 8000;
 
         ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().Be("RK4");
         ViewModel.SimulationParameters.IntegrationMethod.Accuracy.Should().Be(0.001);
-        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("127.0.0.1");
-        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(8000);
     }
 
     [AvaloniaFact]
@@ -78,12 +72,10 @@ public class SettingsTests : IntegrationTestBase
     {
         ViewModel.SimulationParameters.EventDetection.Gamma = 0.5;
         ViewModel.SimulationParameters.EventDetection.LowBorder = 0.01;
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse = true;
         ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse = true;
 
         ViewModel.SimulationParameters.EventDetection.Gamma.Should().Be(0.5);
         ViewModel.SimulationParameters.EventDetection.LowBorder.Should().Be(0.01);
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
     }
 

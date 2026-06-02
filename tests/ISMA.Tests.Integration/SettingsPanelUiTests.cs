@@ -98,25 +98,16 @@ public class SettingsPanelUiTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
-    public async Task EventDetection_CheckboxesExistAndWork()
+    public async Task EventDetection_CheckboxExistsAndWorks()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
         var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
 
-        var eventDetectionCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsEventDetectionEnabled);
         var stepLimitCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsEventDetectionStepLimit);
 
-        eventDetectionCheckBox.Should().NotBeNull("IsEventDetectionInUse CheckBox should exist");
         stepLimitCheckBox.Should().NotBeNull("IsStepLimitInUse CheckBox should exist");
-
-        eventDetectionCheckBox.IsChecked.Should().BeFalse();
         stepLimitCheckBox.IsChecked.Should().BeFalse();
-
-        eventDetectionCheckBox.IsChecked = true;
-        Window.Flush();
-
-        ViewModel.SimulationParameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
 
         stepLimitCheckBox.IsChecked = true;
         Window.Flush();
@@ -160,50 +151,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
         ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
     }
 
-    [AvaloniaFact]
-    public async Task MethodSettings_ServerAndPort_ControlsExist()
-    {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
-        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
-
-        var serverBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationServer);
-        var portBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationPort);
-
-        serverBox.Should().NotBeNull("Server TextBox should exist");
-        portBox.Should().NotBeNull("Port TextBox should exist");
-
-        serverBox.Text.Should().Be("localhost");
-        portBox.Text.Should().Be("7890");
-    }
-
-    [AvaloniaFact]
-    public async Task MethodSettings_ServerTextBoxUpdatesViewModel()
-    {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
-        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
-
-        var serverBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationServer);
-        serverBox.Text = "192.168.1.100";
-        Window.Flush();
-
-        ViewModel.SimulationParameters.IntegrationMethod.Server.Should().Be("192.168.1.100");
-    }
-
-    [AvaloniaFact]
-    public async Task MethodSettings_PortTextBox_UpdatesViewModel()
-    {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
-        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
-
-        var portBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsIntegrationPort);
-        portBox.Text = "9000";
-        Window.Flush();
-
-        ViewModel.SimulationParameters.IntegrationMethod.Port.Should().Be(9000);
-    }
+    
 
     [AvaloniaFact]
     public async Task ResultProcessing_CheckBoxAndTextBox_ControlsExist()

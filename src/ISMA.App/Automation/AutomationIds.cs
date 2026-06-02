@@ -66,13 +66,10 @@ public static class AutomationIds
     // Settings panel - Integration tab
     public const string SettingsIntegrationMethod = "Settings-IntegrationMethod-SelectedMethod";
     public const string SettingsIntegrationAccuracy = "Settings-IntegrationMethod-Accuracy";
-    public const string SettingsIntegrationServer = "Settings-IntegrationMethod-Server";
-    public const string SettingsIntegrationPort = "Settings-IntegrationMethod-Port";
 
     // Settings panel - Event Detection tab
     public const string SettingsEventDetectionGamma = "Settings-EventDetection-Gamma";
     public const string SettingsEventDetectionLowBorder = "Settings-EventDetection-LowBorder";
-    public const string SettingsEventDetectionEnabled = "Settings-EventDetection-IsEventDetectionInUse";
     public const string SettingsEventDetectionStepLimit = "Settings-EventDetection-IsStepLimitInUse";
 
     // Settings panel - Result Processing tab

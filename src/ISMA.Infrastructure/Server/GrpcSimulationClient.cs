@@ -57,13 +57,7 @@ public sealed class GrpcSimulationClient : IDisposable
             };
         }
 
-        // Parallel settings (will be sent when proto is regenerated)
-        if (@params.IsParallelInUse)
-        {
-            // request.IsParallelInUse = true;
-            // request.Server = @params.Server;
-            // request.Port = @params.Port;
-        }
+ 
 
         _logger?.LogInformation("Starting simulation: method={Method}, model={Model}", @params.MethodName, @params.CompiledModelId);
 
