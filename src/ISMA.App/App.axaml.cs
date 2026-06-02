@@ -83,6 +83,10 @@ public partial class App : Application
     {
         var services = new ServiceCollection();
 
+        services.AddLogging(builder => builder
+            .AddConsole()
+            .SetMinimumLevel(LogLevel.Debug));
+
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
         services.AddSingleton<SimulationServerManager>();
