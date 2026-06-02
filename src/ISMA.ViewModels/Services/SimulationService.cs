@@ -86,10 +86,11 @@ public partial class SimulationServiceViewModel : ObservableObject
                 MethodName = snapshot.IntegrationMethod.SelectedMethod,
                 Accuracy = snapshot.IntegrationMethod.Accuracy,
                 IsAccuracyInUse = snapshot.IntegrationMethod.IsAccuracyInUse,
-                IsStabilityControlInUse = snapshot.IntegrationMethod.IsStableInUse || snapshot.IntegrationMethod.IsStableAllowedInUse,
+                IsStabilityControlInUse = snapshot.IntegrationMethod.IsStableInUse,
                 CompiledModelId = compileResult.ModelId,
-                EventDetectionGamma = snapshot.EventDetection.IsStepLimitInUse ? snapshot.EventDetection.Gamma : null,
-                EventDetectionLowBorder = snapshot.EventDetection.IsStepLimitInUse ? snapshot.EventDetection.LowBorder : null
+                IsEventDetectionInUse = snapshot.EventDetection.IsEventDetectionInUse,
+                EventDetectionGamma = snapshot.EventDetection.Gamma,
+                EventDetectionLowBorder = snapshot.EventDetection.LowBorder
             };
 
             long simulationId = await _serverFacade.RunSimulation(runParams);

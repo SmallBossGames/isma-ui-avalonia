@@ -204,7 +204,7 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
         {
             CauchyInitials = new CauchyInitials { StartTime = 1.0, EndTime = 100.0, InitialStep = 0.001 },
             IntegrationMethod = new IntegrationMethodParameters { SelectedMethod = "Rk4", Accuracy = 0.00001 },
-            EventDetection = new EventDetectionParameters { IsStepLimitInUse = true, Gamma = 0.01 },
+            EventDetection = new EventDetectionParameters { Gamma = 0.01 },
             ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.File },
             ResultProcessing = new ResultProcessingParameters { IsSimplifyInUse = true, Tolerance = 0.00001 }
         };

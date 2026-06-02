@@ -47,8 +47,9 @@ public sealed class RunSimulationParams
     public bool IsAccuracyInUse { get; set; }
     public bool IsStabilityControlInUse { get; set; }
     public string CompiledModelId { get; set; } = "";
-    public double? EventDetectionGamma { get; set; }
-    public double? EventDetectionLowBorder { get; set; }
+    public bool IsEventDetectionInUse { get; set; }
+    public double EventDetectionGamma { get; set; }
+    public double EventDetectionLowBorder { get; set; }
 }
 
 public sealed class SocketPaths

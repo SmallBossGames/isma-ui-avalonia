@@ -48,13 +48,12 @@ public partial class SimulationParametersViewModel : ObservableObject
             SelectedMethod = parameters.IntegrationMethod.SelectedMethod,
             Accuracy = parameters.IntegrationMethod.Accuracy,
             IsAccuracyInUse = parameters.IntegrationMethod.IsAccuracyInUse,
-            IsStableAllowedInUse = parameters.IntegrationMethod.IsStableAllowedInUse,
             IsStableInUse = parameters.IntegrationMethod.IsStableInUse
         };
 
         EventDetection = new EventDetectionViewModel
         {
-            IsStepLimitInUse = parameters.EventDetection.IsStepLimitInUse,
+            IsStepLimitInUse = parameters.EventDetection.IsEventDetectionInUse,
             Gamma = parameters.EventDetection.Gamma,
             LowBorder = parameters.EventDetection.LowBorder
         };
@@ -87,12 +86,11 @@ public partial class SimulationParametersViewModel : ObservableObject
                 SelectedMethod = IntegrationMethod.SelectedMethod,
                 Accuracy = IntegrationMethod.Accuracy,
                 IsAccuracyInUse = IntegrationMethod.IsAccuracyInUse,
-                IsStableAllowedInUse = IntegrationMethod.IsStableAllowedInUse,
                 IsStableInUse = IntegrationMethod.IsStableInUse
             },
             EventDetection = new EventDetectionParameters
             {
-                IsStepLimitInUse = EventDetection.IsStepLimitInUse,
+                IsEventDetectionInUse = EventDetection.IsStepLimitInUse,
                 Gamma = EventDetection.Gamma,
                 LowBorder = EventDetection.LowBorder
             },
@@ -123,13 +121,12 @@ public partial class SimulationParametersViewModel : ObservableObject
             SelectedMethod = parameters.IntegrationMethod.SelectedMethod,
             Accuracy = parameters.IntegrationMethod.Accuracy,
             IsAccuracyInUse = parameters.IntegrationMethod.IsAccuracyInUse,
-            IsStableAllowedInUse = parameters.IntegrationMethod.IsStableAllowedInUse,
             IsStableInUse = parameters.IntegrationMethod.IsStableInUse
         };
 
         EventDetection = new EventDetectionViewModel
         {
-            IsStepLimitInUse = parameters.EventDetection.IsStepLimitInUse,
+            IsStepLimitInUse = parameters.EventDetection.IsEventDetectionInUse,
             Gamma = parameters.EventDetection.Gamma,
             LowBorder = parameters.EventDetection.LowBorder
         };

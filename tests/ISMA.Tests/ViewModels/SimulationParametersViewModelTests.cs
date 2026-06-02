@@ -18,7 +18,6 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.SelectedMethod = "RK45";
         viewModel.IntegrationMethod.Accuracy = 0.001;
         viewModel.IntegrationMethod.IsAccuracyInUse = true;
-        viewModel.IntegrationMethod.IsStableAllowedInUse = true;
         viewModel.IntegrationMethod.IsStableInUse = true;
         viewModel.EventDetection.IsStepLimitInUse = true;
         viewModel.EventDetection.Gamma = 0.9;
@@ -36,9 +35,8 @@ public class SimulationParametersViewModelTests
         snapshot.IntegrationMethod.SelectedMethod.Should().Be("RK45");
         snapshot.IntegrationMethod.Accuracy.Should().Be(0.001);
         snapshot.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
-        snapshot.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         snapshot.IntegrationMethod.IsStableInUse.Should().BeTrue();
-        snapshot.EventDetection.IsStepLimitInUse.Should().BeTrue();
+        snapshot.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         snapshot.EventDetection.Gamma.Should().Be(0.9);
         snapshot.EventDetection.LowBorder.Should().Be(0.05);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
@@ -60,7 +58,8 @@ public class SimulationParametersViewModelTests
         snapshot.IntegrationMethod.SelectedMethod.Should().Be("");
         snapshot.IntegrationMethod.Accuracy.Should().Be(0.1);
         snapshot.IntegrationMethod.IsAccuracyInUse.Should().BeFalse();
-        snapshot.EventDetection.IsStepLimitInUse.Should().BeFalse();
+        snapshot.IntegrationMethod.IsStableInUse.Should().BeFalse();
+        snapshot.EventDetection.IsEventDetectionInUse.Should().BeFalse();
         snapshot.EventDetection.Gamma.Should().Be(0.8);
         snapshot.EventDetection.LowBorder.Should().Be(0.001);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.Memory);
@@ -87,12 +86,11 @@ public class SimulationParametersViewModelTests
                 SelectedMethod = "Euler",
                 Accuracy = 0.05,
                 IsAccuracyInUse = true,
-                IsStableAllowedInUse = true,
                 IsStableInUse = true
             },
             EventDetection = new EventDetectionParameters
             {
-                IsStepLimitInUse = true,
+                IsEventDetectionInUse = true,
                 Gamma = 0.7,
                 LowBorder = 0.02
             },
@@ -116,7 +114,6 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.SelectedMethod.Should().Be("Euler");
         viewModel.IntegrationMethod.Accuracy.Should().Be(0.05);
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
-        viewModel.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
         viewModel.EventDetection.IsStepLimitInUse.Should().BeTrue();
         viewModel.EventDetection.Gamma.Should().Be(0.7);
@@ -143,12 +140,11 @@ public class SimulationParametersViewModelTests
                 SelectedMethod = "RK2",
                 Accuracy = 0.01,
                 IsAccuracyInUse = true,
-                IsStableAllowedInUse = false,
                 IsStableInUse = true
             },
             EventDetection = new EventDetectionParameters
             {
-                IsStepLimitInUse = false,
+                IsEventDetectionInUse = true,
                 Gamma = 0.6,
                 LowBorder = 0.03
             },
@@ -172,9 +168,8 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.SelectedMethod.Should().Be("RK2");
         viewModel.IntegrationMethod.Accuracy.Should().Be(0.01);
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
-        viewModel.IntegrationMethod.IsStableAllowedInUse.Should().BeFalse();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
-        viewModel.EventDetection.IsStepLimitInUse.Should().BeFalse();
+        viewModel.EventDetection.IsStepLimitInUse.Should().BeTrue();
         viewModel.EventDetection.Gamma.Should().Be(0.6);
         viewModel.EventDetection.LowBorder.Should().Be(0.03);
         viewModel.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);

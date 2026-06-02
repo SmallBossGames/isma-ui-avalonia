@@ -157,11 +157,7 @@
                                                             <TextBlock Text="Method:" FontSize="10"/>
                                                             <TextBlock Text="{Binding Parameters.IntegrationMethod.SelectedMethod}" FontSize="10"/>
                                                         </StackPanel>
-                                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                                            <TextBlock Text="Accurate:" FontSize="10"/>
-                                                            <TextBlock Text="{Binding Parameters.IntegrationMethod.IsAccuracyInUse}" FontSize="10"/>
-                                                        </StackPanel>
-                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+<StackPanel Orientation="Horizontal" Spacing="8">
                                                             <TextBlock Text="Accuracy:" FontSize="10"/>
                                                             <TextBlock Text="{Binding Parameters.IntegrationMethod.Accuracy, StringFormat='{}{0:F3}'}" FontSize="10"/>
                                                         </StackPanel>

@@ -14,8 +14,5 @@ public partial class MethodSettingsViewModel : ObservableObject
     private bool _isAccuracyInUse;
 
     [ObservableProperty]
-    private bool _isStableAllowedInUse;
-
-    [ObservableProperty]
     private bool _isStableInUse;
 }

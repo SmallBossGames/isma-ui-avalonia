@@ -115,7 +115,7 @@ public class SimulationParametersService : ISimulationParametersStoreService
             },
             EventDetection = new EventDetectionParameters
             {
-                IsStepLimitInUse = _parametersVm.EventDetection.IsStepLimitInUse,
+                IsEventDetectionInUse = _parametersVm.EventDetection.IsStepLimitInUse,
                 Gamma = _parametersVm.EventDetection.Gamma,
                 LowBorder = _parametersVm.EventDetection.LowBorder
             },

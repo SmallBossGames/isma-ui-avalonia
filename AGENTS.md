@@ -54,6 +54,15 @@ Two test projects with different scopes:
 
 Centralized via `Directory.Packages.props` at both root and `src/` level. All versions pinned in one place. Never edit a `.csproj` to change a version.
 
+## Codestyle Rules
+
+### C#
+- Prefer primary constructors
+- Prefer records for data models
+- Prefer `init` instead of `set` in auto-properties
+- Add XML documentation comments for public interfaces
+- Add XML documentation comments for data models
+
 ## Key files
 
 | File | Role |

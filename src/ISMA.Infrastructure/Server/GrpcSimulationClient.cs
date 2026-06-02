@@ -48,12 +48,12 @@ public sealed class GrpcSimulationClient : IDisposable
             request.StabilityConfig = new StabilityConfig();
         }
 
-        if (@params.EventDetectionGamma.HasValue && @params.EventDetectionLowBorder.HasValue)
+        if (@params.IsEventDetectionInUse)
         {
             request.EventDetection = new EventDetectionConfig
             {
-                Gamma = @params.EventDetectionGamma.Value,
-                LowBorder = @params.EventDetectionLowBorder.Value,
+                Gamma = @params.EventDetectionGamma,
+                LowBorder = @params.EventDetectionLowBorder,
             };
         }
 

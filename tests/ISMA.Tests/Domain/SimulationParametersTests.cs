@@ -23,12 +23,11 @@ public class SimulationParametersTests
                 SelectedMethod = "RK45",
                 Accuracy = 0.001,
                 IsAccuracyInUse = true,
-                IsStableAllowedInUse = true,
                 IsStableInUse = false
             },
             EventDetection = new EventDetectionParameters
             {
-                IsStepLimitInUse = true,
+                IsEventDetectionInUse = true,
                 Gamma = 0.9,
                 LowBorder = 0.01
             },
@@ -59,9 +58,8 @@ public class SimulationParametersTests
         deserialized.IntegrationMethod.SelectedMethod.Should().Be("RK45");
         deserialized.IntegrationMethod.Accuracy.Should().Be(0.001);
         deserialized.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
-        deserialized.IntegrationMethod.IsStableAllowedInUse.Should().BeTrue();
         deserialized.IntegrationMethod.IsStableInUse.Should().BeFalse();
-        deserialized.EventDetection.IsStepLimitInUse.Should().BeTrue();
+        deserialized.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         deserialized.EventDetection.Gamma.Should().Be(0.9);
         deserialized.EventDetection.LowBorder.Should().Be(0.01);
         deserialized.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
@@ -82,10 +80,9 @@ public class SimulationParametersTests
         parameters.IntegrationMethod.SelectedMethod.Should().Be("");
         parameters.IntegrationMethod.Accuracy.Should().Be(0.1);
         parameters.IntegrationMethod.IsAccuracyInUse.Should().BeFalse();
-        parameters.IntegrationMethod.IsStableAllowedInUse.Should().BeFalse();
         parameters.IntegrationMethod.IsStableInUse.Should().BeFalse();
 
-        parameters.EventDetection.IsStepLimitInUse.Should().BeFalse();
+        parameters.EventDetection.IsEventDetectionInUse.Should().BeFalse();
         parameters.EventDetection.Gamma.Should().Be(0.8);
         parameters.EventDetection.LowBorder.Should().Be(0.001);
 
@@ -114,15 +111,19 @@ public class SimulationParametersTests
 
         parameters.IntegrationMethod.SelectedMethod = "Euler";
         parameters.IntegrationMethod.Accuracy = 0.01;
+        parameters.IntegrationMethod.IsAccuracyInUse = true;
+        parameters.IntegrationMethod.IsStableInUse = true;
 
         parameters.IntegrationMethod.SelectedMethod.Should().Be("Euler");
         parameters.IntegrationMethod.Accuracy.Should().Be(0.01);
+        parameters.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
+        parameters.IntegrationMethod.IsStableInUse.Should().BeTrue();
 
-        parameters.EventDetection.IsStepLimitInUse = true;
+        parameters.EventDetection.IsEventDetectionInUse = true;
         parameters.EventDetection.Gamma = 0.5;
         parameters.EventDetection.LowBorder = 0.1;
 
-        parameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
+        parameters.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         parameters.EventDetection.Gamma.Should().Be(0.5);
         parameters.EventDetection.LowBorder.Should().Be(0.1);
 
