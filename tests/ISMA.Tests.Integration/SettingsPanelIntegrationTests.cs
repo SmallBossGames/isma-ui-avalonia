@@ -80,9 +80,21 @@ public class SettingsPanelIntegrationTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
+    public async Task MethodSettings_Has_IntegrationMethods()
+    {
+        await FlushDispatcher();
+        ViewModel.SimulationParameters.IntegrationMethod.IntegrationMethods.Should().NotBeEmpty();
+        ViewModel.SimulationParameters.IntegrationMethod.IntegrationMethods.Should().Contain("Euler");
+        ViewModel.SimulationParameters.IntegrationMethod.IntegrationMethods.Should().Contain("Runge-Kutta 2");
+        ViewModel.SimulationParameters.IntegrationMethod.IntegrationMethods.Should().Contain("Runge-Kutta 4");
+    }
+
+    [AvaloniaFact]
     public async Task MethodSettings_Has_Default_Selected_Method()
     {
-        ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().BeEmpty();
+        await FlushDispatcher();
+        ViewModel.SimulationParameters.IntegrationMethod.IntegrationMethods.Should().NotBeEmpty();
+        ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().Be("Euler");
     }
 
     [AvaloniaFact]

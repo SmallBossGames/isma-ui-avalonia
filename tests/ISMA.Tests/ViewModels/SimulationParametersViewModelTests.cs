@@ -160,7 +160,7 @@ public class SimulationParametersViewModelTests
             }
         };
 
-        var viewModel = new SimulationParametersViewModel(parameters);
+        var viewModel = new SimulationParametersViewModel(null, parameters);
 
         viewModel.CauchyInitials.StartTime.Should().Be(1.0);
         viewModel.CauchyInitials.EndTime.Should().Be(20.0);

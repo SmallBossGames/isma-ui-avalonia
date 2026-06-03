@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ISMA.ViewModels.ViewModels;
@@ -8,6 +9,12 @@ public partial class MethodSettingsViewModel : ObservableObject
     private string _selectedMethod = "";
 
     [ObservableProperty]
+    private int _selectedMethodIndex = -1;
+
+    [ObservableProperty]
+    private ObservableCollection<string> _integrationMethods = new();
+
+    [ObservableProperty]
     private double _accuracy = 0.1;
 
     [ObservableProperty]
@@ -15,4 +22,21 @@ public partial class MethodSettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isStableInUse;
+
+    partial void OnSelectedMethodIndexChanged(int value)
+    {
+        if (value >= 0 && value < IntegrationMethods.Count)
+        {
+            SelectedMethod = IntegrationMethods[value];
+        }
+    }
+
+    partial void OnSelectedMethodChanged(string value)
+    {
+        var index = IntegrationMethods.IndexOf(value);
+        if (index >= 0)
+        {
+            SelectedMethodIndex = index;
+        }
+    }
 }

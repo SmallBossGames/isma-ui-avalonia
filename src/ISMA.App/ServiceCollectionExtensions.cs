@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using ISMA.App.Services;
 using ISMA.Domain.Contracts;
 using ISMA.Infrastructure.ChartViewer;
@@ -30,7 +31,21 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
         services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
-        services.AddSingleton<SimulationParametersViewModel>();
+        services.AddSingleton<SimulationParametersViewModel>(sp =>
+        {
+            var vm = new SimulationParametersViewModel(sp.GetService<ISimulationServerFacade>());
+            vm.SetSetMethodsAction(methods =>
+            {
+                vm.IntegrationMethods = new ObservableCollection<string>(methods);
+                vm.IntegrationMethod.IntegrationMethods = new ObservableCollection<string>(methods);
+                vm.IntegrationMethod.SelectedMethodIndex = methods.Count > 0 ? 0 : -1;
+                if (methods.Count > 0)
+                {
+                    vm.IntegrationMethod.SelectedMethod = methods[0];
+                }
+            });
+            return vm;
+        });
         services.AddSingleton<TasksPopOverViewModel>();
         services.AddSingleton<SimulationServiceViewModel>();
         services.AddSingleton<ProjectService>();
@@ -66,7 +81,21 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
         services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
-        services.AddSingleton<SimulationParametersViewModel>();
+        services.AddSingleton<SimulationParametersViewModel>(sp =>
+        {
+            var vm = new SimulationParametersViewModel(sp.GetService<ISimulationServerFacade>());
+            vm.SetSetMethodsAction(methods =>
+            {
+                vm.IntegrationMethods = new ObservableCollection<string>(methods);
+                vm.IntegrationMethod.IntegrationMethods = new ObservableCollection<string>(methods);
+                vm.IntegrationMethod.SelectedMethodIndex = methods.Count > 0 ? 0 : -1;
+                if (methods.Count > 0)
+                {
+                    vm.IntegrationMethod.SelectedMethod = methods[0];
+                }
+            });
+            return vm;
+        });
         services.AddSingleton<TasksPopOverViewModel>();
         services.AddSingleton<SimulationServiceViewModel>();
         services.AddSingleton<ProjectService>();

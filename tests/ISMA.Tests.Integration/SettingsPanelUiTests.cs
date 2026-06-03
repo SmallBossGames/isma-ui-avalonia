@@ -116,6 +116,36 @@ public class SettingsPanelUiTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
+    public async Task IntegrationMethod_ComboBoxExistsAndShowsOptions()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel)
+            .FirstOrDefault(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
+
+        methodComboBox.Should().NotBeNull("IntegrationMethod ComboBox should exist");
+        methodComboBox.Should().NotBeNull();
+        var items = methodComboBox.ItemsSource.Cast<string>().ToList();
+        items.Should().Contain("Euler");
+        items.Should().Contain("Runge-Kutta 2");
+        items.Should().Contain("Runge-Kutta 4");
+
+        methodComboBox.SelectedIndex.Should().Be(0);
+    }
+
+    [AvaloniaFact]
+    public async Task IntegrationMethod_ComboBoxSelectionUpdatesViewModel()
+    {
+        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel)
+            .First(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
+
+        methodComboBox.SelectedIndex = 2;
+        Window.Flush();
+
+        ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().Be("Runge-Kutta 4");
+    }
+
+    [AvaloniaFact]
     public async Task ResultSaving_ComboBoxExistsAndShowsOptions()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
@@ -177,6 +207,6 @@ public class SettingsPanelUiTests : IntegrationTestBase
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
 
-        grids.Should().HaveCount(5, "Should have 5 PropertiesGrid controls: CauchyInitials, IntegrationMethod, EventDetection, ResultSaving, ResultProcessing");
+        grids.Should().HaveCount(4, "Should have 4 PropertiesGrid controls: CauchyInitials, EventDetection, ResultSaving, ResultProcessing (IntegrationMethod uses native ComboBox)");
     }
 }

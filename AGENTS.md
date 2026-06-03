@@ -62,6 +62,7 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 - Prefer `init` instead of `set` in auto-properties
 - Add XML documentation comments for public interfaces
 - Add XML documentation comments for data models
+- Avoid using reflection
 
 ## Key files
 

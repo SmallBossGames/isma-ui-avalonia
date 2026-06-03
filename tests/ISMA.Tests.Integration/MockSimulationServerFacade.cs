@@ -29,7 +29,7 @@ public class MockSimulationServerFacade : ISimulationServerFacade
     public Func<long, IAsyncEnumerable<SimulationProgress>> MonitorHandler { get; set; } = _ => AsyncEnumerable.Empty<SimulationProgress>();
     public Func<long, Task<CachedSimulationResult>> DownloadHandler { get; set; } = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/test.bin" });
     public Func<long, Task> CancelHandler { get; set; } = _ => Task.CompletedTask;
-    public Func<Task<string[]>> GetMethodsHandler { get; set; } = () => Task.FromResult(Array.Empty<string>());
+    public Func<Task<string[]>> GetMethodsHandler { get; set; } = () => Task.FromResult(new[] { "Euler", "Runge-Kutta 2", "Runge-Kutta 4" });
 
     public async Task<CompileResult> CompileModel(string source)
     {

@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 
 namespace ISMA.ViewModels.ViewModels;
+
+public delegate void SetMethodsAction(IReadOnlyList<string> methods);
 
 public partial class SimulationParametersViewModel : ObservableObject
 {
@@ -22,6 +25,9 @@ public partial class SimulationParametersViewModel : ObservableObject
     [ObservableProperty]
     private ResultProcessingViewModel _resultProcessing = new();
 
+    private readonly ISimulationServerFacade? _serverFacade;
+    private SetMethodsAction? _setMethodsAction;
+
     private ObservableCollection<string> _integrationMethods = new();
 
     public ObservableCollection<string> IntegrationMethods
@@ -30,12 +36,20 @@ public partial class SimulationParametersViewModel : ObservableObject
         set => SetProperty(ref _integrationMethods, value);
     }
 
-    public SimulationParametersViewModel()
+    public void SetSetMethodsAction(SetMethodsAction action)
     {
+        _setMethodsAction = action;
+        LoadSimulationMethodsAsync();
     }
 
-    public SimulationParametersViewModel(SimulationParameters parameters)
+    public SimulationParametersViewModel(ISimulationServerFacade? serverFacade = null)
     {
+        _serverFacade = serverFacade;
+    }
+
+    public SimulationParametersViewModel(ISimulationServerFacade? serverFacade, SimulationParameters parameters)
+    {
+        _serverFacade = serverFacade;
         CauchyInitials = new CauchyInitialsViewModel
         {
             StartTime = parameters.CauchyInitials.StartTime,
@@ -69,6 +83,25 @@ public partial class SimulationParametersViewModel : ObservableObject
             SelectedSimplifyMethod = parameters.ResultProcessing.SelectedSimplifyMethod,
             Tolerance = parameters.ResultProcessing.Tolerance
         };
+    }
+
+    private void LoadSimulationMethodsAsync()
+    {
+        if (_serverFacade == null || _setMethodsAction == null)
+            return;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var methods = await _serverFacade.GetSimulationMethods();
+                _setMethodsAction(methods);
+            }
+            catch
+            {
+                // Server not available
+            }
+        });
     }
 
     public SimulationParameters Snapshot()
