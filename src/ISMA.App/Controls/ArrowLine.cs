@@ -35,13 +35,17 @@ public class ArrowHitTestEventArgs : EventArgs
 
 /// <summary>
 /// Renders a transition arrow line between two states with arrowhead and label.
+/// Uses atan2-based perpendicular offset per spec.
 /// </summary>
 public class ArrowLine : Control
 {
     private const double ArrowOffset = 10.0;
-    private const double ArrowheadSize = 14.0;
-    private const double StateWidth = 110;
-    private const double StateHeight = 65;
+    private const double ArrowheadSize = 7.0;
+    private const double StateWidth = 110.0;
+    private const double StrokeWidth = 3.0;
+    private const double LabelFontSize = 16;
+    private const double TextOffsetX = 75.0;
+    private const double TextOffsetY = 50.0;
 
     public static readonly StyledProperty<BlueprintStateViewModel?> StartStateProperty =
         AvaloniaProperty.Register<ArrowLine, BlueprintStateViewModel?>(nameof(StartState));
@@ -101,40 +105,53 @@ public class ArrowLine : Control
         var start = GetCenter(StartState);
         var end = GetCenter(EndState);
 
-        var direction = end - start;
-        var length = Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
+        var dx = end.X - start.X;
+        var dy = end.Y - start.Y;
+        var length = Math.Sqrt(dx * dx + dy * dy);
         if (length < 1.0) return;
 
-        var unitDir = new Vector(direction.X / length, direction.Y / length);
-        var startOffset = start + unitDir * ArrowOffset;
-        var endOffset = end - unitDir * (length - ArrowOffset);
+        // atan2-based perpendicular angle per spec
+        var angle = Math.Atan2(dx, dy) + Math.PI / 2;
+        var sin = Math.Sin(angle);
+        var cos = Math.Cos(angle);
 
-        // Draw line
-        context.DrawLine(new Pen(Avalonia.Media.Brushes.Black, 1.5), startOffset, endOffset);
+        var offsetX = ArrowOffset * sin;
+        var offsetY = ArrowOffset * cos;
 
-        // Draw arrowhead
-        var arrowheadAngle = Math.Atan2(direction.Y, direction.X);
-        var arrowheadCenter = endOffset;
-        DrawArrowhead(context, arrowheadCenter, arrowheadAngle);
+        // Line endpoints with perpendicular offset
+        var startOffset = new Point(start.X + offsetX, start.Y + offsetY);
+        var endOffset = new Point(end.X + offsetX, end.Y + offsetY);
 
-        // Draw label
+        // Draw line with spec stroke width
+        context.DrawLine(new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), startOffset, endOffset);
+
+        // Arrowhead at end, rotated to match line direction (not perpendicular)
+        var lineAngle = Math.Atan2(dy, dx);
+        DrawArrowhead(context, endOffset, lineAngle);
+
+        // Label at perpendicular offset from midpoint
         var midX = (startOffset.X + endOffset.X) / 2;
         var midY = (startOffset.Y + endOffset.Y) / 2;
+
+        var textOffsetX = TextOffsetX * sin;
+        var textOffsetY = TextOffsetY * cos;
 
         var displayText = !string.IsNullOrEmpty(Alias) ? Alias : Predicate;
         if (!string.IsNullOrEmpty(displayText))
         {
-            var formattedText = new FormattedText(displayText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), 11, Avalonia.Media.Brushes.Black);
-            context.DrawText(formattedText, new Point(midX - formattedText.Width / 2, midY - formattedText.Height / 2));
+            var formattedText = new FormattedText(displayText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), LabelFontSize, Avalonia.Media.Brushes.Black);
+            context.DrawText(formattedText, new Point(midX + textOffsetX - formattedText.Width / 2, midY + textOffsetY - formattedText.Height / 2));
         }
     }
 
     private void DrawArrowhead(DrawingContext context, Point center, double angle)
     {
-        var halfSize = ArrowheadSize / 2;
+        // 14x14 isosceles triangle per spec: Polygon(7.0, -7.0, -7.0, 0.0, 7.0, 7.0)
+        var halfSize = ArrowheadSize;
         var cos = Math.Cos(angle);
         var sin = Math.Sin(angle);
 
+        // Tip points along the line direction
         var tip = center;
         var base1 = new Point(
             center.X - cos * halfSize + sin * halfSize * 0.5,
@@ -150,12 +167,12 @@ public class ArrowLine : Control
         ctx.LineTo(base2, true);
         ctx.EndFigure(true);
 
-        context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, 1), polygon);
+        context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
     private Point GetCenter(BlueprintStateViewModel state)
     {
-        var height = state.StateHeight > 0 ? state.StateHeight : StateHeight;
+        var height = state.StateHeight > 0 ? state.StateHeight : StateWidth;
         return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + height / 2);
     }
 
@@ -163,26 +180,30 @@ public class ArrowLine : Control
     {
         base.OnPointerPressed(e);
 
-        if (EndState == null) return;
+        if (StartState == null || EndState == null) return;
 
         var position = e.GetPosition(this);
+
+        var start = GetCenter(StartState);
         var end = GetCenter(EndState);
 
-        // Calculate arrowhead position (endOffset)
-        var start = GetCenter(StartState);
-        var direction = end - start;
-        var length = Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y);
+        var dx = end.X - start.X;
+        var dy = end.Y - start.Y;
+        var length = Math.Sqrt(dx * dx + dy * dy);
 
         if (length < 1.0) return;
 
-        var unitDir = new Vector(direction.X / length, direction.Y / length);
-        var endOffset = end - unitDir * (length - ArrowOffset);
+        // Calculate arrowhead position (endOffset) with perpendicular offset
+        var angle = Math.Atan2(dx, dy) + Math.PI / 2;
+        var offsetX = ArrowOffset * Math.Sin(angle);
+        var offsetY = ArrowOffset * Math.Cos(angle);
+        var endOffset = new Point(end.X + offsetX, end.Y + offsetY);
 
         var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - endOffset.X, 2) + Math.Pow(position.Y - endOffset.Y, 2));
 
         var result = new ArrowHitTestResult();
 
-        if (distanceToArrowhead < ArrowheadSize)
+        if (distanceToArrowhead < ArrowheadSize * 2)
         {
             result.IsArrowHead = true;
             ArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(position.X, position.Y)));

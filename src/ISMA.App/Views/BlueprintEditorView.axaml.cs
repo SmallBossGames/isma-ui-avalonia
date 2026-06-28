@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Avalonia;
-using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -9,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ISMA.App.Controls;
+using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Views;
@@ -19,7 +19,6 @@ public partial class BlueprintEditorView : UserControl
     private EditArrowPopOverViewModel? _popOverViewModel;
     private BlueprintTransactionViewModel? _editingTransaction;
     private const double StateWidth = 110.0;
-    private const double StateHeight = 65.0;
     private const double DoubleClickThreshold = 300;
     private const double SingleClickDelay = 200;
 
@@ -33,12 +32,14 @@ public partial class BlueprintEditorView : UserControl
     private string? _previousName;
     private BlueprintStateViewModel? _editingState;
     private PointerPoint? _lastPressedPoint;
+    private ProjectService? _projectService;
 
     public BlueprintEditorView()
     {
         InitializeComponent();
         InitializePopOver();
         InitializeSingleClickTimer();
+        Loaded += OnLoaded;
     }
 
     private void InitializePopOver()
@@ -78,14 +79,101 @@ public partial class BlueprintEditorView : UserControl
     {
         base.OnDataContextChanged(e);
 
-        if (DataContext is BlueprintEditorViewModel vm)
+        if (DataContext is BlueprintEditorViewModel oldVm)
         {
-            vm.PropertyChanged += OnViewModelPropertyChanged;
+            oldVm.PropertyChanged -= OnViewModelPropertyChanged;
+            oldVm.States.CollectionChanged -= OnStatesCollectionChanged;
+            oldVm.Transactions.CollectionChanged -= OnTransactionsCollectionChanged;
+            oldVm.LoopTransactions.CollectionChanged -= OnLoopTransactionsCollectionChanged;
+        }
+
+        if (DataContext is BlueprintEditorViewModel newVm)
+        {
+            newVm.PropertyChanged += OnViewModelPropertyChanged;
+            newVm.States.CollectionChanged += OnStatesCollectionChanged;
+            newVm.Transactions.CollectionChanged += OnTransactionsCollectionChanged;
+            newVm.LoopTransactions.CollectionChanged += OnLoopTransactionsCollectionChanged;
+
+            // Try to find ProjectService from the window's DataContext
+            var window = FindWindow();
+            if (window != null)
+            {
+                var mainWindowVm = window.DataContext as MainWindowViewModel;
+                if (mainWindowVm != null)
+                {
+                    var projectServiceField = mainWindowVm.GetType()
+                        .GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    _projectService = projectServiceField?.GetValue(mainWindowVm) as ProjectService;
+                }
+            }
         }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(BlueprintEditorViewModel.States) ||
+            e.PropertyName == nameof(BlueprintEditorViewModel.Transactions) ||
+            e.PropertyName == nameof(BlueprintEditorViewModel.LoopTransactions))
+        {
+            Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        }
+    }
+
+    private void RecalculateCanvasSize()
+    {
+        if (DataContext is not BlueprintEditorViewModel vm)
+            return;
+
+        double minX = double.MaxValue;
+        double minY = double.MaxValue;
+        double maxX = double.MinValue;
+        double maxY = double.MinValue;
+
+        foreach (var state in vm.States)
+        {
+            double left = state.CanvasPositionX;
+            double top = state.CanvasPositionY;
+            double right = left + 110;
+            double bottom = top + state.StateHeight;
+
+            minX = Math.Min(minX, left);
+            minY = Math.Min(minY, top);
+            maxX = Math.Max(maxX, right);
+            maxY = Math.Max(maxY, bottom);
+        }
+
+        if (minX == double.MaxValue)
+        {
+            Canvas.Width = 1200;
+            Canvas.Height = 800;
+            return;
+        }
+
+        double padding = 200;
+        double contentWidth = (maxX - minX) + padding;
+        double contentHeight = (maxY - minY) + padding;
+        Canvas.Width = Math.Max(400, contentWidth);
+        Canvas.Height = Math.Max(300, contentHeight);
+    }
+
+    private void OnStatesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+    }
+
+    private void OnTransactionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+    }
+
+    private void OnLoopTransactionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+    }
+
+    private void OnLoaded(object? sender, RoutedEventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
     }
 
     private void OnStatePointerPressed(object? sender, PointerPressedEventArgs e)
@@ -111,9 +199,9 @@ public partial class BlueprintEditorView : UserControl
 
         if (vm.CurrentMode == BlueprintEditorMode.AddTransition)
         {
-            if (vm.SelectedState != null)
+            if (vm.GetTransitionSource() != null)
             {
-                if (stateVm != vm.SelectedState)
+                if (stateVm != vm.GetTransitionSource())
                 {
                     vm.SelectedState = stateVm;
                     vm.AddTransitionCommand.Execute(null);
@@ -125,7 +213,7 @@ public partial class BlueprintEditorView : UserControl
             }
             else
             {
-                vm.SelectedState = stateVm;
+                vm.SetTransitionSource(stateVm);
             }
             return;
         }
@@ -137,7 +225,7 @@ public partial class BlueprintEditorView : UserControl
             return;
         }
 
-        if (vm.CurrentMode == BlueprintEditorMode.Default && !stateVm.IsMain && !stateVm.IsInit)
+        if (vm.CurrentMode == BlueprintEditorMode.Default && !stateVm.IsMain && !stateVm.IsInit && stateVm.IsEnabled)
         {
             _draggingState = stateVm;
             _dragStartPoint = position;
@@ -187,6 +275,10 @@ public partial class BlueprintEditorView : UserControl
                 {
                     vm.SelectedState = _draggingState;
                 }
+            }
+            else
+            {
+                Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
             }
 
             _draggingState = null;
@@ -332,29 +424,17 @@ public partial class BlueprintEditorView : UserControl
 
     private void OpenStateTextEditorTab(BlueprintStateViewModel state)
     {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm == null) return;
+        if (_projectService == null) return;
 
-        var projectVm = DataContext as ISMA.ViewModels.ViewModels.IProjectViewModel;
-        if (projectVm == null) return;
-
-        var blueprintProject = projectVm as ISMA.ViewModels.ViewModels.BlueprintProjectViewModel;
-        if (blueprintProject == null) return;
+        var newProject = _projectService.CreateNewTextProject(state.Name);
+        newProject.SetContent(state.Text);
 
         var window = FindWindow();
-        if (window == null) return;
-
-        var mainWindowVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
-        if (mainWindowVm == null) return;
-
-        var projectServiceField = mainWindowVm.GetType().GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var projectService = projectServiceField?.GetValue(mainWindowVm) as ISMA.ViewModels.Services.ProjectService;
-        if (projectService == null) return;
-
-        var newProject = projectService.CreateNewTextProject(state.Name);
-        newProject.SetContent(state.Text);
-        mainWindowVm.ActiveProject = newProject;
-        mainWindowVm.SyncProjects();
+        if (window?.DataContext is MainWindowViewModel mainWindowVm)
+        {
+            mainWindowVm.ActiveProject = newProject;
+            mainWindowVm.SyncProjects();
+        }
     }
 
     private Avalonia.Controls.Window? FindWindow()
@@ -395,6 +475,12 @@ public partial class BlueprintEditorView : UserControl
             _editingTransaction = tx;
             _popOverViewModel!.Alias = tx.Alias;
             _popOverViewModel.Predicate = tx.Predicate;
+
+            // Position PopOver centered on arrowhead, 2px above
+            EditArrowPopup.PlacementTarget = sender as Control;
+            EditArrowPopup.Placement = PlacementMode.Pointer;
+            EditArrowPopup.HorizontalOffset = 0;
+            EditArrowPopup.VerticalOffset = -2;
             EditArrowPopup.IsOpen = true;
         }
     }
@@ -426,26 +512,22 @@ public partial class BlueprintEditorView : UserControl
         var loop = vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
         if (loop == null) return;
 
-        var window = FindWindow();
-        if (window == null) return;
-
-        var mainWindowVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
-        if (mainWindowVm == null) return;
-
-        var projectServiceField = mainWindowVm.GetType()
-            .GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var projectService = projectServiceField?.GetValue(mainWindowVm) as ISMA.ViewModels.Services.ProjectService;
-        if (projectService == null) return;
+        if (_projectService == null) return;
 
         var tabName = $"{loop.State.Name} (loop)";
-        var newProject = projectService.CreateNewTextProject(tabName);
+        var newProject = _projectService.CreateNewTextProject(tabName);
         newProject.SetContent(loop.Text);
-        mainWindowVm.ActiveProject = newProject;
-        mainWindowVm.SyncProjects();
 
-        if (newProject is ISMA.ViewModels.ViewModels.LismaProjectViewModel lismaProject)
+        var window = FindWindow();
+        if (window?.DataContext is MainWindowViewModel mainWindowVm)
         {
-            lismaProject.ContentChanged += (text) => { loop.Text = text; };
+            mainWindowVm.ActiveProject = newProject;
+            mainWindowVm.SyncProjects();
+
+            if (newProject is LismaProjectViewModel lismaProject)
+            {
+                lismaProject.ContentChanged += (text) => { loop.Text = text; };
+            }
         }
     }
 

@@ -5,9 +5,7 @@
               xmlns:converters="using:ISMA.ViewModels.Converters"
               x:Class="ISMA.App.Views.BlueprintEditorView"
               x:CompileBindings="True"
-              x:DataType="vm:BlueprintEditorViewModel"
-              Width="1200"
-              Height="800">
+              x:DataType="vm:BlueprintEditorViewModel">
 
     <Design.PreviewWith>
         <Border Background="#F5F5F5" Width="800" Height="500">
@@ -19,101 +17,100 @@
         </Border>
     </Design.PreviewWith>
 
-    <DockPanel>
-        <ScrollViewer x:Name="ScrollViewer"
-                      DockPanel.Dock="Left"
+   <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0"
                       HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
-            <Border Background="White"
-                    BorderBrush="#E0E0E0"
-                    BorderThickness="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="White">
+            <Canvas x:Name="Canvas"
                     Width="1200"
                     Height="800"
-                    BoxShadow="2 2 4 0 #4D000000">
+                    Background="White"
+                    PointerMoved="OnCanvasPointerMoved"
+                    PointerReleased="OnCanvasPointerReleased"
+                    PointerExited="OnCanvasPointerExited">
 
-                <Canvas x:Name="Canvas"
-                        Width="1200"
-                        Height="800"
-                        PointerMoved="OnCanvasPointerMoved"
-                        PointerReleased="OnCanvasPointerReleased"
-                        PointerExited="OnCanvasPointerExited">
+                <!-- Transaction arrows layer -->
+                <ItemsControl ItemsSource="{Binding Transactions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Width="1200" Height="800"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BlueprintTransactionViewModel">
+                            <controls:ArrowLine StartState="{Binding StartState}"
+                                                EndState="{Binding EndState}"
+                                                Alias="{Binding Alias}"
+                                                Predicate="{Binding Predicate}"
+                                                ArrowHeadClicked="OnArrowHeadClicked"
+                                                ArrowBodyClicked="OnArrowBodyClicked"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                    <!-- Transaction arrows layer -->
-                    <ItemsControl ItemsSource="{Binding Transactions}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Width="1200" Height="800"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:BlueprintTransactionViewModel">
-                                <controls:ArrowLine StartState="{Binding StartState}"
-                                                    EndState="{Binding EndState}"
-                                                    Alias="{Binding Alias}"
-                                                    Predicate="{Binding Predicate}"
-                                                    ArrowHeadClicked="OnArrowHeadClicked"
-                                                    ArrowBodyClicked="OnArrowBodyClicked"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                <!-- Loop arrows layer -->
+                <ItemsControl ItemsSource="{Binding LoopTransactions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Width="1200" Height="800"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
+                            <controls:LoopArrow Canvas.Left="{Binding State.CanvasPositionX}"
+                                                Canvas.Top="{Binding State.CanvasPositionY}"
+                                                State="{Binding State}"
+                                                Alias="{Binding Alias}"
+                                                Predicate="{Binding Predicate}"
+                                                LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
+                                                LoopBodyClicked="OnLoopBodyClicked"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                    <!-- Loop arrows layer -->
-                    <ItemsControl ItemsSource="{Binding LoopTransactions}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Width="1200" Height="800"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
-                                <controls:LoopArrow State="{Binding State}"
-                                                    Alias="{Binding Alias}"
-                                                    Predicate="{Binding Predicate}"
-                                                    LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
-                                                    LoopBodyClicked="OnLoopBodyClicked"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                <!-- States layer -->
+                <ItemsControl ItemsSource="{Binding States}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Width="1200" Height="800"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BlueprintStateViewModel">
+                            <Border Width="110"
+                                    Height="{Binding StateHeight}"
+                                    Background="{Binding FillColorHex}"
+                                    BorderBrush="{Binding IsSelected,
+                                         Converter={StaticResource BoolToBrushConverter}}"
+                                    BorderThickness="2"
+                                    CornerRadius="10"
+                                    Canvas.Left="{Binding CanvasPositionX}"
+                                    Canvas.Top="{Binding CanvasPositionY}"
+                                    BoxShadow="2 2 4 0 #4D000000"
+                                    PointerPressed="OnStatePointerPressed">
+                                <TextBlock Text="{Binding Name}"
+                                           FontFamily="Arial"
+                                           FontWeight="Bold"
+                                           FontSize="16"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                    <!-- States layer -->
-                    <ItemsControl ItemsSource="{Binding States}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Width="1200" Height="800"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                                <Border x:Name="StateBorder"
-                                         Width="110"
-                                         Height="{Binding StateHeight}"
-                                         Background="{Binding FillColorHex}"
-                                        BorderBrush="{Binding IsSelected,
-                                            Converter={StaticResource BoolToVisibilityConverter}}"
-                                        BorderThickness="2"
-                                        CornerRadius="10"
-                                        Canvas.Left="{Binding CanvasPositionX}"
-                                        Canvas.Top="{Binding CanvasPositionY}"
-                                        BoxShadow="2 2 4 0 #4D000000"
-                                        PointerPressed="OnStatePointerPressed">
-                                    <TextBlock Text="{Binding Name}"
-                                               FontWeight="Bold"
-                                               FontSize="16"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Center"/>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                </Canvas>
-
-            </Border>
+            </Canvas>
         </ScrollViewer>
 
-        <Border DockPanel.Dock="Bottom"
+        <Border Grid.Row="1"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
@@ -121,12 +118,9 @@
                         Spacing="4"
                         Margin="8,4">
 
-                <Button Content="+ State"
-                        ToolTip.Tip="Add State"
+                <Button Content="New state"
                         Command="{Binding AddStateCommand}"
-                        IsVisible="{Binding CurrentMode,
-                            Converter={StaticResource ModeToVisibilityConverter},
-                            ConverterParameter=Default}">
+                        IsVisible="{Binding IsDefaultMode}">
                     <Button.Styles>
                         <Style Selector="Button">
                             <Setter Property="Padding" Value="8,4"/>
@@ -134,45 +128,6 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-
-                <StackPanel Orientation="Horizontal"
-                            Spacing="4"
-                            IsVisible="{Binding CurrentMode,
-                                Converter={StaticResource ModeToVisibilityConverter},
-                                ConverterParameter=AddTransition}">
-                    <TextBlock Text="Click a state to set as end point:"
-                               VerticalAlignment="Center"
-                               FontSize="11"
-                               Foreground="#666666"/>
-                    <Button Content="Cancel"
-                            Command="{Binding ResetEditorModeCommand}"/>
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal"
-                            Spacing="4"
-                            IsVisible="{Binding CurrentMode,
-                                Converter={StaticResource ModeToVisibilityConverter},
-                                ConverterParameter=RemoveState}">
-                    <TextBlock Text="Click a state to remove:"
-                               VerticalAlignment="Center"
-                               FontSize="11"
-                               Foreground="#666666"/>
-                    <Button Content="Cancel"
-                            Command="{Binding ResetEditorModeCommand}"/>
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal"
-                            Spacing="4"
-                            IsVisible="{Binding CurrentMode,
-                                Converter={StaticResource ModeToVisibilityConverter},
-                                ConverterParameter=RemoveTransition}">
-                    <TextBlock Text="Click a transition arrow to remove:"
-                               VerticalAlignment="Center"
-                               FontSize="11"
-                               Foreground="#666666"/>
-                    <Button Content="Cancel"
-                            Command="{Binding ResetEditorModeCommand}"/>
-                </StackPanel>
 
                 <Separator/>
 
@@ -188,21 +143,15 @@
                               IsChecked="{Binding IsRemoveTransitionMode}"
                               ToolTip.Tip="Enter Remove Transition mode"/>
 
-                <Separator/>
-
-                <Button Content="Remove Selected"
-                        Command="{Binding RemoveSelectedCommand}"
-                        ToolTip.Tip="Remove selected state or transition"/>
-
             </StackPanel>
         </Border>
 
         <Popup x:Name="EditArrowPopup"
-               Placement="Pointer"
+               Grid.RowSpan="2"
+               Placement="Top"
                IsLightDismissEnabled="True"
-               VerticalOffset="10"
-               HorizontalOffset="10">
+               VerticalOffset="2">
         </Popup>
-    </DockPanel>
+    </Grid>
 
 </UserControl>

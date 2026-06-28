@@ -11,13 +11,22 @@ namespace ISMA.App.Controls;
 
 /// <summary>
 /// Renders a loop arrow (circle) for loop transactions.
+/// Circle offset: (60, -40) from state center per spec.
+/// Arrowhead at (100, 0) pointing right.
+/// Label at (120, -10).
 /// </summary>
 public class LoopArrow : Control
 {
     private const double LoopRadius = 40.0;
-    private const double ArrowheadSize = 14.0;
-    private const double StateWidth = 110;
-    private const double StateHeight = 65;
+    private const double LoopCircleCenterX = 60.0;
+    private const double LoopArrowheadX = 100.0;
+    private const double LoopLabelX = 120.0;
+    private const double LoopLabelYOffset = -10.0;
+    private const double ArrowheadSize = 7.0;
+    private const double StateWidth = 110.0;
+    private const double StateHeight = 65.0;
+    private const double StrokeWidth = 3.0;
+    private const double LabelFontSize = 16;
 
     public static readonly StyledProperty<BlueprintStateViewModel?> StateProperty =
         AvaloniaProperty.Register<LoopArrow, BlueprintStateViewModel?>(nameof(State));
@@ -67,40 +76,37 @@ public class LoopArrow : Control
 
         var center = GetCenter(State);
         var r = LoopRadius;
-        var circleCenter = new Point(center.X + r, center.Y - r);
 
-        // Draw circle
-        context.DrawEllipse(null, new Pen(Avalonia.Media.Brushes.Black, 1.5), circleCenter, r, r);
+        // Circle center offset per spec: (60, -40) from state center
+        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y - r);
 
-        // Arrowhead at top-left of circle (135 degrees)
-        var arrowheadAngle = Math.PI * 0.75;
-        var arrowheadPos = new Point(
-            circleCenter.X + r * Math.Cos(arrowheadAngle),
-            circleCenter.Y + r * Math.Sin(arrowheadAngle));
-        DrawArrowhead(context, arrowheadPos, arrowheadAngle);
+        // Draw circle with spec stroke width
+        context.DrawEllipse(null, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), circleCenter, r, r);
 
-        // Label to the right of circle
+        // Arrowhead at (100, 0) relative to circle center, pointing right
+        var arrowheadPos = new Point(circleCenter.X + LoopArrowheadX, circleCenter.Y + LoopLabelYOffset);
+        DrawArrowhead(context, arrowheadPos, 0.0); // 0 radians = pointing right
+
+        // Label to the right of circle per spec: (120, -10)
         var labelText = !string.IsNullOrEmpty(Alias) ? Alias : Predicate;
         if (!string.IsNullOrEmpty(labelText))
         {
-            var formattedText = new FormattedText(labelText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), 11, Avalonia.Media.Brushes.Black);
-            context.DrawText(formattedText, new Point(circleCenter.X + r + 10, circleCenter.Y - 5));
+            var formattedText = new FormattedText(labelText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), LabelFontSize, Avalonia.Media.Brushes.Black);
+            context.DrawText(formattedText, new Point(circleCenter.X + LoopLabelX - formattedText.Width, circleCenter.Y + LoopLabelYOffset - formattedText.Height / 2));
         }
     }
 
     private void DrawArrowhead(DrawingContext context, Point center, double angle)
     {
-        var halfSize = ArrowheadSize / 2;
+        // Right-pointing triangle per spec: Polygon(0,-7, 7,0, -7,0)
+        var halfSize = ArrowheadSize;
         var cos = Math.Cos(angle);
         var sin = Math.Sin(angle);
 
-        var tip = center;
-        var base1 = new Point(
-            center.X - cos * halfSize + sin * halfSize * 0.5,
-            center.Y - sin * halfSize - cos * halfSize * 0.5);
-        var base2 = new Point(
-            center.X - cos * halfSize - sin * halfSize * 0.5,
-            center.Y - sin * halfSize + cos * halfSize * 0.5);
+        // Tip points to the right (angle=0)
+        var tip = new Point(center.X + halfSize, center.Y);
+        var base1 = new Point(center.X - halfSize, center.Y - halfSize * 0.7);
+        var base2 = new Point(center.X - halfSize, center.Y + halfSize * 0.7);
 
         var polygon = new StreamGeometry();
         using var ctx = polygon.Open();
@@ -109,7 +115,7 @@ public class LoopArrow : Control
         ctx.LineTo(base2, true);
         ctx.EndFigure(true);
 
-        context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, 1), polygon);
+        context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
     private Point GetCenter(BlueprintStateViewModel state)
@@ -127,7 +133,9 @@ public class LoopArrow : Control
         var position = e.GetPosition(this);
         var center = GetCenter(State);
         var r = LoopRadius;
-        var circleCenter = new Point(center.X + r, center.Y - r);
+
+        // Circle center per spec
+        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y - r);
 
         // Check if click is near the circle edge (body click)
         var dx = position.X - circleCenter.X;
@@ -135,20 +143,17 @@ public class LoopArrow : Control
         var distFromCenter = Math.Sqrt(dx * dx + dy * dy);
         var distFromEdge = Math.Abs(distFromCenter - r);
 
-        // Check if click is near the arrowhead
-        var arrowheadAngle = Math.PI * 0.75;
-        var arrowheadPos = new Point(
-            circleCenter.X + r * Math.Cos(arrowheadAngle),
-            circleCenter.Y + r * Math.Sin(arrowheadAngle));
+        // Check if click is near the arrowhead at (100, 0) relative to circle
+        var arrowheadPos = new Point(circleCenter.X + LoopArrowheadX, circleCenter.Y + LoopLabelYOffset);
         var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
 
         var clickPos = new Point(position.X, position.Y);
 
-        if (headDist < ArrowheadSize)
+        if (headDist < ArrowheadSize * 2)
         {
             LoopArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, clickPos));
         }
-        else if (distFromEdge < 8)
+        else if (distFromEdge < 10)
         {
             LoopBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowBody = true }, clickPos));
         }
