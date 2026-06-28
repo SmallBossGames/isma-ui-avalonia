@@ -60,10 +60,12 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        editorVm.AddStateCommand.Execute(null);
+        editorVm.States.Should().HaveCount(4);
 
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         editorVm.Transactions.Should().HaveCount(1);
@@ -113,8 +115,10 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         editorVm!.AddStateCommand.Execute(null);
+        editorVm.AddStateCommand.Execute(null);
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         editorVm.Transactions.Should().HaveCount(1);
@@ -193,10 +197,12 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        editorVm.AddStateCommand.Execute(null);
+        editorVm.States.Should().HaveCount(4);
 
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         var lisma = blueprintProject.ConvertToLisma();

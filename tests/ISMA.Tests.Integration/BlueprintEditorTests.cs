@@ -52,13 +52,15 @@ public class BlueprintEditorTests : IntegrationTestBase
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        // Add a state first
+        // Add states first
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        editorVm.AddStateCommand.Execute(null);
+        editorVm.States.Should().HaveCount(4);
 
-        // Add transition
+        // Add transition between two user states
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was added
@@ -95,10 +97,12 @@ public class BlueprintEditorTests : IntegrationTestBase
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        // Add a state and transition
+        // Add states and transition
         editorVm!.AddStateCommand.Execute(null);
+        editorVm.AddStateCommand.Execute(null);
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         editorVm.Transactions.Should().HaveCount(1);

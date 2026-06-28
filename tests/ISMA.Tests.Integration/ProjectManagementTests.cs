@@ -185,13 +185,15 @@ public class ProjectManagementTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        // Add a state first
+        // Add two states first
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        editorVm.AddStateCommand.Execute(null);
+        editorVm.States.Should().HaveCount(4);
 
-        // Add transition
+        // Add transition between two user states
         editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was added

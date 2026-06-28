@@ -13,12 +13,12 @@ namespace ISMA.ViewModels.ViewModels;
 public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 {
     private BlueprintModel _model = BlueprintModel.Empty;
-    private BlueprintEditorMode _currentMode = BlueprintEditorMode.Default;
 
     private ObservableCollection<BlueprintStateViewModel> _states = new();
     private ObservableCollection<BlueprintTransactionViewModel> _transactions = new();
     private ObservableCollection<BlueprintLoopTransactionViewModel> _loopTransactions = new();
     private readonly NameChangingMonitor _nameMonitor = new();
+    private BlueprintStateViewModel? _transitionSource;
 
     public ObservableCollection<BlueprintStateViewModel> States
     {
@@ -38,11 +38,8 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _loopTransactions, value);
     }
 
-    public BlueprintEditorMode CurrentMode
-    {
-        get => _currentMode;
-        set => SetProperty(ref _currentMode, value);
-    }
+    [ObservableProperty]
+    private BlueprintEditorMode _currentMode;
 
     [ObservableProperty]
     private BlueprintStateViewModel? _selectedState;
@@ -58,6 +55,30 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _isRemoveTransitionMode;
+
+    [ObservableProperty]
+    private bool _isDefaultMode;
+
+    partial void OnCurrentModeChanged(BlueprintEditorMode value)
+    {
+        IsDefaultMode = value == BlueprintEditorMode.Default;
+        UpdateStateEditability();
+    }
+
+    private void UpdateStateEditability()
+    {
+        foreach (var state in States)
+        {
+            if (state.IsMain || state.IsInit)
+            {
+                state.IsEnabled = false;
+            }
+            else
+            {
+                state.IsEnabled = !(IsAddTransitionMode || IsRemoveStateMode);
+            }
+        }
+    }
 
     private string _addTransitionButtonContent = "Add Transition";
     private string _removeStateButtonContent = "Remove State";
@@ -86,6 +107,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         IsAddTransitionMode = false;
         IsRemoveStateMode = false;
         IsRemoveTransitionMode = false;
+        IsDefaultMode = true;
         SetBlueprintModel(BlueprintModel.Empty);
     }
 
@@ -111,8 +133,8 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var newStateName = _nameMonitor.CreateNextDefaultName();
         var newState = new BlueprintStateModel
         {
-            CanvasPositionX = 100 + (States.Count * 30),
-            CanvasPositionY = 100 + (States.Count * 30),
+            CanvasPositionX = 100,
+            CanvasPositionY = 100,
             Name = newStateName,
             Text = ""
         };
@@ -260,26 +282,54 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         if (SelectedState == null)
             return;
 
-        var newTx = new BlueprintTransactionModel
+        if (_transitionSource == null)
         {
-            StartStateName = SelectedState.Name,
-            EndStateName = SelectedState.Name,
-            Predicate = "condition",
-            Alias = ""
-        };
-
-        if (!HasDuplicateTransaction(SelectedState.Name, SelectedState.Name, newTx.Predicate))
-        {
-            _model = new BlueprintModel
-            {
-                Main = _model.Main,
-                Init = _model.Init,
-                States = _model.States,
-                Transactions = _model.Transactions.Add(newTx),
-                LoopTransactions = _model.LoopTransactions
-            };
+            SelectedState = null;
+            CurrentMode = BlueprintEditorMode.Default;
+            IsAddTransitionMode = false;
+            return;
         }
 
+        if (_transitionSource.Name == SelectedState.Name)
+        {
+            var existingLoop = _model.LoopTransactions.FirstOrDefault(l => l.StateName == _transitionSource.Name);
+            if (existingLoop == null)
+            {
+                var newLoop = new BlueprintLoopTransactionModel
+                {
+                    StateName = _transitionSource.Name,
+                    Predicate = "1 > 0",
+                    Alias = "",
+                    Text = ""
+                };
+                AddLoop(newLoop);
+            }
+        }
+        else
+        {
+            var newTx = new BlueprintTransactionModel
+            {
+                StartStateName = _transitionSource.Name,
+                EndStateName = SelectedState.Name,
+                Predicate = "condition",
+                Alias = ""
+            };
+
+            if (!HasDuplicateTransaction(newTx.StartStateName, newTx.EndStateName, newTx.Predicate))
+            {
+                _model = new BlueprintModel
+                {
+                    Main = _model.Main,
+                    Init = _model.Init,
+                    States = _model.States,
+                    Transactions = _model.Transactions.Add(newTx),
+                    LoopTransactions = _model.LoopTransactions
+                };
+            }
+        }
+
+        _transitionSource = null;
+        SelectedState = null;
         CurrentMode = BlueprintEditorMode.Default;
         IsAddTransitionMode = false;
         ReloadViews();
@@ -343,6 +393,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         ReloadViews();
     }
 
+    public void SetTransitionSource(BlueprintStateViewModel state)
+    {
+        _transitionSource = state;
+    }
+
+    public BlueprintStateViewModel? GetTransitionSource() => _transitionSource;
+
     public void AddLoop(BlueprintLoopTransactionModel loopModel)
     {
         // Check for existing loop on this state
@@ -385,11 +442,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         SelectedState = null;
         ReloadViews();
-    }
-
-    [RelayCommand]
-    private void OpenStateTextEditor(BlueprintStateViewModel state)
-    {
     }
 
     [RelayCommand]
@@ -462,6 +514,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             CurrentMode = BlueprintEditorMode.Default;
             AddTransitionButtonContent = "Add Transition";
         }
+        UpdateStateEditability();
     }
 
     partial void OnIsRemoveStateModeChanged(bool value)
@@ -478,6 +531,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             CurrentMode = BlueprintEditorMode.Default;
             RemoveStateButtonContent = "Remove State";
         }
+        UpdateStateEditability();
     }
 
     partial void OnIsRemoveTransitionModeChanged(bool value)
@@ -494,6 +548,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             CurrentMode = BlueprintEditorMode.Default;
             RemoveTransitionButtonContent = "Remove Transition";
         }
+        UpdateStateEditability();
     }
 
     private void ReloadViews()
@@ -503,6 +558,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         LoopTransactions.Clear();
 
         _nameMonitor.Clear();
+        _transitionSource = null;
 
         if (_model.Main != null)
         {
@@ -552,12 +608,17 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                 });
             }
         }
+
+        UpdateStateEditability();
     }
 
     private BlueprintStateViewModel MapState(BlueprintStateModel model, bool isMain, bool isInit)
     {
         var fillColorHex = "#F08080";
         var stateHeight = 65.0;
+        var canvasX = model.CanvasPositionX;
+        var canvasY = model.CanvasPositionY;
+
         if (isMain)
         {
             fillColorHex = "#90EE90";
@@ -571,15 +632,16 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         return new BlueprintStateViewModel
         {
-            CanvasPositionX = model.CanvasPositionX,
-            CanvasPositionY = model.CanvasPositionY,
+            CanvasPositionX = canvasX,
+            CanvasPositionY = canvasY,
             Name = model.Name,
             Text = model.Text,
             IsEditable = true,
             IsMain = isMain,
             IsInit = isInit,
             FillColorHex = fillColorHex,
-            StateHeight = stateHeight
+            StateHeight = stateHeight,
+            IsEnabled = !(isMain || isInit)
         };
     }
 

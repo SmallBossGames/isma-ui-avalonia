@@ -33,4 +33,7 @@ public partial class BlueprintStateViewModel : ObservableObject
 
     [ObservableProperty]
     private double _stateHeight;
+
+    [ObservableProperty]
+    private bool _isEnabled;
 }

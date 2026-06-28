@@ -74,19 +74,19 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         editorVm.IsAddTransitionMode = true;
         editorVm.CurrentMode.Should().Be(BlueprintEditorMode.AddTransition);
 
-        // Select first user state as source
+        // Set source state
         var sourceState = editorVm.States[2];
-        editorVm.SelectedState = sourceState;
+        editorVm.SetTransitionSource(sourceState);
 
         // Click target state (second user state) - simulating code-behind behavior
         var targetState = editorVm.States[3];
         editorVm.SelectedState = targetState;
         editorVm.AddTransitionCommand.Execute(null);
 
-        // Verify transition was created (AddTransition creates a loop when source == target,
-        // but since we selected different states, it should create a transition)
-        // Note: The current AddTransition implementation creates a loop when start == end
+        // Verify inter-state transition was created
         editorVm.Transactions.Should().HaveCount(1);
+        editorVm.Transactions[0].StartState.Name.Should().Be(sourceState.Name);
+        editorVm.Transactions[0].EndState.Name.Should().Be(targetState.Name);
     }
 
     [AvaloniaFact]
