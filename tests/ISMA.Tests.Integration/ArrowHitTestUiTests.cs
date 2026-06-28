@@ -21,13 +21,15 @@ public class ArrowHitTestUiTests : IntegrationTestBase
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        // Add a user state
+        // Add two user states
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        editorVm.AddStateCommand.Execute(null);
+        editorVm.States.Should().HaveCount(4);
 
-        // Create a transition
+        // Create an inter-state transition
         editorVm.IsAddTransitionMode = true;
-        editorVm.SelectedState = editorVm.States[0]; // Main
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was created
@@ -121,10 +123,12 @@ public class ArrowHitTestUiTests : IntegrationTestBase
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        // Add a state and transition
+        // Add two states and transition
         editorVm!.AddStateCommand.Execute(null);
+        editorVm.AddStateCommand.Execute(null);
         editorVm.IsAddTransitionMode = true;
-        editorVm.SelectedState = editorVm.States[0]; // Main
+        editorVm.SetTransitionSource(editorVm.States[2]);
+        editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         editorVm.Transactions.Should().HaveCount(1);
