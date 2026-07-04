@@ -110,9 +110,10 @@
                         Spacing="4"
                         Margin="8,4">
 
-                <Button Content="New state"
+                <Button x:Name="AddStateButton" Content="New state"
                         Command="{Binding AddStateCommand}"
-                        IsVisible="{Binding IsDefaultMode}">
+                        IsVisible="{Binding IsDefaultMode}"
+                        AutomationProperties.AutomationId="BlueprintNewState">
                     <Button.Styles>
                         <Style Selector="Button">
                             <Setter Property="Padding" Value="8,4"/>
@@ -121,22 +122,25 @@
                     </Button.Styles>
                 </Button>
 
-                <Separator/>
-
-                <ToggleButton Content="{Binding AddTransitionButtonContent}"
+                <ToggleButton x:Name="AddTransitionToggle" Content="{Binding AddTransitionButtonContent}"
                               IsChecked="{Binding IsAddTransitionMode}"
                               Command="{Binding SetAddTransitionModeCommand}"
+                              AutomationProperties.AutomationId="BlueprintAddTransition"
                               ToolTip.Tip="Enter Add Transition mode"/>
 
-                <ToggleButton Content="{Binding RemoveStateButtonContent}"
+                <ToggleButton x:Name="RemoveStateToggle" Content="{Binding RemoveStateButtonContent}"
                               IsChecked="{Binding IsRemoveStateMode}"
                               Command="{Binding SetRemoveStateModeCommand}"
+                              AutomationProperties.AutomationId="BlueprintRemoveState"
                               ToolTip.Tip="Enter Remove State mode"/>
 
-                <ToggleButton Content="{Binding RemoveTransitionButtonContent}"
+                <ToggleButton x:Name="RemoveTransitionToggle" Content="{Binding RemoveTransitionButtonContent}"
                               IsChecked="{Binding IsRemoveTransitionMode}"
                               Command="{Binding SetRemoveTransitionModeCommand}"
+                              AutomationProperties.AutomationId="BlueprintRemoveTransition"
                               ToolTip.Tip="Enter Remove Transition mode"/>
+
+                <Separator IsVisible="{Binding IsDefaultMode}"/>
 
             </StackPanel>
         </Border>

@@ -14,6 +14,7 @@ public partial class BlueprintEditorView : UserControl
     private EditArrowPopOverView? _popOverView;
     private EditArrowPopOverViewModel? _popOverViewModel;
     private BlueprintEditorViewModel? _vm;
+    private BlueprintTransactionViewModel? _currentEditingTransaction;
 
     public BlueprintEditorView()
     {
@@ -28,6 +29,8 @@ public partial class BlueprintEditorView : UserControl
         _popOverViewModel = new EditArrowPopOverViewModel();
         _popOverView.DataContext = _popOverViewModel;
         _popOverView.DismissRequested += OnPopOverDismissRequested;
+        _popOverView.AliasChanged += OnPopOverAliasChanged;
+        _popOverView.PredicateChanged += OnPopOverPredicateChanged;
         EditArrowPopup.Child = _popOverView;
     }
 
@@ -85,6 +88,7 @@ public partial class BlueprintEditorView : UserControl
     private void OnEditArrowRequested(BlueprintTransactionViewModel tx, double x, double y)
     {
         if (_popOverViewModel == null) return;
+        _currentEditingTransaction = tx;
         _popOverViewModel.Alias = tx.Alias ?? "";
         _popOverViewModel.Predicate = tx.Predicate ?? "";
         EditArrowPopup.PlacementTarget = Canvas;
@@ -92,7 +96,23 @@ public partial class BlueprintEditorView : UserControl
         EditArrowPopup.IsOpen = true;
     }
 
-    private void OnPopOverDismissRequested() => EditArrowPopup.IsOpen = false;
+    private void OnPopOverDismissRequested()
+    {
+        _currentEditingTransaction = null;
+        EditArrowPopup.IsOpen = false;
+    }
+
+    private void OnPopOverAliasChanged()
+    {
+        if (_currentEditingTransaction == null || _popOverViewModel == null) return;
+        _currentEditingTransaction.Alias = _popOverViewModel.Alias ?? "";
+    }
+
+    private void OnPopOverPredicateChanged()
+    {
+        if (_currentEditingTransaction == null || _popOverViewModel == null) return;
+        _currentEditingTransaction.Predicate = _popOverViewModel.Predicate ?? "";
+    }
 
     private void OnStateBoxStatePressed(object? sender, PointerEventArgs e)
     {

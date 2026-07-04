@@ -98,7 +98,6 @@ public partial class App : Application
             return new SimulationServerFacade(manager, socketHandler, logger);
         });
 
-        // Use shared service collection configuration (everything except ISimulationServerFacade)
         services.ConfigureAppServices();
 
         return services;

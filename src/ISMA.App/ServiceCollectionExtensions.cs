@@ -57,6 +57,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    // TODO: tests should use ConfigureAppServices too, there should be no difference
     /// <summary>
     /// Creates a service collection suitable for integration tests.
     /// The ISimulationServerFacade must be registered before calling this method.

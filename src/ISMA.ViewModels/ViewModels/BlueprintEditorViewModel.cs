@@ -60,13 +60,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public string RemoveStateButtonContent => Mode switch
     {
-        EditorMode.RemoveState => "Stop remove state",
+        EditorMode.RemoveState => "Stop removing state",
         _ => "Remove State"
     };
 
     public string RemoveTransitionButtonContent => Mode switch
     {
-        EditorMode.RemoveTransition => "Stop remove transition",
+        EditorMode.RemoveTransition => "Stop removing transition",
         _ => "Remove Transition"
     };
 

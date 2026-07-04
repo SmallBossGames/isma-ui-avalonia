@@ -55,6 +55,12 @@ public static class AutomationIds
     public const string ProcessBarRun = "ProcessBarRun";
     public const string ProcessBarTasks = "ProcessBarTasks";
 
+    // Blueprint editor toolbar
+    public const string BlueprintNewState = "BlueprintNewState";
+    public const string BlueprintAddTransition = "BlueprintAddTransition";
+    public const string BlueprintRemoveState = "BlueprintRemoveState";
+    public const string BlueprintRemoveTransition = "BlueprintRemoveTransition";
+
     // Text editor
     public const string TextEditor = "Editor";
 

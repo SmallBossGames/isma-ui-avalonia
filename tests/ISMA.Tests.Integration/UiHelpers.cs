@@ -1,6 +1,8 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -301,6 +303,221 @@ public static class UiHelpers
     {
         var vm = window.DataContext as MainWindowViewModel;
         return vm?.ErrorList.Errors.Count ?? 0;
+    }
+
+    /// <summary>
+    /// Get the active BlueprintEditorView from the currently selected tab.
+    /// Must be called after Flush() to ensure TabControl containers are generated.
+    /// </summary>
+    public static BlueprintEditorView? GetActiveBlueprintEditor(this MainWindow window)
+    {
+        var editorViews = FindDescendants<BlueprintEditorView>(window).ToList();
+        foreach (var ev in editorViews)
+        {
+            if (ev.DataContext is BlueprintEditorViewModel)
+                return ev;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Click the "Add State" button in the blueprint editor toolbar.
+    /// </summary>
+    public static void ClickAddStateButton(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var button = editor?.FindControl<Button>("AddStateButton");
+        if (button is null)
+            throw new InvalidOperationException("Add State button not found in active blueprint editor.");
+
+        if (button.Command is not null)
+        {
+            button.Command.Execute(button.CommandParameter);
+        }
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Click the "Add Transition" toggle button in the blueprint editor toolbar.
+    /// Toggles between entering and exiting add-transition mode.
+    /// </summary>
+    public static void ClickAddTransitionToggle(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var toggle = editor?.FindControl<ToggleButton>("AddTransitionToggle");
+        if (toggle is null)
+            throw new InvalidOperationException("Add Transition toggle not found in active blueprint editor.");
+
+        if (toggle.Command is not null)
+        {
+            toggle.Command.Execute(toggle.CommandParameter);
+        }
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Click the "Remove State" toggle button in the blueprint editor toolbar.
+    /// </summary>
+    public static void ClickRemoveStateToggle(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var toggle = editor?.FindControl<ToggleButton>("RemoveStateToggle");
+        if (toggle is null)
+            throw new InvalidOperationException("Remove State toggle not found in active blueprint editor.");
+
+        if (toggle.Command is not null)
+        {
+            toggle.Command.Execute(toggle.CommandParameter);
+        }
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Click the "Remove Transition" toggle button in the blueprint editor toolbar.
+    /// </summary>
+    public static void ClickRemoveTransitionToggle(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var toggle = editor?.FindControl<ToggleButton>("RemoveTransitionToggle");
+        if (toggle is null)
+            throw new InvalidOperationException("Remove Transition toggle not found in active blueprint editor.");
+
+        if (toggle.Command is not null)
+        {
+            toggle.Command.Execute(toggle.CommandParameter);
+        }
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Get the number of StateBox controls in the active blueprint editor canvas.
+    /// </summary>
+    public static int GetStateBoxCount(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        return editor != null ? FindDescendants<StateBox>(editor).Count() : 0;
+    }
+
+    /// <summary>
+    /// Get the number of ArrowLine controls in the active blueprint editor canvas.
+    /// </summary>
+    public static int GetArrowLineCount(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        return editor != null ? FindDescendants<ArrowLine>(editor).Count() : 0;
+    }
+
+    /// <summary>
+    /// Get the number of LoopArrow controls in the active blueprint editor canvas.
+    /// </summary>
+    public static int GetLoopArrowCount(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        return editor != null ? FindDescendants<LoopArrow>(editor).Count() : 0;
+    }
+
+    /// <summary>
+    /// Get the first StateBox with the given name text in the active blueprint editor.
+    /// </summary>
+    public static StateBox? GetStateBoxByName(this MainWindow window, string name)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        if (editor is null) return null;
+
+        var stateBoxes = FindDescendants<StateBox>(editor).ToList();
+        foreach (var sb in stateBoxes)
+        {
+            if (sb.Name == name)
+                return sb;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Get the first ArrowLine in the active blueprint editor canvas.
+    /// </summary>
+    public static ArrowLine? GetFirstArrowLine(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        return editor != null ? FindDescendants<ArrowLine>(editor).FirstOrDefault() : null;
+    }
+
+    /// <summary>
+    /// Get the first LoopArrow in the active blueprint editor canvas.
+    /// </summary>
+    public static LoopArrow? GetFirstLoopArrow(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        return editor != null ? FindDescendants<LoopArrow>(editor).FirstOrDefault() : null;
+    }
+
+    /// <summary>
+    /// Type text into the PopOver's Alias field via the PopOverView's public property.
+    /// </summary>
+    public static void TypeInPopOverAlias(this MainWindow window, string text)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popOver = editor?.FindControl<Popup>("EditArrowPopup")?.Child as EditArrowPopOverView;
+        if (popOver is null)
+            throw new InvalidOperationException("PopOver not found or not open.");
+
+        popOver.Alias = text;
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Type text into the PopOver's Predicate field via the PopOverView's public property.
+    /// </summary>
+    public static void TypeInPopOverPredicate(this MainWindow window, string text)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popOver = editor?.FindControl<Popup>("EditArrowPopup")?.Child as EditArrowPopOverView;
+        if (popOver is null)
+            throw new InvalidOperationException("PopOver not found or not open.");
+
+        popOver.Predicate = text;
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Get the PopOver's current Alias value.
+    /// </summary>
+    public static string? GetPopOverAlias(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popOver = editor?.FindControl<Popup>("EditArrowPopup")?.Child as EditArrowPopOverView;
+        return popOver?.Alias;
+    }
+
+    /// <summary>
+    /// Get the PopOver's current Predicate value.
+    /// </summary>
+    public static string? GetPopOverPredicate(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popOver = editor?.FindControl<Popup>("EditArrowPopup")?.Child as EditArrowPopOverView;
+        return popOver?.Predicate;
+    }
+
+    /// <summary>
+    /// Check if the PopOver is currently open.
+    /// </summary>
+    public static bool IsPopOverOpen(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popup = editor?.FindControl<Popup>("EditArrowPopup");
+        return popup?.IsOpen == true;
+    }
+
+    /// <summary>
+    /// Simulate the PopOver being dismissed by pointer exiting (moving mouse outside).
+    /// </summary>
+    public static void DismissPopOver(this MainWindow window)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        var popup = editor?.FindControl<Popup>("EditArrowPopup");
+        popup?.Close();
+        window.Flush();
     }
 
     /// <summary>

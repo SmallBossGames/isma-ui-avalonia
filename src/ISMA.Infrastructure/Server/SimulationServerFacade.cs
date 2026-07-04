@@ -8,9 +8,11 @@ namespace ISMA.Infrastructure.Server;
 public sealed class SimulationServerFacade : ISimulationServerFacade, IDisposable
 {
     private readonly SimulationServerManager _serverManager;
+    // TODO: it's not ok that we have it here, working with connections should be a SimulationServerManager responsibility
     private readonly IUnixSocketHandler _socketHandler;
     private readonly ILogger? _logger;
 
+    // TODO: each client should have it's own facade
     private GrpcSimulationClient? _simulationClient;
     private GrpcLismaCompilerClient? _compilerClient;
     private HttpSimulationClient? _httpClient;

@@ -36,8 +36,8 @@
                  <views:IsmaTextEditorView DataContext="{Binding}" />
              </DataTemplate>
              <DataTemplate x:DataType="vm:BlueprintProjectViewModel">
-                 <ContentControl Content="{Binding EditorContent}" />
-             </DataTemplate>
+                  <views:BlueprintEditorView DataContext="{Binding EditorContent}" />
+              </DataTemplate>
          </TabControl.DataTemplates>
      </TabControl>
 </UserControl>
