@@ -11,6 +11,7 @@ namespace ISMA.ViewModels.ViewModels;
 public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 {
     private BlueprintModel _model = BlueprintModel.Empty;
+    private readonly BlueprintCanvasViewModel _canvas = new();
 
     private ObservableCollection<BlueprintStateViewModel> _states = new();
     private ObservableCollection<BlueprintTransactionViewModel> _transactions = new();
@@ -66,6 +67,9 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         EditorMode.RemoveTransition => "Stop remove transition",
         _ => "Remove Transition"
     };
+
+    public event Action<BlueprintStateViewModel>? StateTextEditorRequested;
+    public event Action<BlueprintLoopTransactionViewModel>? LoopTextEditorRequested;
 
     partial void OnModeChanged(EditorMode value)
     {
@@ -331,11 +335,11 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             return;
 
         var stateName = SelectedState.Name;
-        var newStateList = _model.States.RemoveAll(s => s.Name == stateName);
+        _canvas.RemoveState(stateName);
 
+        var newStateList = _model.States.RemoveAll(s => s.Name == stateName);
         var newTxList = _model.Transactions.RemoveAll(tx =>
             tx.StartStateName == stateName || tx.EndStateName == stateName);
-
         var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == stateName);
 
         _nameMonitor.TryUnregister(stateName);
@@ -363,10 +367,16 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         if (SelectedTransaction == null)
             return;
 
+        var startName = SelectedTransaction.StartState.Name;
+        var endName = SelectedTransaction.EndState.Name;
+        var predicate = SelectedTransaction.Predicate;
+
+        _canvas.RemoveTransaction(startName, endName, predicate);
+
         var newTxList = _model.Transactions.RemoveAll(tx =>
-            tx.StartStateName == SelectedTransaction.StartState.Name &&
-            tx.EndStateName == SelectedTransaction.EndState.Name &&
-            tx.Predicate == SelectedTransaction.Predicate);
+            tx.StartStateName == startName &&
+            tx.EndStateName == endName &&
+            tx.Predicate == predicate);
 
         _model = new BlueprintModel
         {
@@ -427,7 +437,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         if (SelectedState == null)
             return;
 
-        var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == SelectedState.Name);
+        var stateName = SelectedState.Name;
+        _canvas.RemoveLoop(stateName);
+
+        var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == stateName);
 
         _model = new BlueprintModel
         {
@@ -442,51 +455,32 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         ReloadViews();
     }
 
-    [RelayCommand]
-    private void RemoveSelected()
-    {
-        if (Mode is EditorMode.RemoveState && SelectedState != null)
-        {
-            var newStateList = _model.States.RemoveAll(s => s.Name == SelectedState.Name);
-            var newTxList = _model.Transactions.RemoveAll(tx =>
-                tx.StartStateName == SelectedState.Name || tx.EndStateName == SelectedState.Name);
-            var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == SelectedState.Name);
-            _model = new BlueprintModel
-            {
-                Main = _model.Main,
-                Init = _model.Init,
-                States = newStateList,
-                Transactions = newTxList,
-                LoopTransactions = newLoopList
-            };
-            SelectedState = null;
-            ReloadViews();
-        }
-        else if (Mode is EditorMode.RemoveTransition && SelectedTransaction != null)
-        {
-            var newTxList = _model.Transactions.RemoveAll(tx =>
-                tx.StartStateName == SelectedTransaction.StartState.Name &&
-                tx.EndStateName == SelectedTransaction.EndState.Name &&
-                tx.Predicate == SelectedTransaction.Predicate);
-            _model = new BlueprintModel
-            {
-                Main = _model.Main,
-                Init = _model.Init,
-                States = _model.States,
-                Transactions = newTxList,
-                LoopTransactions = _model.LoopTransactions
-            };
-            SelectedTransaction = null;
-            ReloadViews();
-        }
-    }
-
     public BlueprintModel GetBlueprintModel() => _model;
 
     public void SetBlueprintModel(BlueprintModel model)
     {
         _model = model;
         ReloadViews();
+    }
+
+    public void OpenStateTextEditor(BlueprintStateViewModel state)
+    {
+        StateTextEditorRequested?.Invoke(state);
+    }
+
+    public void OpenLoopTextEditor(BlueprintLoopTransactionViewModel loop)
+    {
+        LoopTextEditorRequested?.Invoke(loop);
+    }
+
+    public void UpdateStateText(BlueprintStateViewModel state, string newText)
+    {
+        state.Text = newText;
+    }
+
+    public void UpdateLoopText(BlueprintLoopTransactionViewModel loop, string newText)
+    {
+        loop.Text = newText;
     }
 
     [RelayCommand]
@@ -527,25 +521,32 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         States.Clear();
         Transactions.Clear();
         LoopTransactions.Clear();
+        _canvas.ClearAll();
 
         _nameMonitor.Clear();
 
         if (_model.Main != null)
         {
             _nameMonitor.TryRegister(_model.Main.Name);
-            States.Add(MapState(_model.Main, true, false));
+            var mainVm = MapState(_model.Main, true, false);
+            States.Add(mainVm);
+            _canvas.AddState(mainVm);
         }
 
         if (_model.Init != null)
         {
             _nameMonitor.TryRegister(_model.Init.Name);
-            States.Add(MapState(_model.Init, false, true));
+            var initVm = MapState(_model.Init, false, true);
+            States.Add(initVm);
+            _canvas.AddState(initVm);
         }
 
         foreach (var state in _model.States)
         {
             _nameMonitor.TryRegister(state.Name);
-            States.Add(MapState(state, false, false));
+            var vm = MapState(state, false, false);
+            States.Add(vm);
+            _canvas.AddState(vm);
         }
 
         foreach (var tx in _model.Transactions)
@@ -554,13 +555,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             var endState = States.FirstOrDefault(s => s.Name == tx.EndStateName);
             if (startState != null && endState != null)
             {
-                Transactions.Add(new BlueprintTransactionViewModel
+                var txVm = new BlueprintTransactionViewModel
                 {
                     StartState = startState,
                     EndState = endState,
                     Predicate = tx.Predicate,
                     Alias = tx.Alias
-                });
+                };
+                Transactions.Add(txVm);
+                _canvas.AddTransaction(txVm);
             }
         }
 
@@ -569,13 +572,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             var state = States.FirstOrDefault(s => s.Name == loop.StateName);
             if (state != null)
             {
-                LoopTransactions.Add(new BlueprintLoopTransactionViewModel
+                var loopVm = new BlueprintLoopTransactionViewModel
                 {
                     State = state,
                     Predicate = loop.Predicate,
                     Alias = loop.Alias,
                     Text = loop.Text
-                });
+                };
+                LoopTransactions.Add(loopVm);
+                _canvas.AddLoop(loopVm);
             }
         }
 
