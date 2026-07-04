@@ -27,7 +27,7 @@ public class ArrowHitTestUiTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(4);
 
         // Create an inter-state transition
-        editorVm.IsAddTransitionMode = true;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
@@ -126,7 +126,7 @@ public class ArrowHitTestUiTests : IntegrationTestBase
         // Add two states and transition
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
-        editorVm.IsAddTransitionMode = true;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
@@ -134,7 +134,7 @@ public class ArrowHitTestUiTests : IntegrationTestBase
         editorVm.Transactions.Should().HaveCount(1);
 
         // Enter remove transition mode and remove
-        editorVm.CurrentMode = BlueprintEditorMode.RemoveTransition;
+        editorVm.Mode = new EditorMode.RemoveTransition();
         editorVm.SelectedTransaction = editorVm.Transactions[0];
         editorVm.RemoveTransitionCommand.Execute(null);
 

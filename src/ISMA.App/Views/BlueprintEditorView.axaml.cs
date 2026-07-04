@@ -190,8 +190,10 @@ public partial class BlueprintEditorView : UserControl
 
         _lastPressedPoint = e.GetCurrentPoint(Canvas);
 
-        if (vm.CurrentMode == BlueprintEditorMode.AddTransition)
+        if (vm.Mode is EditorMode.AddTransition)
         {
+            if (vm.SelectedState == null) return;
+
             if (vm.GetTransitionSource() != null)
             {
                 if (stateVm != vm.GetTransitionSource())
@@ -211,14 +213,14 @@ public partial class BlueprintEditorView : UserControl
             return;
         }
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveState)
+        if (vm.Mode is EditorMode.RemoveState)
         {
             vm.SelectedState = stateVm;
             vm.RemoveStateCommand.Execute(null);
             return;
         }
 
-        if (vm.CurrentMode == BlueprintEditorMode.Default && !stateVm.IsMain && !stateVm.IsInit && stateVm.IsEnabled)
+        if (vm.Mode is EditorMode.Default && !stateVm.IsMain && !stateVm.IsInit && stateVm.IsEnabled)
         {
             _draggingState = stateVm;
             _dragStartPoint = position;
@@ -302,7 +304,7 @@ public partial class BlueprintEditorView : UserControl
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.Mode is EditorMode.RemoveTransition)
         {
             OnArrowClicked(arrow, arrow);
         }
@@ -321,7 +323,7 @@ public partial class BlueprintEditorView : UserControl
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.Mode is EditorMode.RemoveTransition)
         {
             OnLoopClicked(arrow, arrow);
         }
@@ -332,7 +334,7 @@ public partial class BlueprintEditorView : UserControl
         if (state.IsMain || state.IsInit) return;
 
         var vm = DataContext as BlueprintEditorViewModel;
-        if (vm == null || (vm.CurrentMode != BlueprintEditorMode.Default)) return;
+        if (vm == null || vm.Mode is not EditorMode.Default) return;
 
         StopInlineNameEditor();
 
@@ -440,7 +442,7 @@ public partial class BlueprintEditorView : UserControl
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.Mode is EditorMode.RemoveTransition)
         {
             var tx = arrow.StartState != null && arrow.EndState != null
                 ? vm.Transactions.FirstOrDefault(t => t.StartState == arrow.StartState && t.EndState == arrow.EndState)
@@ -494,7 +496,7 @@ public partial class BlueprintEditorView : UserControl
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveTransition)
+        if (vm.Mode is EditorMode.RemoveTransition)
         {
             var loop = arrow.State != null
                 ? vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State)
@@ -567,7 +569,7 @@ public partial class BlueprintEditorView : UserControl
 
         var position = e.GetPosition(Canvas);
 
-        if (vm.CurrentMode == BlueprintEditorMode.AddTransition)
+        if (vm.Mode is EditorMode.AddTransition)
         {
             if (vm.GetTransitionSource() != null)
             {
@@ -588,7 +590,7 @@ public partial class BlueprintEditorView : UserControl
             return;
         }
 
-        if (vm.CurrentMode == BlueprintEditorMode.RemoveState)
+        if (vm.Mode is EditorMode.RemoveState)
         {
             vm.SelectedState = stateVm;
             vm.RemoveStateCommand.Execute(null);

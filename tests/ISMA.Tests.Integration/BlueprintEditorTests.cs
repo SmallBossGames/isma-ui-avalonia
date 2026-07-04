@@ -58,14 +58,14 @@ public class BlueprintEditorTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(4);
 
         // Add transition between two user states
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was added
         editorVm.Transactions.Should().HaveCount(1);
-        editorVm.CurrentMode.Should().Be(BlueprintEditorMode.Default);
+        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
     }
 
     [AvaloniaFact]
@@ -81,7 +81,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(3);
 
         // Remove the user state
-        editorVm.CurrentMode = BlueprintEditorMode.RemoveState;
+        editorVm.Mode = new EditorMode.RemoveState();
         editorVm.SelectedState = editorVm.States[2];
         editorVm.RemoveStateCommand.Execute(null);
 
@@ -100,7 +100,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Add states and transition
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
@@ -108,7 +108,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         editorVm.Transactions.Should().HaveCount(1);
 
         // Remove the transition
-        editorVm.CurrentMode = BlueprintEditorMode.RemoveTransition;
+        editorVm.Mode = new EditorMode.RemoveTransition();
         editorVm.SelectedTransaction = editorVm.Transactions[0];
         editorVm.RemoveTransitionCommand.Execute(null);
 
@@ -174,15 +174,15 @@ public class BlueprintEditorTests : IntegrationTestBase
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         // Verify initial mode
-        editorVm.CurrentMode.Should().Be(BlueprintEditorMode.Default);
+        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
 
         // Set AddTransition mode
-        editorVm.IsAddTransitionMode = true;
-        editorVm.CurrentMode.Should().Be(BlueprintEditorMode.AddTransition);
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
 
         // Reset mode
         editorVm.ResetEditorModeCommand.Execute(null);
-        editorVm.CurrentMode.Should().Be(BlueprintEditorMode.Default);
+        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
     }
 
     [AvaloniaFact]

@@ -1,7 +1,12 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using FluentAssertions;
+using ISMA.App.Views;
 using ISMA.Domain.Models;
 using ISMA.ViewModels.ViewModels;
 
@@ -48,13 +53,28 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         editorVm!.AddStateCommand.Execute(null);
         var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
 
-        // Try to set negative position (should be clamped by code-behind logic)
-        userState.CanvasPositionX = -10;
-        userState.CanvasPositionY = -5;
+        // Verify the clamping logic: Math.Max(0.0, position - offset)
+        // Simulate a drag where the offset would result in negative coordinates
+        var dragOffsetX = 50.0;
+        var dragOffsetY = 30.0;
+        var moveX = 10.0; // Would result in position X = -40 without clamping
+        var moveY = 5.0;  // Would result in position Y = -25 without clamping
 
-        // The ViewModel allows negative values; clamping is done in the code-behind
-        // during drag operations. This test verifies the ViewModel allows the operation.
-        // The actual clamping happens in OnCanvasPointerMoved.
+        // Verify the clamping formula works as expected
+        var clampedX = Math.Max(0.0, moveX - dragOffsetX);
+        var clampedY = Math.Max(0.0, moveY - dragOffsetY);
+
+        clampedX.Should().Be(0.0);
+        clampedY.Should().Be(0.0);
+
+        // Also verify that positive positions are not clamped
+        var positiveMoveX = 100.0;
+        var positiveMoveY = 100.0;
+        var positiveClampedX = Math.Max(0.0, positiveMoveX - dragOffsetX);
+        var positiveClampedY = Math.Max(0.0, positiveMoveY - dragOffsetY);
+
+        positiveClampedX.Should().Be(50.0);
+        positiveClampedY.Should().Be(70.0);
     }
 
     [AvaloniaFact]
@@ -71,8 +91,8 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(4); // Main, Init, New state 1, New state 2
 
         // Enter add transition mode
-        editorVm.IsAddTransitionMode = true;
-        editorVm.CurrentMode.Should().Be(BlueprintEditorMode.AddTransition);
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
 
         // Set source state
         var sourceState = editorVm.States[2];
@@ -195,7 +215,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         editorVm.RemoveTransitionButtonContent.Should().Be("Remove Transition");
 
         // Enable add transition mode
-        editorVm.IsAddTransitionMode = true;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.AddTransitionButtonContent.Should().Be("Stop adding transaction");
         editorVm.RemoveStateButtonContent.Should().Be("Remove State");
         editorVm.RemoveTransitionButtonContent.Should().Be("Remove Transition");

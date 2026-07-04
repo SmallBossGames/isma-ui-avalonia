@@ -4,11 +4,18 @@ namespace ISMA.ViewModels.Converters;
 
 public class ModeToVisibilityConverter
 {
-    public bool Convert(BlueprintEditorMode mode, string parameter)
+    public bool Convert(EditorMode mode, string parameter)
     {
         if (string.IsNullOrEmpty(parameter))
             return false;
 
-        return Enum.TryParse(parameter, true, out BlueprintEditorMode target) && mode == target;
+        return parameter.ToLowerInvariant() switch
+        {
+            "default" => mode is EditorMode.Default,
+            "addtransition" => mode is EditorMode.AddTransition,
+            "removestate" => mode is EditorMode.RemoveState,
+            "removetransition" => mode is EditorMode.RemoveTransition,
+            _ => false
+        };
     }
 }

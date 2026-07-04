@@ -191,7 +191,7 @@ public class ProjectManagementTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(4);
 
         // Add transition between two user states
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);

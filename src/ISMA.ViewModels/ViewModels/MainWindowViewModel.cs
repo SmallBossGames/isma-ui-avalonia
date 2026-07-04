@@ -12,6 +12,9 @@ namespace ISMA.ViewModels.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ProjectService _projectService;
+
+    public ProjectService ProjectService => _projectService;
+
     private readonly SimulationServiceViewModel _simulationService;
     private readonly ErrorListViewModel _errorList;
     private readonly SimulationParametersViewModel _simulationParameters;

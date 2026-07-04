@@ -63,7 +63,7 @@ public class AuthorBlueprintTests : IntegrationTestBase
         editorVm.AddStateCommand.Execute(null);
         editorVm.States.Should().HaveCount(4);
 
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
@@ -116,7 +116,7 @@ public class AuthorBlueprintTests : IntegrationTestBase
 
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);
@@ -163,7 +163,7 @@ public class AuthorBlueprintTests : IntegrationTestBase
         editorVm.States.Should().HaveCount(3);
 
         // Remove the added state
-        editorVm.CurrentMode = BlueprintEditorMode.RemoveState;
+        editorVm.Mode = new EditorMode.RemoveState();
         editorVm.SelectedState = editorVm.States[2];
         editorVm.RemoveStateCommand.Execute(null);
 
@@ -200,7 +200,7 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
         editorVm.AddStateCommand.Execute(null);
         editorVm.States.Should().HaveCount(4);
 
-        editorVm.CurrentMode = BlueprintEditorMode.AddTransition;
+        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
         editorVm.AddTransitionCommand.Execute(null);

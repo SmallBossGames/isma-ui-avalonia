@@ -128,14 +128,17 @@
 
                 <ToggleButton Content="{Binding AddTransitionButtonContent}"
                               IsChecked="{Binding IsAddTransitionMode}"
+                              Command="{Binding SetAddTransitionModeCommand}"
                               ToolTip.Tip="Enter Add Transition mode"/>
 
                 <ToggleButton Content="{Binding RemoveStateButtonContent}"
                               IsChecked="{Binding IsRemoveStateMode}"
+                              Command="{Binding SetRemoveStateModeCommand}"
                               ToolTip.Tip="Enter Remove State mode"/>
 
                 <ToggleButton Content="{Binding RemoveTransitionButtonContent}"
                               IsChecked="{Binding IsRemoveTransitionMode}"
+                              Command="{Binding SetRemoveTransitionModeCommand}"
                               ToolTip.Tip="Enter Remove Transition mode"/>
 
             </StackPanel>
