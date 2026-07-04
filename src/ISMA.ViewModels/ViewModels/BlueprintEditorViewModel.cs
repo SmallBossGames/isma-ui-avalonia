@@ -333,6 +333,11 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var stateName = SelectedState.Name;
         var newStateList = _model.States.RemoveAll(s => s.Name == stateName);
 
+        var newTxList = _model.Transactions.RemoveAll(tx =>
+            tx.StartStateName == stateName || tx.EndStateName == stateName);
+
+        var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == stateName);
+
         _nameMonitor.TryUnregister(stateName);
 
         _model = new BlueprintModel
@@ -340,8 +345,8 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             Main = _model.Main,
             Init = _model.Init,
             States = newStateList,
-            Transactions = _model.Transactions,
-            LoopTransactions = _model.LoopTransactions
+            Transactions = newTxList,
+            LoopTransactions = newLoopList
         };
 
         Mode = new EditorMode.Default();
@@ -443,13 +448,16 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         if (Mode is EditorMode.RemoveState && SelectedState != null)
         {
             var newStateList = _model.States.RemoveAll(s => s.Name == SelectedState.Name);
+            var newTxList = _model.Transactions.RemoveAll(tx =>
+                tx.StartStateName == SelectedState.Name || tx.EndStateName == SelectedState.Name);
+            var newLoopList = _model.LoopTransactions.RemoveAll(loop => loop.StateName == SelectedState.Name);
             _model = new BlueprintModel
             {
                 Main = _model.Main,
                 Init = _model.Init,
                 States = newStateList,
-                Transactions = _model.Transactions,
-                LoopTransactions = _model.LoopTransactions
+                Transactions = newTxList,
+                LoopTransactions = newLoopList
             };
             SelectedState = null;
             ReloadViews();
