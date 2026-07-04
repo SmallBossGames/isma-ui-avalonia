@@ -546,4 +546,121 @@ public static class UiHelpers
 
         return tabItem.Header?.ToString();
     }
+
+    /// <summary>
+    /// Click the close button (X) on a tab by its index in the tab pane.
+    /// </summary>
+    public static void ClickTabCloseButton(this MainWindow window, int index)
+    {
+        var tabPane = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        var tabControl = tabPane?.Content as TabControl;
+        if (tabControl is null)
+            throw new InvalidOperationException("TabControl not found in EditorTabPane.");
+
+        var tabItem = tabControl.ContainerFromIndex(index) as TabItem;
+        if (tabItem is null)
+            throw new InvalidOperationException($"TabItem at index {index} not found (only {tabControl.Items.Count} tabs).");
+
+        var closeButton = FindDescendants<Button>(tabItem)
+            .FirstOrDefault(b => b.GetValue(AutomationProperties.AutomationIdProperty) as string != null
+                || b.Content is PathIcon);
+
+        if (closeButton is null)
+            throw new InvalidOperationException($"Close button not found in tab item at index {index}.");
+
+        closeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Get the Items collection from the first ItemsControl in the TasksPopOver (InProgress section).
+    /// </summary>
+    public static IEnumerable<object?>? GetTasksPopOverItems(this MainWindow window)
+    {
+        var processBar = window.FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
+        if (processBar is null)
+            throw new InvalidOperationException("ProcessBar not found.");
+
+        var popup = FindDescendants<Popup>(processBar).FirstOrDefault();
+        if (popup?.Child is null)
+            throw new InvalidOperationException("TasksPopOver popup not found or not open.");
+
+        var itemsControl = FindDescendants<ItemsControl>(popup.Child).FirstOrDefault();
+        if (itemsControl is null)
+            throw new InvalidOperationException("ItemsControl not found in TasksPopOver.");
+
+        return itemsControl.Items;
+    }
+
+    /// <summary>
+    /// Click an action button in the TasksPopOver by model name and action text.
+    /// Searches for the Border containing the matching ModelName, then finds the Button with the matching action text.
+    /// </summary>
+    public static void ClickTasksPopOverActionButton(this MainWindow window, string modelName, string action)
+    {
+        var processBar = window.FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
+        if (processBar is null)
+            throw new InvalidOperationException("ProcessBar not found.");
+
+        var popup = FindDescendants<Popup>(processBar).FirstOrDefault();
+        if (popup?.Child is null)
+            throw new InvalidOperationException("TasksPopOver popup not found or not open.");
+
+        var borders = FindDescendants<Border>(popup.Child).ToList();
+        Border? targetBorder = null;
+
+        foreach (var border in borders)
+        {
+            var textBlock = FindDescendants<TextBlock>(border).FirstOrDefault(t =>
+                t.Text?.Contains(modelName, StringComparison.Ordinal) == true);
+            if (textBlock is null)
+                continue;
+
+            var button = FindDescendants<Button>(border)
+                .FirstOrDefault(b => b.Content?.ToString() == action);
+            if (button is not null)
+            {
+                targetBorder = border;
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                window.Flush();
+                return;
+            }
+        }
+
+        throw new InvalidOperationException($"Action button '{action}' for model '{modelName}' not found in TasksPopOver.");
+    }
+
+    /// <summary>
+    /// Find and click a StateBox by its Name property in the active blueprint editor canvas.
+    /// </summary>
+    public static void ClickStateBoxByName(this MainWindow window, string name)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        if (editor is null)
+            throw new InvalidOperationException("Blueprint editor not found.");
+
+        var stateBox = FindDescendants<StateBox>(editor)
+            .FirstOrDefault(sb => sb.Name == name);
+
+        if (stateBox is null)
+            throw new InvalidOperationException($"StateBox with name '{name}' not found in blueprint editor.");
+
+        if (stateBox.DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        {
+            stateVm.IsSelected = true;
+        }
+        window.Flush();
+    }
+
+    /// <summary>
+    /// Get a StateBox by its index in the active blueprint editor canvas.
+    /// </summary>
+    public static StateBox? GetStateBoxByIndex(this MainWindow window, int index)
+    {
+        var editor = window.GetActiveBlueprintEditor();
+        if (editor is null) return null;
+
+        var stateBoxes = FindDescendants<StateBox>(editor).ToList();
+        return index >= 0 && index < stateBoxes.Count ? stateBoxes[index] : null;
+    }
 }

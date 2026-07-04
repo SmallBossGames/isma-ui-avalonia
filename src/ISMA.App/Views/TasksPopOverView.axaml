@@ -88,6 +88,7 @@
                                             FontSize="10"
                                             Margin="6,0,0,0"
                                             Command="{Binding ShowCommand}"
+                                            AutomationProperties.AutomationId="SimulationShow"
                                             VerticalAlignment="Center" />
 
                                     <Button Grid.Column="2"
@@ -96,6 +97,7 @@
                                             FontSize="10"
                                             Margin="4,0,0,0"
                                             Command="{Binding ExportCommand}"
+                                            AutomationProperties.AutomationId="SimulationExport"
                                             VerticalAlignment="Center" />
 
                                     <Button Grid.Column="3"
@@ -105,6 +107,7 @@
                                             Margin="4,0,0,0"
                                             Classes="danger"
                                             Command="{Binding RemoveCommand}"
+                                            AutomationProperties.AutomationId="SimulationRemove"
                                             VerticalAlignment="Center" />
 
                                     <Button Grid.Column="4"

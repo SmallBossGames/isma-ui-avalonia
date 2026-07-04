@@ -31,6 +31,7 @@
             <views:EditorTabPaneView x:Name="EditorTabPane" AutomationProperties.AutomationId="EditorTabPane" Grid.Column="0" />
             
             <ScrollViewer x:Name="SettingsPanel" Grid.Column="1"
+                          AutomationProperties.AutomationId="SettingsPanel"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ContentControl Content="{Binding SimulationParameters}">

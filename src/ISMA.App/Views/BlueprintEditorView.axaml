@@ -28,6 +28,7 @@
                       VerticalScrollBarVisibility="Auto"
                       Background="White">
             <Canvas x:Name="Canvas"
+                    AutomationProperties.AutomationId="BlueprintCanvas"
                     Width="1200"
                     Height="800"
                     Background="White">
@@ -90,11 +91,12 @@
                                                StateHeight="{Binding StateHeight}"
                                                CanvasPositionX="{Binding CanvasPositionX}"
                                                CanvasPositionY="{Binding CanvasPositionY}"
-                             StatePressed="OnStateBoxStatePressed"
-                             StateReleased="OnStateBoxStateReleased"
-                             StateClicked="OnStateBoxStateClicked"
-                             StateDoubleClicked="OnStateBoxStateDoubleClicked"
-                             NameCommitted="OnStateBoxNameCommitted"/>
+                                               AutomationProperties.AutomationId="{Binding Name}"
+                               StatePressed="OnStateBoxStatePressed"
+                               StateReleased="OnStateBoxStateReleased"
+                               StateClicked="OnStateBoxStateClicked"
+                               StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                               NameCommitted="OnStateBoxNameCommitted"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
