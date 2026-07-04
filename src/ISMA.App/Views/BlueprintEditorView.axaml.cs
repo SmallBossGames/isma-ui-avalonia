@@ -103,6 +103,24 @@ public partial class BlueprintEditorView : UserControl
 
     private void OnStateBoxStateReleased(object? sender, PointerEventArgs e) => _vm?.OnStateReleased();
 
+    private void OnStateBoxStateClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
+        _vm?.OnStateClicked(stateVm);
+    }
+
+    private void OnStateBoxStateDoubleClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
+        _vm?.OnStateDoubleClicked(stateVm);
+    }
+
+    private void OnStateBoxNameCommitted(object? sender, string? newName)
+    {
+        if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
+        _vm?.OnStateNameCommitted(stateVm, newName);
+    }
+
     private void OnArrowHeadClicked(object? sender, Controls.ArrowHitTestEventArgs e)
     {
         if (sender is not Controls.ArrowLine arrow) return;

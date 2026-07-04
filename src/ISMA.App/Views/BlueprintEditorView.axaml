@@ -90,8 +90,11 @@
                                                StateHeight="{Binding StateHeight}"
                                                CanvasPositionX="{Binding CanvasPositionX}"
                                                CanvasPositionY="{Binding CanvasPositionY}"
-                            StatePressed="OnStateBoxStatePressed"
-                            StateReleased="OnStateBoxStateReleased"/>
+                             StatePressed="OnStateBoxStatePressed"
+                             StateReleased="OnStateBoxStateReleased"
+                             StateClicked="OnStateBoxStateClicked"
+                             StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                             NameCommitted="OnStateBoxNameCommitted"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
