@@ -83,26 +83,21 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                            <Border Width="110"
-                                    Height="{Binding StateHeight}"
-                                    Background="{Binding FillColorHex}"
-                                    BorderBrush="{Binding IsSelected,
-                                         Converter={StaticResource BoolToBrushConverter}}"
-                                    BorderThickness="2"
-                                    CornerRadius="10"
-                                    Canvas.Left="{Binding CanvasPositionX}"
-                                    Canvas.Top="{Binding CanvasPositionY}"
-                                    BoxShadow="2 2 4 0 #4D000000"
-                                    PointerPressed="OnStatePointerPressed">
-                                <TextBlock Text="{Binding Name}"
-                                           FontFamily="Arial"
-                                           FontWeight="Bold"
-                                           FontSize="16"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center"/>
-                            </Border>
+                            <controls:StateBox Width="110"
+                                               Height="{Binding StateHeight}"
+                                               FillColor="{Binding FillColorHex}"
+                                               Canvas.Left="{Binding CanvasPositionX}"
+                                               Canvas.Top="{Binding CanvasPositionY}"
+                                               IsEditable="{Binding IsEditable}"
+                                               IsEnabled="{Binding IsEnabled}"
+                                               StateHeight="{Binding StateHeight}"
+                                               CanvasPositionX="{Binding CanvasPositionX}"
+                                               CanvasPositionY="{Binding CanvasPositionY}"
+                                               StatePressed="OnStateBoxStatePressed"
+                                               StateReleased="OnStateBoxStateReleased"
+                                               StateClicked="OnStateBoxStateClicked"
+                                               StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                                               NameCommitted="OnStateBoxNameCommitted"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

@@ -94,17 +94,10 @@ public partial class BlueprintEditorView : UserControl
             newVm.Transactions.CollectionChanged += OnTransactionsCollectionChanged;
             newVm.LoopTransactions.CollectionChanged += OnLoopTransactionsCollectionChanged;
 
-            // Try to find ProjectService from the window's DataContext
             var window = FindWindow();
-            if (window != null)
+            if (window?.DataContext is MainWindowViewModel mainWindowVm)
             {
-                var mainWindowVm = window.DataContext as MainWindowViewModel;
-                if (mainWindowVm != null)
-                {
-                    var projectServiceField = mainWindowVm.GetType()
-                        .GetField("_projectService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    _projectService = projectServiceField?.GetValue(mainWindowVm) as ProjectService;
-                }
+                _projectService = mainWindowVm.ProjectService;
             }
         }
     }
@@ -299,7 +292,7 @@ public partial class BlueprintEditorView : UserControl
     private void OnArrowHeadClicked(object? sender, ArrowHitTestEventArgs e)
     {
         if (sender is not ArrowLine arrow) return;
-        OnArrowHeadClicked(arrow, arrow);
+        OnArrowHeadClicked(this, arrow, e.ClickPosition);
     }
 
     private void OnArrowBodyClicked(object? sender, ArrowHitTestEventArgs e)
@@ -461,7 +454,7 @@ public partial class BlueprintEditorView : UserControl
         }
     }
 
-    private void OnArrowHeadClicked(object? sender, ArrowLine arrow)
+    private void OnArrowHeadClicked(object sender, ArrowLine arrow, Point clickPosition)
     {
         var vm = DataContext as BlueprintEditorViewModel;
         if (vm is null) return;
@@ -476,12 +469,23 @@ public partial class BlueprintEditorView : UserControl
             _popOverViewModel!.Alias = tx.Alias;
             _popOverViewModel.Predicate = tx.Predicate;
 
-            // Position PopOver centered on arrowhead, 2px above
-            EditArrowPopup.PlacementTarget = sender as Control;
-            EditArrowPopup.Placement = PlacementMode.Pointer;
-            EditArrowPopup.HorizontalOffset = 0;
-            EditArrowPopup.VerticalOffset = -2;
-            EditArrowPopup.IsOpen = true;
+            var control = sender as Control;
+            if (control != null)
+            {
+                var root = control.FindAncestorOfType<Window>();
+                if (root != null)
+                {
+                    var rootPoint = control.TranslatePoint(clickPosition, root);
+                    if (rootPoint.HasValue)
+                    {
+                        EditArrowPopup.PlacementTarget = control;
+                        EditArrowPopup.Placement = PlacementMode.Pointer;
+                        EditArrowPopup.HorizontalOffset = rootPoint.Value.X - 150;
+                        EditArrowPopup.VerticalOffset = rootPoint.Value.Y - 2;
+                        EditArrowPopup.IsOpen = true;
+                    }
+                }
+            }
         }
     }
 
@@ -551,6 +555,93 @@ public partial class BlueprintEditorView : UserControl
     {
         EditArrowPopup.IsOpen = false;
         _editingTransaction = null;
+    }
+
+    private void OnStateBoxStatePressed(object? sender, PointerEventArgs e)
+    {
+        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
+            return;
+
+        var vm = DataContext as BlueprintEditorViewModel;
+        if (vm is null) return;
+
+        var position = e.GetPosition(Canvas);
+
+        if (vm.CurrentMode == BlueprintEditorMode.AddTransition)
+        {
+            if (vm.GetTransitionSource() != null)
+            {
+                if (stateVm != vm.GetTransitionSource())
+                {
+                    vm.SelectedState = stateVm;
+                    vm.AddTransitionCommand.Execute(null);
+                }
+                else
+                {
+                    CreateLoopFromSelected(stateVm);
+                }
+            }
+            else
+            {
+                vm.SetTransitionSource(stateVm);
+            }
+            return;
+        }
+
+        if (vm.CurrentMode == BlueprintEditorMode.RemoveState)
+        {
+            vm.SelectedState = stateVm;
+            vm.RemoveStateCommand.Execute(null);
+            return;
+        }
+
+        _draggingState = stateVm;
+        _dragStartPoint = position;
+        _dragOffset = new Point(position.X - stateVm.CanvasPositionX, position.Y - stateVm.CanvasPositionY);
+        _isDragging = false;
+
+        e.Handled = true;
+    }
+
+    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e)
+    {
+        if (_draggingState != null)
+        {
+            Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+            _draggingState = null;
+            _isDragging = false;
+        }
+    }
+
+    private void OnStateBoxStateClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
+            return;
+
+        var vm = DataContext as BlueprintEditorViewModel;
+        if (vm is null) return;
+
+        vm.SelectedState = stateVm;
+    }
+
+    private void OnStateBoxStateDoubleClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
+            return;
+
+        OpenStateTextEditorTab(stateVm);
+    }
+
+    private void OnStateBoxNameCommitted(object? sender, string? newName)
+    {
+        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
+            return;
+
+        var vm = DataContext as BlueprintEditorViewModel;
+        if (vm is null) return;
+
+        var finalName = string.IsNullOrEmpty(newName) ? stateVm.Name : newName;
+        vm.UpdateStateName(stateVm, finalName);
     }
 
     private void CreateLoopFromSelected(BlueprintStateViewModel state)
