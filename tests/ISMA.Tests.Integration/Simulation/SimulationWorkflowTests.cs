@@ -21,7 +21,7 @@ public class SimulationWorkflowTests : IntegrationTestBase
     {
         // Step 1: Create new text project via UI
         Window.ClickMenuItem("MenuNewText");
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
         Window.GetActiveProject().Should().NotBeNull();
 
         // Step 2: Write model text using LISMA language via UI
@@ -67,7 +67,7 @@ state ""initial"" (1 > 0) {
         ViewModel.SimulationService.StatusText.Should().Be("Simulation complete");
 
         // Step 8: Verify project state
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
         Window.GetActiveProject().Should().NotBeNull();
     }
 
@@ -116,20 +116,24 @@ state ""initial"" (1 > 0) {
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
         // Start simulation via UI
-        var simulationTask = ViewModel.RunCommand.ExecuteAsync(null);
+        Window.ClickMenuItem("MenuRun");
 
         // Wait for simulation to start
         await Task.Delay(100);
         ViewModel.SimulationService.IsRunning.Should().BeTrue();
 
-        // Cancel the simulation
-        ViewModel.SimulationService.StopSimulationAsync(ViewModel.SimulationService.TrackingTasks.FirstOrDefault()!).Wait();
+        // Cancel the simulation (no UI cancel button exists, so we use the service directly)
+        var task = ViewModel.SimulationService.TrackingTasks.FirstOrDefault();
+        if (task is not null)
+        {
+            ViewModel.SimulationService.StopSimulationAsync(task).Wait();
+        }
 
         // Cancel the coroutine
         cts.Cancel();
 
-        // Wait for simulation to finish
-        await simulationTask;
+        // Wait a bit for cancellation to propagate
+        await Task.Delay(100);
 
         ViewModel.SimulationService.IsRunning.Should().BeFalse();
     }
@@ -137,7 +141,8 @@ state ""initial"" (1 > 0) {
     [AvaloniaFact]
     public async Task Simulation_WithNoActiveProject_DoesNotThrow()
     {
-        ViewModel.ActiveProject = null;
+        // Ensure no project is open (fresh window state)
+        Window.GetProjectCount().Should().Be(0);
 
         Action run = () => Window.ClickMenuItem("MenuRun");
         run.Should().NotThrow();
@@ -193,7 +198,7 @@ state ""initial"" (1 > 0) {
     {
         // Step 1: Create new blueprint project via UI
         Window.ClickMenuItem("MenuNewBlueprint");
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
         Window.GetActiveProject().Should().NotBeNull();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;

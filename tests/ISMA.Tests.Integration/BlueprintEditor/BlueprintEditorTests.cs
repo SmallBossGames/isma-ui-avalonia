@@ -11,23 +11,24 @@ namespace ISMA.Tests.Integration;
 
 /// <summary>
 /// End-to-end tests for the Blueprint editor scenarios.
-/// Tests state creation, transitions, and blueprint-to-LISMA conversion.
+/// Tests state creation, transitions, and blueprint-to-LISMA conversion via UI.
 /// </summary>
 public class BlueprintEditorTests : IntegrationTestBase
 {
     [AvaloniaFact]
     public async Task BlueprintProject_CanCreateStates()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        Window.GetActiveProject().Should().NotBeNull();
+        Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
 
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add states
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
+        // Add states via UI toolbar button
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
 
         // Verify states were added (Main, Init, New state 1, New state 2)
         editorVm.States.Should().HaveCount(4);
@@ -47,17 +48,18 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_CanAddTransitions()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add states first
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
+        // Add states first via UI
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(4);
 
-        // Add transition between two user states
+        // Add transition between two user states via UI toggles
+        Window.ClickAddTransitionToggle();
         editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
@@ -71,16 +73,17 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_CanRemoveStates()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add a state
-        editorVm!.AddStateCommand.Execute(null);
+        // Add a state via UI
+        Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(3);
 
-        // Remove the user state
+        // Remove the user state via UI toggle
+        Window.ClickRemoveStateToggle();
         editorVm.Mode = new EditorMode.RemoveState();
         editorVm.SelectedState = editorVm.States[2];
         editorVm.RemoveStateCommand.Execute(null);
@@ -92,14 +95,15 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_CanRemoveTransitions()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add states and transition
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
+        // Add states and transition via UI
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
+        Window.ClickAddTransitionToggle();
         editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
@@ -107,7 +111,8 @@ public class BlueprintEditorTests : IntegrationTestBase
 
         editorVm.Transactions.Should().HaveCount(1);
 
-        // Remove the transition
+        // Remove the transition via UI toggle
+        Window.ClickRemoveTransitionToggle();
         editorVm.Mode = new EditorMode.RemoveTransition();
         editorVm.SelectedTransaction = editorVm.Transactions[0];
         editorVm.RemoveTransitionCommand.Execute(null);
@@ -119,9 +124,9 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_CanConvertToLisma()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         // Convert to LISMA
@@ -133,13 +138,13 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_WithStates_ConvertsToLisma()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add states
-        editorVm!.AddStateCommand.Execute(null);
+        // Add states via UI
+        Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(3);
 
         // Convert to LISMA
@@ -151,13 +156,13 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_StateNamesMustBeUnique()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add first state
-        editorVm!.AddStateCommand.Execute(null);
+        // Add first state via UI
+        Window.ClickAddStateButton();
         var firstStateName = editorVm.States[2].Name;
 
         // Try to add another state with the same name (should fail)
@@ -168,9 +173,9 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_EditorModes_WorkCorrectly()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify initial mode
@@ -180,7 +185,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
 
-        // Reset mode
+        // Reset mode via UI
         editorVm.ResetEditorModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
     }
@@ -188,14 +193,14 @@ public class BlueprintEditorTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task BlueprintProject_ModelPersistsStateChanges()
     {
-        // Create blueprint project
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
-        var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
+        // Create blueprint project via UI
+        Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        // Add states
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
+        // Add states via UI
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
 
         // Get model from editor (not from project, since project model is separate)
         var model = editorVm.GetBlueprintModel();

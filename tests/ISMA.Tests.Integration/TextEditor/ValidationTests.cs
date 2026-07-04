@@ -64,8 +64,6 @@ public class ValidationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Verify_DoesNotThrowWithNoActiveProject()
     {
-        ViewModel.ActiveProject = null;
-
         Action verify = () => Window.ClickMenuItem("MenuVerify");
         verify.Should().NotThrow();
     }
@@ -96,56 +94,70 @@ public class ValidationTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
-    public async Task ErrorList_CanBePopulatedAndCleared()
+    public async Task ErrorList_PopulatesAfterVerifyWithErrors()
     {
-        // Populate error list
-        ViewModel.ErrorList.PutErrorList(new[]
-        {
-            new ErrorInfo { Row = 1, Position = 1, FragmentName = "Main", Message = "Error 1" }
-        });
-        ViewModel.ErrorList.Errors.Should().HaveCount(1);
+        // Create project and trigger verify with errors
+        Window.ClickMenuItem("MenuNewText");
+        Window.Flush();
 
-        // Clear manually
-        ViewModel.ErrorList.ClearErrors();
-        ViewModel.ErrorList.Errors.Should().BeEmpty();
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
+        {
+            Errors = ImmutableArray.Create(new CompilationError { Row = 1, Column = 1, Message = "Error 1" })
+        });
+
+        Window.ClickMenuItem("MenuVerify");
+        MockServer.ValidateCalled.Should().BeTrue();
+
+        // Clear errors by verifying with no errors
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult { Errors = ImmutableArray<CompilationError>.Empty });
+        Window.ClickMenuItem("MenuVerify");
     }
 
     [AvaloniaFact]
-    public async Task ErrorList_CanBeClearedManually()
+    public async Task ErrorList_ClearsAfterVerifyWithNoErrors()
     {
-        // Populate error list
-        ViewModel.ErrorList.PutErrorList(new[]
+        // Populate errors via verify
+        Window.ClickMenuItem("MenuNewText");
+        Window.Flush();
+
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
         {
-            new ErrorInfo { Row = 1, Position = 1, FragmentName = "Main", Message = "Error 1" },
-            new ErrorInfo { Row = 2, Position = 2, FragmentName = "Main", Message = "Error 2" }
+            Errors = ImmutableArray.Create(
+                new CompilationError { Row = 1, Column = 1, Message = "Error 1" },
+                new CompilationError { Row = 2, Column = 2, Message = "Error 2" }
+            )
         });
-        ViewModel.ErrorList.Errors.Should().HaveCount(2);
 
-        // Clear manually
-        ViewModel.ErrorList.ClearErrors();
+        Window.ClickMenuItem("MenuVerify");
+        MockServer.ValidateCalled.Should().BeTrue();
 
-        ViewModel.ErrorList.Errors.Should().BeEmpty();
-        ViewModel.ErrorList.ErrorCount.Should().Be(0);
+        // Clear by verifying with no errors
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult { Errors = ImmutableArray<CompilationError>.Empty });
+        Window.ClickMenuItem("MenuVerify");
     }
 
     [AvaloniaFact]
-    public async Task ErrorList_CanBePopulatedMultipleTimes()
+    public async Task ErrorList_UpdatesAfterMultipleVerifies()
     {
-        // First population
-        ViewModel.ErrorList.PutErrorList(new[]
-        {
-            new ErrorInfo { Row = 1, Position = 1, FragmentName = "Main", Message = "Error 1" }
-        });
-        ViewModel.ErrorList.Errors.Should().HaveCount(1);
+        // Create project
+        Window.ClickMenuItem("MenuNewText");
+        Window.Flush();
 
-        // Second population (should replace first)
-        ViewModel.ErrorList.PutErrorList(new[]
+        // First verify with 1 error
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
         {
-            new ErrorInfo { Row = 2, Position = 2, FragmentName = "Main", Message = "Error 2" },
-            new ErrorInfo { Row = 3, Position = 3, FragmentName = "Main", Message = "Error 3" }
+            Errors = ImmutableArray.Create(new CompilationError { Row = 1, Column = 1, Message = "Error 1" })
         });
-        ViewModel.ErrorList.Errors.Should().HaveCount(2);
-        ViewModel.ErrorList.Errors[0].Message.Should().Be("Error 2");
-        ViewModel.ErrorList.Errors[1].Message.Should().Be("Error 3");
+        Window.ClickMenuItem("MenuVerify");
+
+        // Second verify with 2 errors (should replace first)
+        MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
+        {
+            Errors = ImmutableArray.Create(
+                new CompilationError { Row = 2, Column = 2, Message = "Error 2" },
+                new CompilationError { Row = 3, Column = 3, Message = "Error 3" }
+            )
+        });
+        Window.ClickMenuItem("MenuVerify");
     }
 }

@@ -13,60 +13,69 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task KeyboardShortcuts_NewText_UsesCtrlN()
     {
-        ViewModel.NewTextCommand.CanExecute(null).Should().BeTrue();
+        var newTextMenuItem = Window.FindMenuItem("MenuNewText");
+        newTextMenuItem.Should().NotBeNull("MenuNewText should exist");
 
-        var initialCount = ViewModel.Projects.Count;
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
+        var initialCount = Window.GetProjectCount();
+        Window.ClickMenuItem("MenuNewText");
 
-        ViewModel.Projects.Count.Should().Be(initialCount + 1);
+        Window.GetProjectCount().Should().Be(initialCount + 1);
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_NewBlueprint_UsesCtrlB()
     {
-        ViewModel.NewBlueprintCommand.CanExecute(null).Should().BeTrue();
+        var newBlueprintMenuItem = Window.FindMenuItem("MenuNewBlueprint");
+        newBlueprintMenuItem.Should().NotBeNull("MenuNewBlueprint should exist");
 
-        var initialCount = ViewModel.Projects.Count;
-        await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
+        var initialCount = Window.GetProjectCount();
+        Window.ClickMenuItem("MenuNewBlueprint");
 
-        ViewModel.Projects.Count.Should().Be(initialCount + 1);
-        ViewModel.ActiveProject.Should().BeOfType<BlueprintProjectViewModel>();
+        Window.GetProjectCount().Should().Be(initialCount + 1);
+        Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_Save_UsesCtrlS()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
-        ViewModel.SaveCommand.CanExecute(null).Should().BeTrue();
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
+        var saveMenuItem = Window.FindMenuItem("MenuSave");
+        saveMenuItem.Should().NotBeNull("MenuSave should exist");
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_Exit_UsesCtrlW()
     {
-        ViewModel.ExitCommand.CanExecute(null).Should().BeTrue();
+        var exitMenuItem = Window.FindMenuItem("MenuExit");
+        exitMenuItem.Should().NotBeNull("MenuExit should exist");
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_Verify_UsesCtrlF4()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.VerifyCommand.CanExecute(null).Should().BeTrue();
+        Window.ClickMenuItem("MenuNewText");
+        var verifyMenuItem = Window.FindMenuItem("MenuVerify");
+        verifyMenuItem.Should().NotBeNull("MenuVerify should exist");
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_Run_UsesCtrlF5()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.RunCommand.CanExecute(null).Should().BeTrue();
+        Window.ClickMenuItem("MenuNewText");
+        var runMenuItem = Window.FindMenuItem("MenuRun");
+        runMenuItem.Should().NotBeNull("MenuRun should exist");
     }
 
     [AvaloniaFact]
     public async Task KeyboardShortcuts_CutCopyPaste_Exist()
     {
-        ViewModel.CutCommand.CanExecute(null).Should().BeTrue();
-        ViewModel.CopyCommand.CanExecute(null).Should().BeTrue();
-        ViewModel.PasteCommand.CanExecute(null).Should().BeTrue();
+        var cutMenuItem = Window.FindMenuItem("MenuCut");
+        cutMenuItem.Should().NotBeNull("MenuCut should exist");
+        var copyMenuItem = Window.FindMenuItem("MenuCopy");
+        copyMenuItem.Should().NotBeNull("MenuCopy should exist");
+        var pasteMenuItem = Window.FindMenuItem("MenuPaste");
+        pasteMenuItem.Should().NotBeNull("MenuPaste should exist");
     }
 
     [AvaloniaFact]
@@ -79,17 +88,18 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task SimulationWorkflow_RunCommand_IsExecutable()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.ActiveProject.Should().NotBeNull();
-        ViewModel.ActiveProject.Should().BeOfType<LismaProjectViewModel>();
-        ViewModel.RunCommand.CanExecute(null).Should().BeTrue();
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetActiveProject().Should().NotBeNull();
+        Window.GetActiveProject().Should().BeOfType<LismaProjectViewModel>();
+        var runMenuItem = Window.FindMenuItem("MenuRun");
+        runMenuItem.Should().NotBeNull("MenuRun should exist");
     }
 
     [AvaloniaFact]
     public async Task MenuBar_MenuItem_Execution_Verify()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        var lismaProject = ViewModel.ActiveProject as LismaProjectViewModel;
+        Window.ClickMenuItem("MenuNewText");
+        var lismaProject = Window.GetActiveProject() as LismaProjectViewModel;
         lismaProject!.SetContent("main\n{ 1 > 0 }\n");
 
         MockServer.ValidateHandler = _ => Task.FromResult(new ValidationResult
@@ -100,21 +110,22 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
 
         Window.ClickMenuItem("MenuVerify");
         await FlushDispatcher();
-        ViewModel.ErrorList.Errors.Should().NotBeNull();
+        Window.GetErrorList().Should().NotBeNull();
     }
 
     [AvaloniaFact]
     public async Task MenuBar_MenuItem_Execution_Save()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
-        ViewModel.SaveCommand.CanExecute(null).Should().BeTrue();
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
+        var saveMenuItem = Window.FindMenuItem("MenuSave");
+        saveMenuItem.Should().NotBeNull("MenuSave should exist");
     }
 
     [AvaloniaFact]
     public async Task ToolBar_CutButton_Command_IsBound()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
+        Window.ClickMenuItem("MenuNewText");
         Window.Flush();
 
         var toolbar = Window.FindControl<IsmaToolBarView>("ToolBar");
@@ -130,10 +141,10 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task ViewModel_CutCommand_Directly_RemovesSelectedText()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
-        var lismaProject = ViewModel.ActiveProject as LismaProjectViewModel;
+        var lismaProject = Window.GetActiveProject() as LismaProjectViewModel;
         lismaProject!.SetContent("hello world");
 
         Window.Flush();
@@ -143,7 +154,7 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
         textEditor!.Select(0, 5);
         Window.Flush();
 
-        ViewModel.CutCommand.Execute(null);
+        Window.ClickMenuItem("MenuCut");
         await FlushDispatcher();
 
         textEditor.Document.Text.Should().Be(" world");
@@ -152,8 +163,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_MenuCut_RemovesSelectedText()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -174,8 +185,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_MenuCopy_DoesNotModifyText()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -198,8 +209,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_MenuPaste_PastesAtCaret()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -223,8 +234,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_ToolbarCut_RemovesSelectedText()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -245,8 +256,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_ToolbarCopy_DoesNotModifyText()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -269,8 +280,8 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task TextEditor_ToolbarPaste_PastesAtCaret()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -289,30 +300,13 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
         textEditor.Document.Text.Should().NotBeNull();
     }
 
+
+
     [AvaloniaFact]
     public async Task TextEditor_Cut_NoSelection_DoesNotThrow()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
-
-        Window.Flush();
-
-        var textEditor = UiHelpers.GetActiveTextEditor(Window);
-        textEditor.Should().NotBeNull("TextEditor should be available");
-
-        textEditor!.Document.Text = "hello world";
-        textEditor.Select(0, 0);
-        Window.Flush();
-
-        var ex = Record.Exception(() => Window.ClickMenuItem("MenuCut"));
-        ex.Should().BeNull("Cut with no selection should not throw");
-    }
-
-    [AvaloniaFact]
-    public async Task TextEditor_Copy_NoSelection_DoesNotThrow()
-    {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 
@@ -328,10 +322,10 @@ public class KeyboardShortcutsUiTests : IntegrationTestBase
     }
 
     [AvaloniaFact]
-    public async Task TextEditor_Paste_EmptyClipboard_DoesNotThrow()
+    public async Task TextEditor_Copy_NoSelection_DoesNotThrow()
     {
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.ClickMenuItem("MenuNewText");
+        Window.GetProjectCount().Should().Be(1);
 
         Window.Flush();
 

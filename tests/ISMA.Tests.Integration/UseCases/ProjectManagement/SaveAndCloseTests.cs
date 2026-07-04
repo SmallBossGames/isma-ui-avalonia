@@ -25,7 +25,7 @@ public class SaveAndCloseTests : IntegrationTestBase
         Window.Flush();
 
         // Verify project is removed
-        ViewModel.Projects.Should().BeEmpty();
+        Window.GetProjectCount().Should().Be(0);
         Window.GetActiveProject().Should().BeNull();
     }
 
@@ -44,7 +44,7 @@ public class SaveAndCloseTests : IntegrationTestBase
         Window.Flush();
 
         // Verify all are removed
-        ViewModel.Projects.Should().BeEmpty();
+        Window.GetProjectCount().Should().Be(0);
         Window.GetActiveProject().Should().BeNull();
     }
 
@@ -61,7 +61,7 @@ public class SaveAndCloseTests : IntegrationTestBase
         Window.Flush();
 
         // Verify project is removed
-        ViewModel.Projects.Should().BeEmpty();
+        Window.GetProjectCount().Should().Be(0);
     }
 
     [AvaloniaFact]
@@ -77,7 +77,7 @@ public class SaveAndCloseTests : IntegrationTestBase
         // Close via Close command (closes active project)
         Window.ClickMenuItem("MenuClose");
         Window.Flush();
-        ViewModel.Projects.Should().HaveCount(2);
+        Window.GetProjectCount().Should().Be(2);
     }
 
     [AvaloniaFact]
@@ -92,7 +92,7 @@ public class SaveAndCloseTests : IntegrationTestBase
         var secondProject = Window.GetActiveProject() as LismaProjectViewModel;
 
         // Verify both projects exist
-        ViewModel.Projects.Should().HaveCount(2);
+        Window.GetProjectCount().Should().Be(2);
         firstProject.Should().NotBeNull();
         secondProject.Should().NotBeNull();
     }

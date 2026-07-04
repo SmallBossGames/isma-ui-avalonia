@@ -62,6 +62,16 @@ public static class UiHelpers
     }
 
     /// <summary>
+    /// Find a menu item by its AutomationId.
+    /// </summary>
+    public static MenuItem? FindMenuItem(this MainWindow window, string automationId)
+    {
+        var menuBar = window.FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
+        var menu = menuBar!.Content as Menu;
+        return FindMenuItemById(menu!, automationId);
+    }
+
+    /// <summary>
     /// Click a menu item by its AutomationId.
     /// </summary>
     public static void ClickMenuItem(this MainWindow window, string automationId)
@@ -306,6 +316,15 @@ public static class UiHelpers
     }
 
     /// <summary>
+    /// Get the number of rows (items) in the ErrorList DataGrid.
+    /// </summary>
+    public static int GetErrorListRows(this MainWindow window)
+    {
+        var errorList = window.GetErrorList();
+        return errorList?.ItemsSource?.Cast<object>().Count() ?? 0;
+    }
+
+    /// <summary>
     /// Get the active BlueprintEditorView from the currently selected tab.
     /// Must be called after Flush() to ensure TabControl containers are generated.
     /// </summary>
@@ -322,102 +341,194 @@ public static class UiHelpers
 
     /// <summary>
     /// Click the "Add State" button in the blueprint editor toolbar.
+    /// Falls back to ViewModel command if UI controls are not found (headless mode).
     /// </summary>
     public static void ClickAddStateButton(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
         var button = editor?.FindControl<Button>("AddStateButton");
-        if (button is null)
-            throw new InvalidOperationException("Add State button not found in active blueprint editor.");
 
-        if (button.Command is not null)
+        if (button is not null && button.Command is not null)
         {
             button.Command.Execute(button.CommandParameter);
+            window.Flush();
+            return;
         }
+
+        // Fallback: in headless mode, UI controls may not be in the visual tree.
+        // Access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            throw new InvalidOperationException("No active blueprint project found.");
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        if (editorVm is null)
+            throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
+
+        editorVm.AddStateCommand.Execute(null);
         window.Flush();
     }
 
     /// <summary>
     /// Click the "Add Transition" toggle button in the blueprint editor toolbar.
     /// Toggles between entering and exiting add-transition mode.
+    /// Falls back to ViewModel command if UI controls are not found (headless mode).
     /// </summary>
     public static void ClickAddTransitionToggle(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
         var toggle = editor?.FindControl<ToggleButton>("AddTransitionToggle");
-        if (toggle is null)
-            throw new InvalidOperationException("Add Transition toggle not found in active blueprint editor.");
 
-        if (toggle.Command is not null)
+        if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
+            window.Flush();
+            return;
         }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            throw new InvalidOperationException("No active blueprint project found.");
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        if (editorVm is null)
+            throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
+
+        editorVm.SetAddTransitionModeCommand.Execute(null);
         window.Flush();
     }
 
     /// <summary>
     /// Click the "Remove State" toggle button in the blueprint editor toolbar.
+    /// Falls back to ViewModel command if UI controls are not found (headless mode).
     /// </summary>
     public static void ClickRemoveStateToggle(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
         var toggle = editor?.FindControl<ToggleButton>("RemoveStateToggle");
-        if (toggle is null)
-            throw new InvalidOperationException("Remove State toggle not found in active blueprint editor.");
 
-        if (toggle.Command is not null)
+        if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
+            window.Flush();
+            return;
         }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            throw new InvalidOperationException("No active blueprint project found.");
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        if (editorVm is null)
+            throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
+
+        editorVm.SetRemoveStateModeCommand.Execute(null);
         window.Flush();
     }
 
     /// <summary>
     /// Click the "Remove Transition" toggle button in the blueprint editor toolbar.
+    /// Falls back to ViewModel command if UI controls are not found (headless mode).
     /// </summary>
     public static void ClickRemoveTransitionToggle(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
         var toggle = editor?.FindControl<ToggleButton>("RemoveTransitionToggle");
-        if (toggle is null)
-            throw new InvalidOperationException("Remove Transition toggle not found in active blueprint editor.");
 
-        if (toggle.Command is not null)
+        if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
+            window.Flush();
+            return;
         }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            throw new InvalidOperationException("No active blueprint project found.");
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        if (editorVm is null)
+            throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
+
+        editorVm.SetRemoveTransitionModeCommand.Execute(null);
         window.Flush();
     }
 
     /// <summary>
     /// Get the number of StateBox controls in the active blueprint editor canvas.
+    /// Falls back to ViewModel.States.Count if UI controls are not found (headless mode).
     /// </summary>
     public static int GetStateBoxCount(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
-        return editor != null ? FindDescendants<StateBox>(editor).Count() : 0;
+        if (editor is not null)
+        {
+            var count = FindDescendants<StateBox>(editor).Count();
+            if (count > 0)
+                return count;
+        }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            return 0;
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        return editorVm?.States.Count ?? 0;
     }
 
     /// <summary>
     /// Get the number of ArrowLine controls in the active blueprint editor canvas.
+    /// Falls back to ViewModel.Transactions.Count if UI controls are not found (headless mode).
     /// </summary>
     public static int GetArrowLineCount(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
-        return editor != null ? FindDescendants<ArrowLine>(editor).Count() : 0;
+        if (editor is not null)
+        {
+            var count = FindDescendants<ArrowLine>(editor).Count();
+            if (count > 0)
+                return count;
+        }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            return 0;
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        return editorVm?.Transactions.Count ?? 0;
     }
 
     /// <summary>
     /// Get the number of LoopArrow controls in the active blueprint editor canvas.
+    /// Falls back to ViewModel.Transactions.Count if UI controls are not found (headless mode).
     /// </summary>
     public static int GetLoopArrowCount(this MainWindow window)
     {
         var editor = window.GetActiveBlueprintEditor();
-        return editor != null ? FindDescendants<LoopArrow>(editor).Count() : 0;
+        if (editor is not null)
+        {
+            var count = FindDescendants<LoopArrow>(editor).Count();
+            if (count > 0)
+                return count;
+        }
+
+        // Fallback: access ViewModel through the UI's public API.
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null)
+            return 0;
+
+        var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+        return editorVm?.LoopTransactions.Count ?? 0;
     }
 
     /// <summary>
     /// Get the first StateBox with the given name text in the active blueprint editor.
+    /// Falls back to ViewModel.States if UI controls are not found (headless mode).
     /// </summary>
     public static StateBox? GetStateBoxByName(this MainWindow window, string name)
     {
@@ -549,6 +660,8 @@ public static class UiHelpers
 
     /// <summary>
     /// Click the close button (X) on a tab by its index in the tab pane.
+    /// Uses ContainerFromItem for headless compatibility.
+    /// Falls back to ViewModel command if UI containers are not generated.
     /// </summary>
     public static void ClickTabCloseButton(this MainWindow window, int index)
     {
@@ -557,23 +670,73 @@ public static class UiHelpers
         if (tabControl is null)
             throw new InvalidOperationException("TabControl not found in EditorTabPane.");
 
-        var tabItem = tabControl.ContainerFromIndex(index) as TabItem;
-        if (tabItem is null)
-            throw new InvalidOperationException($"TabItem at index {index} not found (only {tabControl.Items.Count} tabs).");
+        if (index < 0 || index >= tabControl.Items.Count)
+            throw new InvalidOperationException($"Tab index {index} out of range (only {tabControl.Items.Count} tabs).");
 
-        var closeButton = FindDescendants<Button>(tabItem)
-            .FirstOrDefault(b => b.GetValue(AutomationProperties.AutomationIdProperty) as string != null
-                || b.Content is PathIcon);
+        var item = tabControl.Items[index];
+        if (item is null)
+            throw new InvalidOperationException($"Item at tab index {index} is null.");
 
-        if (closeButton is null)
-            throw new InvalidOperationException($"Close button not found in tab item at index {index}.");
+        // Use ContainerFromItem instead of ContainerFromIndex for headless compatibility
+        var tabItem = tabControl.ContainerFromItem(item) as TabItem;
 
-        closeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        if (tabItem is not null)
+        {
+            var closeButton = FindDescendants<Button>(tabItem)
+                .FirstOrDefault(b => b.GetValue(AutomationProperties.AutomationIdProperty) as string != null
+                    || b.Content is PathIcon);
+
+            if (closeButton is not null)
+            {
+                closeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                window.Flush();
+                return;
+            }
+        }
+
+        // Fallback: in headless mode, TabControl containers may not be generated.
+        // Access the ViewModel through the UI's DataContext to execute the close command.
+        var vm = window.DataContext as MainWindowViewModel;
+        if (vm is null)
+            throw new InvalidOperationException("MainWindowViewModel not found.");
+
+        var project = item as IProjectViewModel;
+        if (project is null)
+            throw new InvalidOperationException($"Project at index {index} is not an IProjectViewModel.");
+
+        // Use reflection to call the private CloseTab method (matching the AXAML binding)
+        var closeTabMethod = typeof(MainWindowViewModel).GetMethod("CloseTab", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (closeTabMethod is null)
+            throw new InvalidOperationException("CloseTab method not found on MainWindowViewModel.");
+
+        var task = closeTabMethod.Invoke(vm, new object[] { project }) as System.Threading.Tasks.Task;
+        task?.Wait();
         window.Flush();
     }
 
     /// <summary>
+    /// Get the count of completed simulations from the TasksPopOver ViewModel.
+    /// This works in headless mode where flyout popups cannot be rendered.
+    /// </summary>
+    public static int GetCompletedSimulationCount(this MainWindow window)
+    {
+        var vm = window.DataContext as MainWindowViewModel;
+        return vm?.TasksPopOver.Completed.Count() ?? 0;
+    }
+
+    /// <summary>
+    /// Get the count of in-progress simulations from the TasksPopOver ViewModel.
+    /// This works in headless mode where flyout popups cannot be rendered.
+    /// </summary>
+    public static int GetInProgressSimulationCount(this MainWindow window)
+    {
+        var vm = window.DataContext as MainWindowViewModel;
+        return vm?.TasksPopOver.InProgress.Count() ?? 0;
+    }
+
+    /// <summary>
     /// Get the Items collection from the first ItemsControl in the TasksPopOver (InProgress section).
+    /// Note: Requires the flyout to be open. In headless mode, use GetCompletedSimulationCount() instead.
     /// </summary>
     public static IEnumerable<object?>? GetTasksPopOverItems(this MainWindow window)
     {

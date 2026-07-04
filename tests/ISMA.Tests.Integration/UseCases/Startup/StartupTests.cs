@@ -17,10 +17,11 @@ public class SessionRestoreTests : IntegrationTestBase
     public async Task UC10_LastOpenedFiles_TrackedOnOpen()
     {
         // Create a project (this tracks the file if it has a path)
-        await ViewModel.NewTextCommand.ExecuteAsync(null);
+        Window.ClickMenuItem("MenuNewText");
+        Window.Flush();
 
         // Project should exist
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
     }
 
     [AvaloniaFact]

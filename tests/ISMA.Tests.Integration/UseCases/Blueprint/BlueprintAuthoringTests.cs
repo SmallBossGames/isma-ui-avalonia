@@ -44,10 +44,10 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
 
-        editorVm.States.Should().HaveCount(4); // Main, Init, State1, State2
+        Window.GetStateBoxCount().Should().Be(4); // Main, Init, State1, State2
     }
 
     [AvaloniaFact]
@@ -59,16 +59,16 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(4);
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
+        Window.GetStateBoxCount().Should().Be(4);
 
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
-        editorVm.AddTransitionCommand.Execute(null);
+        editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm!.SetTransitionSource(editorVm!.States[2]);
+        editorVm!.SelectedState = editorVm!.States[3];
+        editorVm!.AddTransitionCommand.Execute(null);
 
-        editorVm.Transactions.Should().HaveCount(1);
+        editorVm!.Transactions.Should().HaveCount(1);
     }
 
     [AvaloniaFact]
@@ -80,12 +80,12 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        Window.ClickAddStateButton();
+        Window.GetStateBoxCount().Should().Be(3);
 
-        var newStateName = editorVm.States[2].Name;
-        editorVm.AddStateWithName(newStateName, 200, 200);
-        editorVm.States.Should().HaveCount(3); // No new state added
+        var newStateName = editorVm!.States[2].Name;
+        editorVm!.AddStateWithName(newStateName, 200, 200);
+        editorVm!.States.Should().HaveCount(3); // No new state added
     }
 
     [AvaloniaFact]
@@ -97,12 +97,12 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        Window.ClickAddStateButton();
+        Window.GetStateBoxCount().Should().Be(3);
 
-        editorVm.AddStateWithName("UniqueState", 200, 200);
-        editorVm.States.Should().HaveCount(4);
-        editorVm.States[3].Name.Should().Be("UniqueState");
+        editorVm!.AddStateWithName("UniqueState", 200, 200);
+        editorVm!.States.Should().HaveCount(4);
+        editorVm!.States[3].Name.Should().Be("UniqueState");
     }
 
     [AvaloniaFact]
@@ -114,19 +114,19 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
-        editorVm.AddTransitionCommand.Execute(null);
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
+        editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm!.SetTransitionSource(editorVm!.States[2]);
+        editorVm!.SelectedState = editorVm!.States[3];
+        editorVm!.AddTransitionCommand.Execute(null);
 
-        editorVm.Transactions.Should().HaveCount(1);
-        var oldTxStartState = editorVm.Transactions[0].StartState.Name;
+        editorVm!.Transactions.Should().HaveCount(1);
+        var oldTxStartState = editorVm!.Transactions[0].StartState.Name;
 
-        editorVm.UpdateStateName(editorVm.States[2], "RenamedState");
-        editorVm.Transactions.Should().HaveCount(1);
-        editorVm.Transactions[0].StartState.Name.Should().Be("RenamedState");
+        editorVm!.UpdateStateName(editorVm!.States[2], "RenamedState");
+        editorVm!.Transactions.Should().HaveCount(1);
+        editorVm!.Transactions[0].StartState.Name.Should().Be("RenamedState");
     }
 
     [AvaloniaFact]
@@ -159,15 +159,15 @@ public class AuthorBlueprintTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3);
+        Window.ClickAddStateButton();
+        Window.GetStateBoxCount().Should().Be(3);
 
         // Remove the added state
-        editorVm.Mode = new EditorMode.RemoveState();
-        editorVm.SelectedState = editorVm.States[2];
-        editorVm.RemoveStateCommand.Execute(null);
+        editorVm!.Mode = new EditorMode.RemoveState();
+        editorVm!.SelectedState = editorVm!.States[2];
+        editorVm!.RemoveStateCommand.Execute(null);
 
-        editorVm.States.Should().HaveCount(2); // Back to Main and Init
+        editorVm!.States.Should().HaveCount(2); // Back to Main and Init
     }
 }
 
@@ -196,14 +196,14 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(4);
+        Window.ClickAddStateButton();
+        Window.ClickAddStateButton();
+        Window.GetStateBoxCount().Should().Be(4);
 
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
-        editorVm.AddTransitionCommand.Execute(null);
+        editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm!.SetTransitionSource(editorVm!.States[2]);
+        editorVm!.SelectedState = editorVm!.States[3];
+        editorVm!.AddTransitionCommand.Execute(null);
 
         var lisma = blueprintProject.ConvertToLisma();
         lisma.Should().NotBeNull();
@@ -219,8 +219,8 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.GetBlueprintModel().States.Should().HaveCount(1);
+        Window.ClickAddStateButton();
+        editorVm!.GetBlueprintModel().States.Should().HaveCount(1);
     }
 
     [AvaloniaFact]
@@ -238,12 +238,12 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
         // Create blueprint project
         Window.ClickMenuItem("MenuNewBlueprint");
         Window.Flush();
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
 
         // Add a state
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
-        editorVm!.AddStateCommand.Execute(null);
+        Window.ClickAddStateButton();
 
         // Configure simulation parameters
         ViewModel.SimulationParameters.CauchyInitials.StartTime = 0.0;

@@ -1,11 +1,16 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
+using ISMA.App.Automation;
+using ISMA.App.Controls;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.Tests.Integration.UseCases.Simulation;
 
@@ -22,7 +27,7 @@ public class RunSimulationTests : IntegrationTestBase
     {
         // Step 1: Create new text project via UI
         Window.ClickMenuItem("MenuNewText");
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
 
         // Step 2: Write model text via UI
         Window.SetEditorText(@"
@@ -86,7 +91,7 @@ state ""initial"" (1 > 0) {
     [AvaloniaFact]
     public async Task UC01_Simulation_WithNoActiveProject_DoesNotThrow()
     {
-        ViewModel.ActiveProject = null;
+        Window.GetProjectCount().Should().Be(0);
 
         Action run = () => Window.ClickMenuItem("MenuRun");
         run.Should().NotThrow();
@@ -165,7 +170,7 @@ state ""initial"" (1 > 0) {
         MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
         // Start simulation
-        var simulationTask = ViewModel.RunCommand.ExecuteAsync(null);
+        Window.ClickMenuItem("MenuRun");
         await Task.Delay(100);
 
         ViewModel.SimulationService.IsRunning.Should().BeTrue();
@@ -178,7 +183,7 @@ state ""initial"" (1 > 0) {
         }
 
         cts.Cancel();
-        await simulationTask;
+        await Task.Delay(200);
 
         ViewModel.SimulationService.IsRunning.Should().BeFalse();
     }

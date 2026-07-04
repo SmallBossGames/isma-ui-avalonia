@@ -18,7 +18,7 @@ public class LoopArrowEditingTests : IntegrationTestBase
     {
         // Create blueprint project
         Window.ClickMenuItem("MenuNewBlueprint");
-        ViewModel.Projects.Should().HaveCount(1);
+        Window.GetProjectCount().Should().Be(1);
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
@@ -49,11 +49,11 @@ public class LoopArrowEditingTests : IntegrationTestBase
 
         // The loop arrow double-click should create a new text tab
         // (In headless mode, we verify the ViewModel state rather than UI interaction)
-        var initialTabCount = ViewModel.Projects.Count;
+        var initialTabCount = Window.GetProjectCount();
 
         // Simulate the loop text update via ContentChanged
-        var newProject = ViewModel.Projects.FirstOrDefault(p => p.Name.Contains("loop"));
-        newProject.Should().BeNull(); // No loop tab yet
+        var activeProject = Window.GetActiveProject();
+        (activeProject?.Name?.Contains("loop")).Should().BeFalse(); // No loop tab yet
 
         // The actual double-click test would require UI interaction with the LoopArrow control
         // which is difficult in headless mode. The implementation is verified in BlueprintEditorTests.
