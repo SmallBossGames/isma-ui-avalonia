@@ -30,10 +30,7 @@
             <Canvas x:Name="Canvas"
                     Width="1200"
                     Height="800"
-                    Background="White"
-                    PointerMoved="OnCanvasPointerMoved"
-                    PointerReleased="OnCanvasPointerReleased"
-                    PointerExited="OnCanvasPointerExited">
+                    Background="White">
 
                 <!-- Transaction arrows layer -->
                 <ItemsControl ItemsSource="{Binding Transactions}">
@@ -93,11 +90,8 @@
                                                StateHeight="{Binding StateHeight}"
                                                CanvasPositionX="{Binding CanvasPositionX}"
                                                CanvasPositionY="{Binding CanvasPositionY}"
-                                               StatePressed="OnStateBoxStatePressed"
-                                               StateReleased="OnStateBoxStateReleased"
-                                               StateClicked="OnStateBoxStateClicked"
-                                               StateDoubleClicked="OnStateBoxStateDoubleClicked"
-                                               NameCommitted="OnStateBoxNameCommitted"/>
+                            StatePressed="OnStateBoxStatePressed"
+                            StateReleased="OnStateBoxStateReleased"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

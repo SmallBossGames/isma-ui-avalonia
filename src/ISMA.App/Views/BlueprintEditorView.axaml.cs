@@ -4,11 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
-using ISMA.App.Controls;
-using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Views;
@@ -17,28 +13,12 @@ public partial class BlueprintEditorView : UserControl
 {
     private EditArrowPopOverView? _popOverView;
     private EditArrowPopOverViewModel? _popOverViewModel;
-    private BlueprintTransactionViewModel? _editingTransaction;
-    private const double StateWidth = 110.0;
-    private const double DoubleClickThreshold = 300;
-    private const double SingleClickDelay = 200;
-
-    private BlueprintStateViewModel? _draggingState;
-    private Point _dragStartPoint;
-    private Point _dragOffset;
-    private bool _isDragging;
-    private DispatcherTimer? _singleClickTimer;
-    private Border? _editingBorder;
-    private TextBox? _editingTextBox;
-    private string? _previousName;
-    private BlueprintStateViewModel? _editingState;
-    private PointerPoint? _lastPressedPoint;
-    private ProjectService? _projectService;
+    private BlueprintEditorViewModel? _vm;
 
     public BlueprintEditorView()
     {
         InitializeComponent();
         InitializePopOver();
-        InitializeSingleClickTimer();
         Loaded += OnLoaded;
     }
 
@@ -47,32 +27,8 @@ public partial class BlueprintEditorView : UserControl
         _popOverView = new EditArrowPopOverView();
         _popOverViewModel = new EditArrowPopOverViewModel();
         _popOverView.DataContext = _popOverViewModel;
-
-        _popOverView.AliasChanged += OnPopOverAliasChanged;
-        _popOverView.PredicateChanged += OnPopOverPredicateChanged;
         _popOverView.DismissRequested += OnPopOverDismissRequested;
-
         EditArrowPopup.Child = _popOverView;
-    }
-
-    private void InitializeSingleClickTimer()
-    {
-        _singleClickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SingleClickDelay) };
-        _singleClickTimer.Tick += (s, e) =>
-        {
-            _singleClickTimer?.Stop();
-            if (!_isDragging && _editingBorder != null && _editingState != null)
-            {
-                var point = _lastPressedPoint;
-                if (point != null)
-                {
-                    OpenInlineNameEditor(_editingBorder, _editingState, point.Value);
-                }
-            }
-            _editingBorder = null;
-            _editingState = null;
-            _lastPressedPoint = null;
-        };
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -81,87 +37,27 @@ public partial class BlueprintEditorView : UserControl
 
         if (DataContext is BlueprintEditorViewModel oldVm)
         {
-            oldVm.PropertyChanged -= OnViewModelPropertyChanged;
-            oldVm.States.CollectionChanged -= OnStatesCollectionChanged;
-            oldVm.Transactions.CollectionChanged -= OnTransactionsCollectionChanged;
-            oldVm.LoopTransactions.CollectionChanged -= OnLoopTransactionsCollectionChanged;
+            Unsubscribe(oldVm);
         }
 
         if (DataContext is BlueprintEditorViewModel newVm)
         {
-            newVm.PropertyChanged += OnViewModelPropertyChanged;
-            newVm.States.CollectionChanged += OnStatesCollectionChanged;
-            newVm.Transactions.CollectionChanged += OnTransactionsCollectionChanged;
-            newVm.LoopTransactions.CollectionChanged += OnLoopTransactionsCollectionChanged;
-
-            var window = FindWindow();
-            if (window?.DataContext is MainWindowViewModel mainWindowVm)
-            {
-                _projectService = mainWindowVm.ProjectService;
-            }
+            Subscribe(newVm);
         }
     }
 
-    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void Subscribe(BlueprintEditorViewModel vm)
     {
-        if (e.PropertyName == nameof(BlueprintEditorViewModel.States) ||
-            e.PropertyName == nameof(BlueprintEditorViewModel.Transactions) ||
-            e.PropertyName == nameof(BlueprintEditorViewModel.LoopTransactions))
-        {
-            Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-        }
+        _vm = vm;
+        vm.EditArrowRequested += OnEditArrowRequested;
+        vm.States.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        vm.Transactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        vm.LoopTransactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
     }
 
-    private void RecalculateCanvasSize()
+    private void Unsubscribe(BlueprintEditorViewModel vm)
     {
-        if (DataContext is not BlueprintEditorViewModel vm)
-            return;
-
-        double minX = double.MaxValue;
-        double minY = double.MaxValue;
-        double maxX = double.MinValue;
-        double maxY = double.MinValue;
-
-        foreach (var state in vm.States)
-        {
-            double left = state.CanvasPositionX;
-            double top = state.CanvasPositionY;
-            double right = left + 110;
-            double bottom = top + state.StateHeight;
-
-            minX = Math.Min(minX, left);
-            minY = Math.Min(minY, top);
-            maxX = Math.Max(maxX, right);
-            maxY = Math.Max(maxY, bottom);
-        }
-
-        if (minX == double.MaxValue)
-        {
-            Canvas.Width = 1200;
-            Canvas.Height = 800;
-            return;
-        }
-
-        double padding = 200;
-        double contentWidth = (maxX - minX) + padding;
-        double contentHeight = (maxY - minY) + padding;
-        Canvas.Width = Math.Max(400, contentWidth);
-        Canvas.Height = Math.Max(300, contentHeight);
-    }
-
-    private void OnStatesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-    {
-        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-    }
-
-    private void OnTransactionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-    {
-        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-    }
-
-    private void OnLoopTransactionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-    {
-        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        vm.EditArrowRequested -= OnEditArrowRequested;
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -169,502 +65,81 @@ public partial class BlueprintEditorView : UserControl
         Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
     }
 
-    private void OnStatePointerPressed(object? sender, PointerPressedEventArgs e)
+    private void RecalculateCanvasSize()
     {
-        if (sender is not Border border || border.DataContext is not BlueprintStateViewModel stateVm)
-            return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        var position = e.GetPosition(Canvas);
-
-        if (e.ClickCount > 1)
+        if (_vm == null) return;
+        double minX = double.MaxValue, minY = double.MaxValue;
+        double maxX = double.MinValue, maxY = double.MinValue;
+        foreach (var state in _vm.States)
         {
-            OpenStateTextEditorTab(stateVm);
-            _singleClickTimer?.Stop();
-            _editingBorder = null;
-            _editingState = null;
-            return;
+            minX = Math.Min(minX, state.CanvasPositionX);
+            minY = Math.Min(minY, state.CanvasPositionY);
+            maxX = Math.Max(maxX, state.CanvasPositionX + 110);
+            maxY = Math.Max(maxY, state.CanvasPositionY + state.StateHeight);
         }
-
-        _lastPressedPoint = e.GetCurrentPoint(Canvas);
-
-        if (vm.Mode is EditorMode.AddTransition)
-        {
-            if (vm.SelectedState == null) return;
-
-            if (vm.GetTransitionSource() != null)
-            {
-                if (stateVm != vm.GetTransitionSource())
-                {
-                    vm.SelectedState = stateVm;
-                    vm.AddTransitionCommand.Execute(null);
-                }
-                else
-                {
-                    CreateLoopFromSelected(stateVm);
-                }
-            }
-            else
-            {
-                vm.SetTransitionSource(stateVm);
-            }
-            return;
-        }
-
-        if (vm.Mode is EditorMode.RemoveState)
-        {
-            vm.SelectedState = stateVm;
-            vm.RemoveStateCommand.Execute(null);
-            return;
-        }
-
-        if (vm.Mode is EditorMode.Default && !stateVm.IsMain && !stateVm.IsInit && stateVm.IsEnabled)
-        {
-            _draggingState = stateVm;
-            _dragStartPoint = position;
-            _dragOffset = new Point(position.X - stateVm.CanvasPositionX, position.Y - stateVm.CanvasPositionY);
-            _isDragging = false;
-
-            _editingBorder = border;
-            _editingState = stateVm;
-            _previousName = stateVm.Name;
-            _singleClickTimer?.Stop();
-            _singleClickTimer?.Start();
-        }
-
-        e.Handled = true;
+        if (minX == double.MaxValue) { Canvas.Width = 1200; Canvas.Height = 800; return; }
+        Canvas.Width = Math.Max(400, (maxX - minX) + 200);
+        Canvas.Height = Math.Max(300, (maxY - minY) + 200);
     }
 
-    private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
+    private void OnEditArrowRequested(BlueprintTransactionViewModel tx, double x, double y)
     {
-        if (_draggingState == null || _isDragging == false) return;
-
-        var position = e.GetPosition(Canvas);
-        var dx = position.X - _dragStartPoint.X;
-        var dy = position.Y - _dragStartPoint.Y;
-        var distance = Math.Sqrt(dx * dx + dy * dy);
-
-        if (distance > 3.0)
-        {
-            _isDragging = true;
-            _singleClickTimer?.Stop();
-
-            var newX = Math.Max(0.0, position.X - _dragOffset.X);
-            var newY = Math.Max(0.0, position.Y - _dragOffset.Y);
-
-            _draggingState.CanvasPositionX = newX;
-            _draggingState.CanvasPositionY = newY;
-        }
+        if (_popOverViewModel == null) return;
+        _popOverViewModel.Alias = tx.Alias ?? "";
+        _popOverViewModel.Predicate = tx.Predicate ?? "";
+        EditArrowPopup.PlacementTarget = Canvas;
+        EditArrowPopup.Placement = PlacementMode.Pointer;
+        EditArrowPopup.IsOpen = true;
     }
 
-    private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (_draggingState != null)
-        {
-            if (!_isDragging)
-            {
-                var vm = DataContext as BlueprintEditorViewModel;
-                if (vm != null)
-                {
-                    vm.SelectedState = _draggingState;
-                }
-            }
-            else
-            {
-                Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-            }
-
-            _draggingState = null;
-            _isDragging = false;
-        }
-    }
-
-    private void OnCanvasPointerExited(object? sender, PointerEventArgs e)
-    {
-        if (_draggingState != null)
-        {
-            _draggingState = null;
-            _isDragging = false;
-            _singleClickTimer?.Stop();
-        }
-    }
-
-    private void OnArrowHeadClicked(object? sender, ArrowHitTestEventArgs e)
-    {
-        if (sender is not ArrowLine arrow) return;
-        OnArrowHeadClicked(this, arrow, e.ClickPosition);
-    }
-
-    private void OnArrowBodyClicked(object? sender, ArrowHitTestEventArgs e)
-    {
-        if (sender is not ArrowLine arrow) return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        if (vm.Mode is EditorMode.RemoveTransition)
-        {
-            OnArrowClicked(arrow, arrow);
-        }
-    }
-
-    private void OnLoopArrowHeadClickedEvent(object? sender, ArrowHitTestEventArgs e)
-    {
-        if (sender is not LoopArrow arrow) return;
-        OnLoopArrowHeadClicked(arrow, arrow);
-    }
-
-    private void OnLoopBodyClicked(object? sender, ArrowHitTestEventArgs e)
-    {
-        if (sender is not LoopArrow arrow) return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        if (vm.Mode is EditorMode.RemoveTransition)
-        {
-            OnLoopClicked(arrow, arrow);
-        }
-    }
-
-    private void OpenInlineNameEditor(Border border, BlueprintStateViewModel state, PointerPoint point)
-    {
-        if (state.IsMain || state.IsInit) return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm == null || vm.Mode is not EditorMode.Default) return;
-
-        StopInlineNameEditor();
-
-        var textBox = new TextBox
-        {
-            Text = state.Name,
-            FontSize = 16,
-            FontWeight = Avalonia.Media.FontWeight.Bold,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Width = 90,
-            MaxWidth = 90
-        };
-
-        textBox.KeyDown += (s, e) =>
-        {
-            if (e.Key == Key.Enter)
-            {
-                CommitInlineName(textBox, state);
-            }
-            else if (e.Key == Key.Escape)
-            {
-                CancelInlineName(state);
-            }
-        };
-
-        textBox.LostFocus += (s, e) =>
-        {
-            CommitInlineName(textBox, state);
-        };
-
-        var grid = new Grid
-        {
-            Width = 110,
-            Height = state.StateHeight > 0 ? state.StateHeight : 65
-        };
-        grid.Children.Add(textBox);
-        border.Child = grid;
-        textBox.Focus();
-        textBox.SelectAll();
-
-        _editingTextBox = textBox;
-        _editingState = state;
-    }
-
-    private void CommitInlineName(TextBox textBox, BlueprintStateViewModel state)
-    {
-        var newName = textBox.Text?.Trim();
-        if (string.IsNullOrEmpty(newName))
-        {
-            newName = _previousName;
-        }
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm != null)
-        {
-            vm.UpdateStateName(state, newName ?? _previousName!);
-        }
-
-        StopInlineNameEditor();
-    }
-
-    private void CancelInlineName(BlueprintStateViewModel state)
-    {
-        if (_previousName != null)
-        {
-            var vm = DataContext as BlueprintEditorViewModel;
-            if (vm != null)
-            {
-                vm.UpdateStateName(state, _previousName);
-            }
-        }
-        StopInlineNameEditor();
-    }
-
-    private void StopInlineNameEditor()
-    {
-        _editingTextBox = null;
-        _editingState = null;
-        _previousName = null;
-    }
-
-    private void OpenStateTextEditorTab(BlueprintStateViewModel state)
-    {
-        if (_projectService == null) return;
-
-        var newProject = _projectService.CreateNewTextProject(state.Name);
-        newProject.SetContent(state.Text);
-
-        var window = FindWindow();
-        if (window?.DataContext is MainWindowViewModel mainWindowVm)
-        {
-            mainWindowVm.ActiveProject = newProject;
-            mainWindowVm.SyncProjects();
-        }
-    }
-
-    private Avalonia.Controls.Window? FindWindow()
-    {
-        return this.FindAncestorOfType<Avalonia.Controls.Window>();
-    }
-
-    private void OnArrowClicked(object? sender, ArrowLine arrow)
-    {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        if (vm.Mode is EditorMode.RemoveTransition)
-        {
-            var tx = arrow.StartState != null && arrow.EndState != null
-                ? vm.Transactions.FirstOrDefault(t => t.StartState == arrow.StartState && t.EndState == arrow.EndState)
-                : null;
-
-            if (tx != null)
-            {
-                vm.SelectedTransaction = tx;
-                vm.RemoveTransitionCommand.Execute(null);
-            }
-        }
-    }
-
-    private void OnArrowHeadClicked(object sender, ArrowLine arrow, Point clickPosition)
-    {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        var tx = arrow.StartState != null && arrow.EndState != null
-            ? vm.Transactions.FirstOrDefault(t => t.StartState == arrow.StartState && t.EndState == arrow.EndState)
-            : null;
-
-        if (tx != null)
-        {
-            _editingTransaction = tx;
-            _popOverViewModel!.Alias = tx.Alias;
-            _popOverViewModel.Predicate = tx.Predicate;
-
-            var control = sender as Control;
-            if (control != null)
-            {
-                var root = control.FindAncestorOfType<Window>();
-                if (root != null)
-                {
-                    var rootPoint = control.TranslatePoint(clickPosition, root);
-                    if (rootPoint.HasValue)
-                    {
-                        EditArrowPopup.PlacementTarget = control;
-                        EditArrowPopup.Placement = PlacementMode.Pointer;
-                        EditArrowPopup.HorizontalOffset = rootPoint.Value.X - 150;
-                        EditArrowPopup.VerticalOffset = rootPoint.Value.Y - 2;
-                        EditArrowPopup.IsOpen = true;
-                    }
-                }
-            }
-        }
-    }
-
-    private void OnLoopClicked(object? sender, LoopArrow arrow)
-    {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        if (vm.Mode is EditorMode.RemoveTransition)
-        {
-            var loop = arrow.State != null
-                ? vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State)
-                : null;
-
-            if (loop != null)
-            {
-                vm.SelectedState = loop.State;
-                vm.RemoveLoopCommand.Execute(null);
-            }
-        }
-    }
-
-    private void OnLoopArrowHeadClicked(object? sender, LoopArrow arrow)
-    {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null || arrow.State == null) return;
-
-        var loop = vm.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
-        if (loop == null) return;
-
-        if (_projectService == null) return;
-
-        var tabName = $"{loop.State.Name} (loop)";
-        var newProject = _projectService.CreateNewTextProject(tabName);
-        newProject.SetContent(loop.Text);
-
-        var window = FindWindow();
-        if (window?.DataContext is MainWindowViewModel mainWindowVm)
-        {
-            mainWindowVm.ActiveProject = newProject;
-            mainWindowVm.SyncProjects();
-
-            if (newProject is LismaProjectViewModel lismaProject)
-            {
-                lismaProject.ContentChanged += (text) => { loop.Text = text; };
-            }
-        }
-    }
-
-    private void OnPopOverAliasChanged()
-    {
-        if (_editingTransaction != null && _popOverViewModel != null)
-        {
-            _editingTransaction.Alias = _popOverViewModel.Alias ?? "";
-        }
-    }
-
-    private void OnPopOverPredicateChanged()
-    {
-        if (_editingTransaction != null && _popOverViewModel != null)
-        {
-            _editingTransaction.Predicate = _popOverViewModel.Predicate ?? "";
-        }
-    }
-
-    private void OnPopOverDismissRequested()
-    {
-        EditArrowPopup.IsOpen = false;
-        _editingTransaction = null;
-    }
+    private void OnPopOverDismissRequested() => EditArrowPopup.IsOpen = false;
 
     private void OnStateBoxStatePressed(object? sender, PointerEventArgs e)
     {
-        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
-            return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
+        if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
         var position = e.GetPosition(Canvas);
-
-        if (vm.Mode is EditorMode.AddTransition)
-        {
-            if (vm.GetTransitionSource() != null)
-            {
-                if (stateVm != vm.GetTransitionSource())
-                {
-                    vm.SelectedState = stateVm;
-                    vm.AddTransitionCommand.Execute(null);
-                }
-                else
-                {
-                    CreateLoopFromSelected(stateVm);
-                }
-            }
-            else
-            {
-                vm.SetTransitionSource(stateVm);
-            }
-            return;
-        }
-
-        if (vm.Mode is EditorMode.RemoveState)
-        {
-            vm.SelectedState = stateVm;
-            vm.RemoveStateCommand.Execute(null);
-            return;
-        }
-
-        _draggingState = stateVm;
-        _dragStartPoint = position;
-        _dragOffset = new Point(position.X - stateVm.CanvasPositionX, position.Y - stateVm.CanvasPositionY);
-        _isDragging = false;
-
-        e.Handled = true;
+        _vm?.OnStatePressed(stateVm, position.X, position.Y);
     }
 
-    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e)
+    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e) => _vm?.OnStateReleased();
+
+    private void OnArrowHeadClicked(object? sender, Controls.ArrowHitTestEventArgs e)
     {
-        if (_draggingState != null)
-        {
-            Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-            _draggingState = null;
-            _isDragging = false;
-        }
+        if (sender is not Controls.ArrowLine arrow) return;
+        var tx = GetTransaction(arrow);
+        if (tx != null) _vm?.OnArrowHeadClicked(tx, e.ClickPosition.X, e.ClickPosition.Y);
     }
 
-    private void OnStateBoxStateClicked(object? sender, RoutedEventArgs e)
+    private void OnArrowBodyClicked(object? sender, Controls.ArrowHitTestEventArgs e)
     {
-        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
-            return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        vm.SelectedState = stateVm;
+        if (sender is not Controls.ArrowLine arrow) return;
+        var tx = GetTransaction(arrow);
+        if (tx != null) _vm?.OnArrowBodyClicked(tx);
     }
 
-    private void OnStateBoxStateDoubleClicked(object? sender, RoutedEventArgs e)
+    private void OnLoopArrowHeadClickedEvent(object? sender, Controls.ArrowHitTestEventArgs e)
     {
-        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
-            return;
-
-        OpenStateTextEditorTab(stateVm);
+        if (sender is not Controls.LoopArrow arrow) return;
+        var loop = GetLoop(arrow);
+        if (loop != null) _vm?.OnLoopArrowHeadClicked(loop);
     }
 
-    private void OnStateBoxNameCommitted(object? sender, string? newName)
+    private void OnLoopBodyClicked(object? sender, Controls.ArrowHitTestEventArgs e)
     {
-        if (sender is not StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm)
-            return;
-
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
-
-        var finalName = string.IsNullOrEmpty(newName) ? stateVm.Name : newName;
-        vm.UpdateStateName(stateVm, finalName);
+        if (sender is not Controls.LoopArrow arrow) return;
+        var loop = GetLoop(arrow);
+        if (loop != null) _vm?.OnLoopBodyClicked(loop);
     }
 
-    private void CreateLoopFromSelected(BlueprintStateViewModel state)
+    private BlueprintTransactionViewModel? GetTransaction(Controls.ArrowLine arrow)
     {
-        var vm = DataContext as BlueprintEditorViewModel;
-        if (vm is null) return;
+        if (arrow.StartState == null || arrow.EndState == null) return null;
+        return _vm?.Transactions.FirstOrDefault(t => t.StartState == arrow.StartState && t.EndState == arrow.EndState);
+    }
 
-        foreach (var loop in vm.LoopTransactions)
-        {
-            if (loop.State == state) return;
-        }
-
-        var newLoop = new Domain.Models.BlueprintLoopTransactionModel
-        {
-            StateName = state.Name,
-            Predicate = "1 > 0",
-            Alias = "",
-            Text = ""
-        };
-
-        vm.AddLoop(newLoop);
-        vm.ResetEditorModeCommand.Execute(null);
+    private BlueprintLoopTransactionViewModel? GetLoop(Controls.LoopArrow arrow)
+    {
+        if (arrow.State == null) return null;
+        return _vm?.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
     }
 }

@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
@@ -70,6 +72,9 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public event Action<BlueprintStateViewModel>? StateTextEditorRequested;
     public event Action<BlueprintLoopTransactionViewModel>? LoopTextEditorRequested;
+    public event Action<BlueprintTransactionViewModel, double, double>? EditArrowRequested;
+
+    private BlueprintStateViewModel? _draggingState;
 
     partial void OnModeChanged(EditorMode value)
     {
@@ -111,6 +116,109 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     public BlueprintEditorViewModel(NameChangingMonitor nameMonitor)
     {
         _nameMonitor = nameMonitor;
+    }
+
+    public void OnStatePressed(BlueprintStateViewModel state, double positionX, double positionY)
+    {
+        if (Mode is EditorMode.AddTransition addMode)
+        {
+            if (addMode.SelectedStates.Count > 0)
+            {
+                if (state.Name != addMode.SelectedStates[0].Name)
+                {
+                    SelectedState = state;
+                    AddTransitionCommand.Execute(null);
+                }
+                else
+                {
+                    CreateLoop(state);
+                }
+            }
+            else
+            {
+                addMode.SelectedStates.Add(state);
+            }
+            return;
+        }
+
+        if (Mode is EditorMode.RemoveState)
+        {
+            SelectedState = state;
+            RemoveStateCommand.Execute(null);
+            return;
+        }
+
+        _draggingState = state;
+    }
+
+    public void OnStateReleased()
+    {
+        if (_draggingState != null)
+        {
+            SelectedState = _draggingState;
+        }
+        _draggingState = null;
+    }
+
+    public void OnStateClicked(BlueprintStateViewModel state)
+    {
+        SelectedState = state;
+    }
+
+    public void OnStateDoubleClicked(BlueprintStateViewModel state)
+    {
+        OpenStateTextEditor(state);
+    }
+
+    public void OnStateNameCommitted(BlueprintStateViewModel state, string? newName)
+    {
+        var finalName = string.IsNullOrEmpty(newName) ? state.Name : newName;
+        UpdateStateName(state, finalName);
+    }
+
+    public void OnArrowHeadClicked(BlueprintTransactionViewModel transaction, double clickX, double clickY)
+    {
+        EditArrowRequested?.Invoke(transaction, clickX, clickY);
+    }
+
+    public void OnArrowBodyClicked(BlueprintTransactionViewModel transaction)
+    {
+        if (Mode is EditorMode.RemoveTransition)
+        {
+            SelectedTransaction = transaction;
+            RemoveTransitionCommand.Execute(null);
+        }
+    }
+
+    public void OnLoopArrowHeadClicked(BlueprintLoopTransactionViewModel loop)
+    {
+        OpenLoopTextEditor(loop);
+    }
+
+    public void OnLoopBodyClicked(BlueprintLoopTransactionViewModel loop)
+    {
+        if (Mode is EditorMode.RemoveTransition)
+        {
+            SelectedState = loop.State;
+            RemoveLoopCommand.Execute(null);
+        }
+    }
+
+    private void CreateLoop(BlueprintStateViewModel state)
+    {
+        foreach (var loop in _model.LoopTransactions)
+        {
+            if (loop.StateName == state.Name) return;
+        }
+        var newLoop = new BlueprintLoopTransactionModel
+        {
+            StateName = state.Name,
+            Predicate = "1 > 0",
+            Alias = "",
+            Text = ""
+        };
+        AddLoop(newLoop);
+        ResetEditorModeCommand.Execute(null);
     }
 
     [RelayCommand]
