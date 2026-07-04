@@ -198,7 +198,8 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
                 return;
 
             _highlightTokens = new ObservableCollection<SyntaxTokenDto>(tokens);
-            _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
+            if (_editorInstance is not null)
+                _editorFactory.SetSyntaxHighlighting(_editorInstance, tokens, source);
         }
         catch
         {

@@ -41,11 +41,9 @@ public class ArrowHitTestUiTests : IntegrationTestBase
     {
         // Create an ArrowLine control directly and verify events can be subscribed
         var arrowLine = new ArrowLine();
-        var headClicked = false;
-        var bodyClicked = false;
 
-        arrowLine.ArrowHeadClicked += (s, e) => headClicked = true;
-        arrowLine.ArrowBodyClicked += (s, e) => bodyClicked = true;
+        arrowLine.ArrowHeadClicked += (s, e) => { };
+        arrowLine.ArrowBodyClicked += (s, e) => { };
 
         // Verify event args work correctly
         var result = new ArrowHitTestResult { IsArrowHead = true };
@@ -86,11 +84,9 @@ public class ArrowHitTestUiTests : IntegrationTestBase
     {
         // Create a LoopArrow control directly and verify events can be subscribed
         var loopArrow = new LoopArrow();
-        var headClicked = false;
-        var bodyClicked = false;
 
-        loopArrow.LoopArrowHeadClicked += (s, e) => headClicked = true;
-        loopArrow.LoopBodyClicked += (s, e) => bodyClicked = true;
+        loopArrow.LoopArrowHeadClicked += (s, e) => { };
+        loopArrow.LoopBodyClicked += (s, e) => { };
 
         // Verify event args work correctly
         var result = new ArrowHitTestResult { IsArrowBody = true };

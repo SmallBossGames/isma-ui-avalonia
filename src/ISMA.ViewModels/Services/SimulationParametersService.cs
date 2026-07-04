@@ -6,7 +6,6 @@ namespace ISMA.ViewModels.Services;
 public class SimulationParametersService
 {
     private SimulationParameters _parameters = new();
-    private readonly IPreferencesProvider? _preferencesProvider;
 
     public SimulationParameters Parameters => _parameters;
 
@@ -19,10 +18,9 @@ public class SimulationParametersService
 
     public void LoadFromPreferences(IPreferencesProvider? preferencesProvider = null)
     {
-        var provider = preferencesProvider ?? _preferencesProvider;
-        if (provider == null) return;
+        if (preferencesProvider == null) return;
 
-        var prefs = provider.Load();
+        var prefs = preferencesProvider.Load();
         if (prefs?.SavedParameters != null)
         {
             _parameters = prefs.SavedParameters;
@@ -31,11 +29,10 @@ public class SimulationParametersService
 
     public void SaveToPreferences(IPreferencesProvider? preferencesProvider = null)
     {
-        var provider = preferencesProvider ?? _preferencesProvider;
-        if (provider == null) return;
+        if (preferencesProvider == null) return;
 
-        var prefs = provider.Load();
+        var prefs = preferencesProvider.Load();
         prefs.SavedParameters = _parameters;
-        provider.Save(prefs);
+        preferencesProvider.Save(prefs);
     }
 }

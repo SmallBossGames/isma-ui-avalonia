@@ -37,7 +37,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
-        settingsPanel.IsVisible.Should().BeTrue();
+        settingsPanel!.IsVisible.Should().BeTrue();
     }
 
     [AvaloniaFact]
@@ -47,7 +47,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
         settingsPanel.Should().NotBeNull();
         settingsPanel.IsVisible.Should().BeTrue();
 
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         grids.Should().NotBeEmpty("PropertiesGrid controls should be in visual tree");
 
         var firstGrid = grids.First();
@@ -77,11 +77,12 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task CauchyInitials_TextBoxUpdatesPropagateToViewModel()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
 
         var startTimeBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsCauchyInitialsStartTime);
-        var cauchyVm = startTimeBox.DataContext as CauchyInitialsViewModel;
+        var cauchyVm = startTimeBox!.DataContext as CauchyInitialsViewModel;
         cauchyVm.Should().NotBeNull("TextBox DataContext should be CauchyInitialsViewModel");
 
         // Directly set the ViewModel property (bypasses binding which doesn't work in headless)
@@ -101,7 +102,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task EventDetection_CheckboxExistsAndWorks()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
 
         var stepLimitCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsEventDetectionStepLimit);
@@ -119,12 +121,13 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task IntegrationMethod_ComboBoxExistsAndShowsOptions()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel)
+        settingsPanel.Should().NotBeNull();
+        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel!)
             .FirstOrDefault(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
 
         methodComboBox.Should().NotBeNull("IntegrationMethod ComboBox should exist");
         methodComboBox.Should().NotBeNull();
-        var items = methodComboBox.ItemsSource.Cast<string>().ToList();
+        var items = methodComboBox!.ItemsSource!.Cast<string>().ToList();
         items.Should().Contain("Euler");
         items.Should().Contain("Runge-Kutta 2");
         items.Should().Contain("Runge-Kutta 4");
@@ -136,7 +139,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task IntegrationMethod_ComboBoxSelectionUpdatesViewModel()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel)
+        settingsPanel.Should().NotBeNull();
+        var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel!)
             .First(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
 
         methodComboBox.SelectedIndex = 2;
@@ -149,7 +153,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task ResultSaving_ComboBoxExistsAndShowsOptions()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
 
         var savingTargetBox = allComboBoxes.FirstOrDefault(cb =>
@@ -158,7 +163,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
         savingTargetBox.Should().NotBeNull("SavingTarget ComboBox should exist");
         savingTargetBox.ItemsSource.Should().NotBeNull();
 
-        var items = savingTargetBox.ItemsSource.Cast<string>().ToList();
+        var items = savingTargetBox!.ItemsSource.Cast<string>().ToList();
         items.Should().Contain("Memory");
         items.Should().Contain("File");
 
@@ -169,7 +174,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task ResultSaving_ComboBoxSelectionUpdatesViewModel()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
 
         var savingTargetBox = allComboBoxes.First(cb =>
@@ -187,7 +193,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task ResultProcessing_CheckBoxAndTextBox_ControlsExist()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
 
         var simplifyCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsResultProcessingSimplifyEnabled);
@@ -205,7 +212,8 @@ public class SettingsPanelUiTests : IntegrationTestBase
     public async Task AllSettingsSections_HavePropertiesGridControls()
     {
         var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel).ToList();
+        settingsPanel.Should().NotBeNull();
+        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
 
         grids.Should().HaveCount(4, "Should have 4 PropertiesGrid controls: CauchyInitials, EventDetection, ResultSaving, ResultProcessing (IntegrationMethod uses native ComboBox)");
     }

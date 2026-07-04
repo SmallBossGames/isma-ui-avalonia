@@ -35,7 +35,7 @@ public static class LismaSyntaxHelper
     /// Loads the embedded LISMA.xshd as a fallback highlighting definition.
     /// Cached after first load for performance.
     /// </summary>
-    public static IHighlightingDefinition GetFallbackHighlighting()
+    public static IHighlightingDefinition? GetFallbackHighlighting()
     {
         if (_fallbackHighlighting != null)
             return _fallbackHighlighting;

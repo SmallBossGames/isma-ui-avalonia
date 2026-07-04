@@ -23,7 +23,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         ViewModel.ActiveProject.Should().NotBeNull();
 
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states
         editorVm!.AddStateCommand.Execute(null);
@@ -50,7 +50,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states first
         editorVm!.AddStateCommand.Execute(null);
@@ -74,7 +74,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a state
         editorVm!.AddStateCommand.Execute(null);
@@ -95,7 +95,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states and transition
         editorVm!.AddStateCommand.Execute(null);
@@ -136,7 +136,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states
         editorVm!.AddStateCommand.Execute(null);
@@ -154,7 +154,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add first state
         editorVm!.AddStateCommand.Execute(null);
@@ -171,7 +171,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify initial mode
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
@@ -191,7 +191,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states
         editorVm!.AddStateCommand.Execute(null);

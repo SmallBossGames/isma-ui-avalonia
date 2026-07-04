@@ -56,7 +56,11 @@ public class SimulationResultService : ISimulationResultService
         dialog.InitializeColumns(columns);
         var window = new SelectVariablesDialogWindow(dialog);
 
-        var result = await window.ShowDialog<bool?>(_owner);
+        bool? result;
+        if (_owner is not null)
+            result = await window.ShowDialog<bool?>(_owner);
+        else
+            result = null;
 
         if (result == true && !string.IsNullOrEmpty(dialog.SelectedXAxis))
         {

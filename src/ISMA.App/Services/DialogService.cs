@@ -110,7 +110,10 @@ public class DialogService : IDialogService
         {
             var owner = _getMainWindow();
             var dialog = new SimpleDialogWindow(title, message);
-            await dialog.ShowDialog(owner);
+            if (owner is not null)
+                await dialog.ShowDialog(owner);
+            else
+                dialog.Show();
         });
     }
 
@@ -120,7 +123,10 @@ public class DialogService : IDialogService
         {
             var owner = _getMainWindow();
             var dialog = new SimpleDialogWindow(title, message);
-            await dialog.ShowDialog(owner);
+            if (owner is not null)
+                await dialog.ShowDialog(owner);
+            else
+                dialog.Show();
         });
     }
 
@@ -130,8 +136,13 @@ public class DialogService : IDialogService
         {
             var owner = _getMainWindow();
             var dialog = new SimpleDialogWindow(title, message, showOkCancel: true);
-            await dialog.ShowDialog(owner);
-            return dialog.DialogResultValue;
+            if (owner is not null)
+                return await dialog.ShowDialog<bool>(owner);
+            else
+            {
+                dialog.Show();
+                return false;
+            }
         });
     }
 }

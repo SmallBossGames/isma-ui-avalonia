@@ -24,7 +24,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a user state
         editorVm!.AddStateCommand.Execute(null);
@@ -47,7 +47,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a user state
         editorVm!.AddStateCommand.Execute(null);
@@ -83,7 +83,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add two user states
         editorVm!.AddStateCommand.Execute(null);
@@ -115,7 +115,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a user state
         editorVm!.AddStateCommand.Execute(null);
@@ -142,7 +142,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify Main state height is 60
         var mainState = editorVm!.States.First(s => s.IsMain);
@@ -164,7 +164,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify Main state shows only its name (no extra labels)
         var mainState = editorVm!.States.First(s => s.IsMain);
@@ -186,7 +186,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a user state
         editorVm!.AddStateCommand.Execute(null);
@@ -207,7 +207,7 @@ public class BlueprintCanvasUiTests : IntegrationTestBase
         // Create blueprint project
         await ViewModel.NewBlueprintCommand.ExecuteAsync(null);
         var blueprintProject = ViewModel.ActiveProject as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify initial button content
         editorVm.AddTransitionButtonContent.Should().Be("Add Transition");

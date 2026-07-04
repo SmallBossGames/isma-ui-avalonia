@@ -32,7 +32,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         var initialStateCount = editorVm!.States.Count;
         initialStateCount.Should().Be(2); // Main + Init
@@ -49,7 +49,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
 
@@ -66,7 +66,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.SetAddTransitionModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
@@ -83,7 +83,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
 
@@ -103,7 +103,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
 
@@ -123,7 +123,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.States.Should().HaveCount(2);
     }
@@ -135,7 +135,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
         mainState.FillColorHex.Should().Be("#90EE90");
@@ -148,7 +148,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
         initState.FillColorHex.Should().Be("#ADD8E6");
@@ -161,7 +161,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
         mainState.StateHeight.Should().Be(60);
@@ -174,7 +174,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
         initState.StateHeight.Should().Be(60);
@@ -187,7 +187,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         var mainState = editorVm!.States.First(s => s.IsMain);
         var initState = editorVm.States.First(s => s.IsInit);
@@ -203,7 +203,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
 
@@ -225,7 +225,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
 
@@ -240,7 +240,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
 
@@ -255,7 +255,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
 
@@ -270,7 +270,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
         bool eventFired = false;
@@ -294,7 +294,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
         bool eventFired = false;
@@ -318,7 +318,7 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
         Window.Flush();
 
         var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
+        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
 

@@ -178,8 +178,8 @@ public class MainWindowViewModelTests
             Mock.Of<IProjectFileService>(),
             CreateSyntaxHighlighterMock().Object,
             new LismaTextModel("", Array.Empty<CodeRegion>()),
-            null,
-            null);
+            null!,
+            null!);
 
         viewModel.ActiveProject = mockLismaProject.Object;
 
@@ -222,7 +222,7 @@ public class MainWindowViewModelTests
             mockErrorService.Object,
             Mock.Of<ISimulationResultService>(),
             new SimulationParametersService(),
-            null);
+            null!);
 
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();

@@ -212,7 +212,7 @@ state ""initial"" (1 > 0) {
         ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
     }
 
-    private static async IAsyncEnumerable<SimulationProgress> LongRunningSimulation(System.Threading.CancellationToken token)
+    private static async IAsyncEnumerable<SimulationProgress> LongRunningSimulation([System.Runtime.CompilerServices.EnumeratorCancellation] System.Threading.CancellationToken token)
     {
         for (double t = 0; t <= 10 && !token.IsCancellationRequested; t += 0.1)
         {

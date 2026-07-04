@@ -342,7 +342,8 @@ public class StateBox : ContentControl
         _textBox.KeyDown += OnTextBoxKeyDown;
         _textBox.LostFocus += OnTextBoxLostFocus;
 
-        grid.Children.Remove(_textBlock);
+        if (_textBlock is not null)
+            grid.Children.Remove(_textBlock);
         grid.Children.Add(_textBox);
         _textBox.Focus();
         _textBox.SelectAll();

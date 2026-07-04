@@ -123,7 +123,7 @@ state ""initial"" (1 > 0) {
         ViewModel.SimulationService.IsRunning.Should().BeTrue();
 
         // Cancel the simulation
-        ViewModel.SimulationService.StopSimulationAsync(ViewModel.SimulationService.TrackingTasks.FirstOrDefault()).Wait();
+        ViewModel.SimulationService.StopSimulationAsync(ViewModel.SimulationService.TrackingTasks.FirstOrDefault()!).Wait();
 
         // Cancel the coroutine
         cts.Cancel();
@@ -211,7 +211,7 @@ state ""initial"" (1 > 0) {
         lisma.FullText.Should().NotBeNullOrEmpty();
     }
 
-    private static async IAsyncEnumerable<SimulationProgress> LongRunningSimulation(System.Threading.CancellationToken token)
+    private static async IAsyncEnumerable<SimulationProgress> LongRunningSimulation([System.Runtime.CompilerServices.EnumeratorCancellation] System.Threading.CancellationToken token)
     {
         for (double t = 0; t <= 10 && !token.IsCancellationRequested; t += 0.1)
         {
