@@ -33,7 +33,7 @@ ISMA.App ──► ISMA.ViewModels ──► ISMA.Domain
 
 - **Avalonia 12.0.3** — `AvaloniaUseCompiledBindingsByDefault` is enabled globally in `Directory.Build.props`. All views use `x:DataType`.
 - **CommunityToolkit.Mvvm** — `[ObservableProperty]`, `[RelayCommand]`, source generators. No reactive frameworks.
-- **DI** — `Microsoft.Extensions.DependencyInjection`. App layer registers everything in `ServiceCollectionExtensions.cs`. Tests reuse `ConfigureTestServices()` from the same file.
+- **DI** — `Microsoft.Extensions.DependencyInjection`. App layer registers everything in `ServiceCollectionExtensions.cs`. Tests use `ConfigureAppServices()` and override specific services (e.g. `ISimulationServerFacade`) before calling it.
 - **Server communication** — gRPC over Unix Domain Sockets, with HTTP (gRPC-Web) as fallback. The `ISimulationServerFacade` is the single abstraction.
 - **No XAML code-behind logic** — Views contain only markup. All logic is in ViewModels or services.
 

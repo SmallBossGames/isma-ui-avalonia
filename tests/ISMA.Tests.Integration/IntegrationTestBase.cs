@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -31,16 +30,13 @@ public abstract class IntegrationTestBase : IDisposable
 
     protected IntegrationTestBase()
     {
-        // Create the mock server facade FIRST - it must be registered before ConfigureTestServices
-        MockServer = new MockSimulationServerFacade();
-
-        var services = new ServiceCollection();
-
         // Register the mocked server facade (this is the only difference from the real app)
+        MockServer = new MockSimulationServerFacade();
+        var services = new ServiceCollection();
         services.AddSingleton<ISimulationServerFacade>(MockServer);
 
         // Use the shared service collection configuration from the app
-        services.ConfigureTestServices();
+        services.ConfigureAppServices();
 
         Services = services.BuildServiceProvider();
 
