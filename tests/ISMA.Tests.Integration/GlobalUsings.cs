@@ -1,4 +1,5 @@
 global using global::Xunit;
+global using global::Avalonia.Headless.XUnit;
 global using FluentAssertions;
 global using ISMA.Domain.Contracts;
 global using ISMA.Domain.Conversion;

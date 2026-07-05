@@ -1,22 +1,25 @@
+using Avalonia;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using ISMA.App.Views;
-using ISMA.Tests.Integration;
 
 namespace ISMA.Tests.Integration;
 
-public class MainWindowIntegrationTests : IntegrationTestBase
+public class MainWindowIntegrationTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task MainWindow_Shows_All_Controls()
     {
-        var menubar = FindControl<IsmaMenuBarView>("MenuBar");
-        var toolbar = FindControl<IsmaToolBarView>("ToolBar");
-        var tabPane = FindControl<EditorTabPaneView>("EditorTabPane");
-        var errorList = FindControl<DataGrid>("ErrorList");
-        var processBar = FindControl<SimulationProcessBarView>("ProcessBar");
+        var menubar = _app.FindControl<IsmaMenuBarView>("MenuBar");
+        var toolbar = _app.FindControl<IsmaToolBarView>("ToolBar");
+        var tabPane = _app.FindControl<EditorTabPaneView>("EditorTabPane");
+        var errorList = _app.FindControl<DataGrid>("ErrorList");
+        var processBar = _app.FindControl<SimulationProcessBarView>("ProcessBar");
 
         menubar.Should().NotBeNull();
         toolbar.Should().NotBeNull();

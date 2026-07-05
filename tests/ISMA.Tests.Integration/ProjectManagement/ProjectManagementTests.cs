@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
@@ -11,145 +12,148 @@ namespace ISMA.Tests.Integration;
 /// End-to-end tests for project management scenarios.
 /// Tests multi-project workflow, creation, closing, and switching.
 /// </summary>
-public class ProjectManagementTests : IntegrationTestBase
+public class ProjectManagementTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task CreateMultipleTextProjects_WorksWithAllFeatures()
     {
         // Create first project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(1);
-        Window.GetActiveProject().Should().NotBeNull();
-        var firstProject = Window.GetActiveProject()!;
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(1);
+        _app.Window.GetActiveProject().Should().NotBeNull();
+        var firstProject = _app.Window.GetActiveProject()!;
         firstProject.Name.Should().Be("Untitled");
 
         // Set content via UI
-        Window.SetEditorText("main { x = 0; }");
+        _app.Window.SetEditorText("main { x = 0; }");
 
         // Create second project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(2);
-        Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(2);
+        _app.Window.GetActiveProject().Should().NotBeNull();
 
         // Create third project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(3);
 
         // Verify all projects exist
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.GetProjectCount().Should().Be(3);
     }
 
     [AvaloniaFact]
     public async Task CreateMultipleBlueprintProjects_WorksWithAllFeatures()
     {
         // Create first blueprint via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(1);
-        Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(1);
+        _app.Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
 
         // Create second blueprint via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(2);
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(2);
 
         // Create third blueprint via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(3);
 
         // Verify all are blueprint projects
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.GetProjectCount().Should().Be(3);
     }
 
     [AvaloniaFact]
     public async Task CreateMixedProjectTypes_WorksWithAllFeatures()
     {
         // Create text project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(1);
 
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(2);
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(2);
 
         // Create another text project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(3);
 
         // Verify project types (count check via UI)
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.GetProjectCount().Should().Be(3);
     }
 
     [AvaloniaFact]
     public async Task CloseSingleProject_RemovesFromCollection()
     {
         // Create project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(1);
 
         // Close project via UI
-        Window.ClickMenuItem("MenuClose");
+        _app.Window.ClickMenuItem("MenuClose");
 
         // Verify project is removed
-        Window.GetProjectCount().Should().Be(0);
-        Window.GetActiveProject().Should().BeNull();
+        _app.Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetActiveProject().Should().BeNull();
     }
 
     [AvaloniaFact]
     public async Task CloseAllProjects_RemovesAllFromCollection()
     {
         // Create multiple projects via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(3);
 
         // Close all via UI
-        Window.ClickMenuItem("MenuCloseAll");
+        _app.Window.ClickMenuItem("MenuCloseAll");
 
         // Verify all are removed
-        Window.GetProjectCount().Should().Be(0);
-        Window.GetActiveProject().Should().BeNull();
+        _app.Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetActiveProject().Should().BeNull();
     }
 
     [AvaloniaFact]
     public async Task ActiveProjectUpdatesOnSelection()
     {
         // Create first project via UI
-        Window.ClickMenuItem("MenuNewText");
-        var firstProject = Window.GetActiveProject();
+        _app.Window.ClickMenuItem("MenuNewText");
+        var firstProject = _app.Window.GetActiveProject();
 
         // Create second project (should become active)
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetActiveProject().Should().NotBeNull();
-        Window.GetActiveProject().Should().NotBe(firstProject);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.GetActiveProject().Should().NotBe(firstProject);
 
         // Create third project (should become active)
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetActiveProject().Should().NotBeNull();
-        Window.GetActiveProject().Should().NotBe(firstProject);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.GetActiveProject().Should().NotBe(firstProject);
     }
 
     [AvaloniaFact]
     public async Task CloseProject_DisposesIt()
     {
         // Create project via UI
-        Window.ClickMenuItem("MenuNewText");
-        var project = Window.GetActiveProject();
+        _app.Window.ClickMenuItem("MenuNewText");
+        var project = _app.Window.GetActiveProject();
 
         // Close project via UI
-        Window.ClickMenuItem("MenuClose");
+        _app.Window.ClickMenuItem("MenuClose");
 
         // Verify project is disposed (no exceptions when accessing disposed project)
-        Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetProjectCount().Should().Be(0);
     }
 
     [AvaloniaFact]
     public async Task BlueprintProject_HasInitialStates()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetActiveProject().Should().NotBeNull();
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         // Verify blueprint has initial states
@@ -164,8 +168,8 @@ public class ProjectManagementTests : IntegrationTestBase
     public async Task BlueprintProject_CanAddStates()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         // Add states via editor
@@ -180,8 +184,8 @@ public class ProjectManagementTests : IntegrationTestBase
     public async Task BlueprintProject_CanAddTransitions()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
         // Add two states first
@@ -203,19 +207,19 @@ public class ProjectManagementTests : IntegrationTestBase
     public async Task TextProject_CanSetContent()
     {
         // Create text project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
 
         // Set text directly in the TextEditor UI component
-        Window.SetEditorText("main { x = 0; }");
+        _app.Window.SetEditorText("main { x = 0; }");
     }
 
     [AvaloniaFact]
     public async Task TextProject_NameIsSetFromContent()
     {
         // Create text project via UI
-        Window.ClickMenuItem("MenuNewText");
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewText");
+        var project = _app.Window.GetActiveProject() as LismaProjectViewModel;
         project.Should().NotBeNull();
 
         // Project should have a default name

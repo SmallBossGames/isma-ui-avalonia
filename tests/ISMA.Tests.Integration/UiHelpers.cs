@@ -6,7 +6,6 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using ISMA.App;
@@ -84,7 +83,6 @@ public static class UiHelpers
             throw new InvalidOperationException($"Menu item with AutomationId '{automationId}' not found.");
 
         item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-        window.Flush();
     }
 
     /// <summary>
@@ -104,7 +102,6 @@ public static class UiHelpers
         {
             button.Command.Execute(button.CommandParameter);
         }
-        window.Flush();
     }
 
     /// <summary>
@@ -120,7 +117,6 @@ public static class UiHelpers
             throw new InvalidOperationException("Run button not found in process bar.");
 
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        window.Flush();
     }
 
     /// <summary>
@@ -176,7 +172,6 @@ public static class UiHelpers
             throw new InvalidOperationException("Text editor not found in active tab.");
 
         editor.Document.Text = text;
-        window.Flush();
     }
 
     /// <summary>
@@ -230,7 +225,6 @@ public static class UiHelpers
             throw new InvalidOperationException($"Settings TextBox for property '{propertyName}' not found. Make sure Settings panel is visible.");
 
         textBox.Text = value;
-        window.Flush();
     }
 
     /// <summary>
@@ -240,7 +234,6 @@ public static class UiHelpers
     {
         var vm = window.DataContext as MainWindowViewModel;
         vm!.ShowSettings = true;
-        window.Flush();
     }
 
     /// <summary>
@@ -250,52 +243,6 @@ public static class UiHelpers
     {
         var vm = window.DataContext as MainWindowViewModel;
         vm!.ShowSettings = false;
-        window.Flush();
-    }
-
-    /// <summary>
-    /// Flush the Avalonia dispatcher and force a layout update to ensure
-    /// TabControl data templates are applied in headless mode.
-    /// </summary>
-    public static void Flush(this MainWindow window)
-    {
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        window.ApplyTemplate();
-
-        // Use the window's actual size for layout
-        var size = new Size(window.Width, window.Height);
-        window.Measure(size);
-        window.Arrange(new Rect(default, size));
-
-        // Force TabControl container generation
-        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane)
-            ?? window.GetVisualDescendants().OfType<EditorTabPaneView>().FirstOrDefault();
-        var tabControl = tabPaneView?.FindControl<TabControl>("ProjectTabs")
-            ?? tabPaneView?.GetVisualDescendants().OfType<TabControl>().FirstOrDefault();
-        if (tabControl is not null)
-        {
-            tabControl.ApplyTemplate();
-            tabControl.Measure(size);
-            tabControl.Arrange(new Rect(default, tabControl.DesiredSize));
-        }
-
-        // Force ContentControl template application for SettingsPanel
-        var settingsPanel = window.FindControl<ContentControl>("SettingsPanel");
-        if (settingsPanel is not null && settingsPanel.IsVisible)
-        {
-            settingsPanel.ApplyTemplate();
-            settingsPanel.Measure(size);
-            settingsPanel.Arrange(new Rect(default, settingsPanel.DesiredSize));
-        }
-    }
-
-    /// <summary>
-    /// Wait for async operations to complete.
-    /// </summary>
-    public static async Task FlushAsync(this MainWindow window, int delayMs = 50)
-    {
-        window.Flush();
-        await Task.Delay(delayMs);
     }
 
     /// <summary>
@@ -351,7 +298,6 @@ public static class UiHelpers
         if (button is not null && button.Command is not null)
         {
             button.Command.Execute(button.CommandParameter);
-            window.Flush();
             return;
         }
 
@@ -366,7 +312,6 @@ public static class UiHelpers
             throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
 
         editorVm.AddStateCommand.Execute(null);
-        window.Flush();
     }
 
     /// <summary>
@@ -382,7 +327,6 @@ public static class UiHelpers
         if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
-            window.Flush();
             return;
         }
 
@@ -396,7 +340,6 @@ public static class UiHelpers
             throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
 
         editorVm.SetAddTransitionModeCommand.Execute(null);
-        window.Flush();
     }
 
     /// <summary>
@@ -411,7 +354,6 @@ public static class UiHelpers
         if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
-            window.Flush();
             return;
         }
 
@@ -425,7 +367,6 @@ public static class UiHelpers
             throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
 
         editorVm.SetRemoveStateModeCommand.Execute(null);
-        window.Flush();
     }
 
     /// <summary>
@@ -440,7 +381,6 @@ public static class UiHelpers
         if (toggle is not null && toggle.Command is not null)
         {
             toggle.Command.Execute(toggle.CommandParameter);
-            window.Flush();
             return;
         }
 
@@ -454,7 +394,6 @@ public static class UiHelpers
             throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
 
         editorVm.SetRemoveTransitionModeCommand.Execute(null);
-        window.Flush();
     }
 
     /// <summary>
@@ -573,7 +512,6 @@ public static class UiHelpers
             throw new InvalidOperationException("PopOver not found or not open.");
 
         popOver.Alias = text;
-        window.Flush();
     }
 
     /// <summary>
@@ -587,7 +525,6 @@ public static class UiHelpers
             throw new InvalidOperationException("PopOver not found or not open.");
 
         popOver.Predicate = text;
-        window.Flush();
     }
 
     /// <summary>
@@ -628,7 +565,6 @@ public static class UiHelpers
         var editor = window.GetActiveBlueprintEditor();
         var popup = editor?.FindControl<Popup>("EditArrowPopup");
         popup?.Close();
-        window.Flush();
     }
 
     /// <summary>
@@ -689,7 +625,6 @@ public static class UiHelpers
             if (closeButton is not null)
             {
                 closeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                window.Flush();
                 return;
             }
         }
@@ -711,7 +646,6 @@ public static class UiHelpers
 
         var task = closeTabMethod.Invoke(vm, new object[] { project }) as System.Threading.Tasks.Task;
         task?.Wait();
-        window.Flush();
     }
 
     /// <summary>
@@ -785,7 +719,6 @@ public static class UiHelpers
             {
                 targetBorder = border;
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                window.Flush();
                 return;
             }
         }
@@ -812,7 +745,6 @@ public static class UiHelpers
         {
             stateVm.IsSelected = true;
         }
-        window.Flush();
     }
 
     /// <summary>

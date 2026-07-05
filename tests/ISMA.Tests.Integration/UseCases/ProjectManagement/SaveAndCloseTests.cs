@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
@@ -10,89 +11,70 @@ namespace ISMA.Tests.Integration.UseCases.ProjectManagement;
 /// UC-09: Save, Save As, and Save All
 /// Tests project saving, closing, and tab management via UI interactions.
 /// </summary>
-public class SaveAndCloseTests : IntegrationTestBase
+public class SaveAndCloseTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task UC09_CloseSingleProject_RemovesFromCollection()
     {
-        // Create project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.Flush();
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        // Close project via UI
-        Window.ClickMenuItem("MenuClose");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuClose");
 
-        // Verify project is removed
-        Window.GetProjectCount().Should().Be(0);
-        Window.GetActiveProject().Should().BeNull();
+        _app.Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetActiveProject().Should().BeNull();
     }
 
     [AvaloniaFact]
     public async Task UC09_CloseAllProjects_RemovesAllFromCollection()
     {
-        // Create multiple projects via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(3);
 
-        // Close all via UI
-        Window.ClickMenuItem("MenuCloseAll");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuCloseAll");
 
-        // Verify all are removed
-        Window.GetProjectCount().Should().Be(0);
-        Window.GetActiveProject().Should().BeNull();
+        _app.Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetActiveProject().Should().BeNull();
     }
 
     [AvaloniaFact]
     public async Task UC09_CloseProject_DisposesIt()
     {
-        // Create project via UI
-        Window.ClickMenuItem("MenuNewText");
-        Window.Flush();
-        var project = Window.GetActiveProject();
+        _app.Window.ClickMenuItem("MenuNewText");
+        var project = _app.Window.GetActiveProject();
 
-        // Close project via UI
-        Window.ClickMenuItem("MenuClose");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuClose");
 
-        // Verify project is removed
-        Window.GetProjectCount().Should().Be(0);
+        _app.Window.GetProjectCount().Should().Be(0);
     }
 
     [AvaloniaFact]
     public async Task UC09_MultipleProjects_CloseSpecificTab()
     {
-        // Create 3 projects
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewText");
-        Window.ClickMenuItem("MenuNewText");
-        Window.Flush();
-        Window.GetProjectCount().Should().Be(3);
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetProjectCount().Should().Be(3);
 
-        // Close via Close command (closes active project)
-        Window.ClickMenuItem("MenuClose");
-        Window.Flush();
-        Window.GetProjectCount().Should().Be(2);
+        _app.Window.ClickMenuItem("MenuClose");
+        _app.Window.GetProjectCount().Should().Be(2);
     }
 
     [AvaloniaFact]
     public async Task UC04_MultiProjectEditing_EachProjectIsIndependent()
     {
-        // Create first project
-        Window.ClickMenuItem("MenuNewText");
-        var firstProject = Window.GetActiveProject() as LismaProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewText");
+        var firstProject = _app.Window.GetActiveProject() as LismaProjectViewModel;
 
-        // Create second project
-        Window.ClickMenuItem("MenuNewText");
-        var secondProject = Window.GetActiveProject() as LismaProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewText");
+        var secondProject = _app.Window.GetActiveProject() as LismaProjectViewModel;
 
-        // Verify both projects exist
-        Window.GetProjectCount().Should().Be(2);
+        _app.Window.GetProjectCount().Should().Be(2);
         firstProject.Should().NotBeNull();
         secondProject.Should().NotBeNull();
     }

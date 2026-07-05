@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,22 +14,24 @@ namespace ISMA.Tests.Integration;
 /// End-to-end tests for the Blueprint editor scenarios.
 /// Tests state creation, transitions, and blueprint-to-LISMA conversion via UI.
 /// </summary>
-public class BlueprintEditorTests : IntegrationTestBase
+public class BlueprintEditorTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
     [AvaloniaFact]
     public async Task BlueprintProject_CanCreateStates()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetActiveProject().Should().NotBeNull();
-        Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states via UI toolbar button
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
 
         // Verify states were added (Main, Init, New state 1, New state 2)
         editorVm.States.Should().HaveCount(4);
@@ -49,17 +52,17 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_CanAddTransitions()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states first via UI
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(4);
 
         // Add transition between two user states via UI toggles
-        Window.ClickAddTransitionToggle();
+        _app.Window.ClickAddTransitionToggle();
         editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
@@ -74,16 +77,16 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_CanRemoveStates()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add a state via UI
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(3);
 
         // Remove the user state via UI toggle
-        Window.ClickRemoveStateToggle();
+        _app.Window.ClickRemoveStateToggle();
         editorVm.Mode = new EditorMode.RemoveState();
         editorVm.SelectedState = editorVm.States[2];
         editorVm.RemoveStateCommand.Execute(null);
@@ -96,14 +99,14 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_CanRemoveTransitions()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states and transition via UI
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
-        Window.ClickAddTransitionToggle();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddTransitionToggle();
         editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm.SetTransitionSource(editorVm.States[2]);
         editorVm.SelectedState = editorVm.States[3];
@@ -112,7 +115,7 @@ public class BlueprintEditorTests : IntegrationTestBase
         editorVm.Transactions.Should().HaveCount(1);
 
         // Remove the transition via UI toggle
-        Window.ClickRemoveTransitionToggle();
+        _app.Window.ClickRemoveTransitionToggle();
         editorVm.Mode = new EditorMode.RemoveTransition();
         editorVm.SelectedTransaction = editorVm.Transactions[0];
         editorVm.RemoveTransitionCommand.Execute(null);
@@ -125,8 +128,8 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_CanConvertToLisma()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         // Convert to LISMA
@@ -139,12 +142,12 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_WithStates_ConvertsToLisma()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states via UI
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         editorVm.States.Should().HaveCount(3);
 
         // Convert to LISMA
@@ -157,12 +160,12 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_StateNamesMustBeUnique()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add first state via UI
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         var firstStateName = editorVm.States[2].Name;
 
         // Try to add another state with the same name (should fail)
@@ -174,8 +177,8 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_EditorModes_WorkCorrectly()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Verify initial mode
@@ -194,13 +197,13 @@ public class BlueprintEditorTests : IntegrationTestBase
     public async Task BlueprintProject_ModelPersistsStateChanges()
     {
         // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         // Add states via UI
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
 
         // Get model from editor (not from project, since project model is separate)
         var model = editorVm.GetBlueprintModel();

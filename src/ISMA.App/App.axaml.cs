@@ -79,7 +79,7 @@ public partial class App : Application
         }
     }
 
-    internal static IServiceCollection ConfigureServiceCollection()
+    private static IServiceCollection ConfigureServiceCollection()
     {
         var services = new ServiceCollection();
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using ISMA.ViewModels.ViewModels;
@@ -11,27 +12,27 @@ namespace ISMA.Tests.Integration;
 /// TDD Tasks 1-3: Blueprint editor integration tests.
 /// Covers: toolbar buttons, canvas rendering, state interactions.
 /// </summary>
-public class BlueprintEditorIntegrationTests : IntegrationTestBase
+public class BlueprintEditorIntegrationTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
     [AvaloniaFact]
     public async Task NewBlueprint_CreatesTabWithToolbar()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        var project = Window.GetActiveProject();
+        var project = _app.Window.GetActiveProject();
         project.Should().BeOfType<BlueprintProjectViewModel>();
     }
 
     [AvaloniaFact]
     public async Task NewStateButton_Clicked_AddsState()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         var initialStateCount = editorVm!.States.Count;
@@ -45,10 +46,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task AddTransitionToggle_TogglesMode_AndChangesText()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
@@ -62,10 +62,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task AddTransitionToggle_ClickedAgain_ResetsMode()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.SetAddTransitionModeCommand.Execute(null);
@@ -79,10 +78,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task RemoveStateToggle_TogglesMode_AndChangesText()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
@@ -99,10 +97,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task RemoveTransitionToggle_TogglesMode_AndChangesText()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
@@ -119,10 +116,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_ShowsMainAndInitStates_OnNewBlueprint()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.States.Should().HaveCount(2);
@@ -131,10 +127,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_MainState_HasCorrectColor()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
@@ -144,10 +139,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_InitState_HasCorrectColor()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
@@ -157,10 +151,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_MainState_HasCorrectHeight()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
@@ -170,10 +163,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_InitState_HasCorrectHeight()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
@@ -183,10 +175,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task Canvas_StatesHaveCorrectNames()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         var mainState = editorVm!.States.First(s => s.IsMain);
@@ -199,10 +190,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task StateDrag_RepositionsState()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
@@ -221,10 +211,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UserState_IsEditable()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
@@ -236,10 +225,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UserState_HasCorrectHeight()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
@@ -251,10 +239,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UserState_HasCoralColor()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);
@@ -266,10 +253,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task StateDoubleClicked_OpensTextEditorTab()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.States.First(s => s.IsMain);
 
@@ -290,10 +276,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task StateDoubleClicked_InitState_OpensTextEditorTab()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.States.First(s => s.IsInit);
 
@@ -314,10 +299,9 @@ public class BlueprintEditorIntegrationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task StateDoubleClicked_UserState_OpensTextEditorTab()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         editorVm!.AddStateCommand.Execute(null);

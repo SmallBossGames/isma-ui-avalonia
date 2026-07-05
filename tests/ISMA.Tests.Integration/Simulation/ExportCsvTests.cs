@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Collections.Immutable;
 using System.IO;
 using System.Threading.Tasks;
@@ -14,13 +15,16 @@ namespace ISMA.Tests.Integration;
 /// Integration tests for CSV export with FileDialog.
 /// Tests the export dialog and CSV file writing functionality.
 /// </summary>
-public class ExportCsvTests : IntegrationTestBase
+public class ExportCsvTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task ExportDialog_MethodExists()
     {
         // Verify the ISimulationResultService has ShowExportDialog method
-        var resultService = Services.GetRequiredService<ISimulationResultService>();
+        var resultService = _app.Services.GetRequiredService<ISimulationResultService>();
         resultService.Should().NotBeNull();
 
         // The method should exist and be callable
@@ -57,7 +61,7 @@ public class ExportCsvTests : IntegrationTestBase
                 CachedColumnNames = ImmutableArray.Create("time", "x", "y")
             };
 
-            var resultService = Services.GetRequiredService<ISimulationResultService>();
+            var resultService = _app.Services.GetRequiredService<ISimulationResultService>();
 
             // The export method should be callable
             // (It will fail because the binary file doesn't exist, which is expected)
@@ -84,7 +88,7 @@ public class ExportCsvTests : IntegrationTestBase
             CachedColumnNames = ImmutableArray.Create("time", "x")
         };
 
-        var resultService = Services.GetRequiredService<ISimulationResultService>();
+        var resultService = _app.Services.GetRequiredService<ISimulationResultService>();
         var vm = new CompletedSimulationViewModel(completed, resultService);
 
         // The ExportCommand should exist
@@ -95,31 +99,31 @@ public class ExportCsvTests : IntegrationTestBase
     public async Task SimulationWorkflow_CompleteFlow_WithExport()
     {
         // Create text project
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
 
         // Setup mock server for simulation
-        MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
-        MockServer.RunHandler = _ => Task.FromResult(1L);
-        MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
-        MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult
+        _app.MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
+        _app.MockServer.RunHandler = _ => Task.FromResult(1L);
+        _app.MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
+        _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult
         {
             File = "/tmp/test-result.bin",
             ColumnNames = ImmutableArray.Create("time", "x", "y")
         });
 
         // Run simulation
-        Window.ClickMenuItem("MenuRun");
+        _app.Window.ClickMenuItem("MenuRun");
 
         // Wait for simulation to complete
         await Task.Delay(100);
 
         // Verify simulation completed
-        ViewModel.SimulationService.StatusText.Should().Be("Simulation complete");
-        ViewModel.TasksPopOver.CompletedCount.Should().BeGreaterThanOrEqualTo(0);
+        _app.ViewModel.SimulationService.StatusText.Should().Be("Simulation complete");
+        _app.ViewModel.TasksPopOver.CompletedCount.Should().BeGreaterThanOrEqualTo(0);
 
         // The export dialog method should be available
-        var resultService = Services.GetRequiredService<ISimulationResultService>();
+        var resultService = _app.Services.GetRequiredService<ISimulationResultService>();
         resultService.Should().NotBeNull();
     }
 }

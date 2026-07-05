@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Automation;
@@ -14,16 +15,19 @@ namespace ISMA.Tests.Integration;
 /// End-to-end tests for UI components and their interactions.
 /// Tests that all UI controls are properly initialized and accessible.
 /// </summary>
-public class UiComponentTests : IntegrationTestBase
+public class UiComponentTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task MainWindow_HasAllControls()
     {
-        var menubar = FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
-        var toolbar = FindControl<IsmaToolBarView>(AutomationIds.ToolBar);
-        var tabPane = FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
-        var errorList = FindControl<DataGrid>(AutomationIds.ErrorList);
-        var processBar = FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
+        var menubar = _app.FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
+        var toolbar = _app.FindControl<IsmaToolBarView>(AutomationIds.ToolBar);
+        var tabPane = _app.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        var errorList = _app.FindControl<DataGrid>(AutomationIds.ErrorList);
+        var processBar = _app.FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
 
         menubar.Should().NotBeNull();
         toolbar.Should().NotBeNull();
@@ -35,14 +39,14 @@ public class UiComponentTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task MainWindow_MenuBar_HasAutomationIds()
     {
-        var menuBar = FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
+        var menuBar = _app.FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
         menuBar.Should().NotBeNull();
     }
 
     [AvaloniaFact]
     public async Task MainWindow_ToolBar_HasAutomationIds()
     {
-        var toolbar = FindControl<IsmaToolBarView>(AutomationIds.ToolBar);
+        var toolbar = _app.FindControl<IsmaToolBarView>(AutomationIds.ToolBar);
         toolbar.Should().NotBeNull();
 
         var newText = UiHelpers.FindDescendants<Button>(toolbar!)
@@ -57,7 +61,7 @@ public class UiComponentTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task MainWindow_ProcessBar_HasAutomationIds()
     {
-        var processBar = FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
+        var processBar = _app.FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
         processBar.Should().NotBeNull();
 
         var run = UiHelpers.FindDescendants<Button>(processBar!)

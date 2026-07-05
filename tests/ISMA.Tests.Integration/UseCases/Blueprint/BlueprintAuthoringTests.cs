@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,18 +17,19 @@ namespace ISMA.Tests.Integration.UseCases.Blueprint;
 /// UC-11: Complete Workflow - Blueprint Authoring to Visualization
 /// Tests blueprint creation, editing, conversion, and simulation.
 /// </summary>
-public class AuthorBlueprintTests : IntegrationTestBase
+public class AuthorBlueprintTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task UC02_NewBlueprint_CreatesInitialStatechart()
     {
-        // Create blueprint project via UI
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(1);
-        Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(1);
+        _app.Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
 
-        // Verify blueprint has initial states
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var model = blueprintProject!.GetBlueprintModel();
         model.Main.Should().NotBeNull();
         model.Init.Should().NotBeNull();
@@ -38,30 +40,28 @@ public class AuthorBlueprintTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_CanAddStates()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
 
-        Window.GetStateBoxCount().Should().Be(4); // Main, Init, State1, State2
+        _app.Window.GetStateBoxCount().Should().Be(4);
     }
 
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_CanAddTransitions()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
-        Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.GetStateBoxCount().Should().Be(4);
 
         editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm!.SetTransitionSource(editorVm!.States[2]);
@@ -74,31 +74,29 @@ public class AuthorBlueprintTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_RejectsDuplicateStateNames()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.ClickAddStateButton();
+        _app.Window.GetStateBoxCount().Should().Be(3);
 
         var newStateName = editorVm!.States[2].Name;
         editorVm!.AddStateWithName(newStateName, 200, 200);
-        editorVm!.States.Should().HaveCount(3); // No new state added
+        editorVm!.States.Should().HaveCount(3);
     }
 
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_AllowsUniqueStateNames()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.ClickAddStateButton();
+        _app.Window.GetStateBoxCount().Should().Be(3);
 
         editorVm!.AddStateWithName("UniqueState", 200, 200);
         editorVm!.States.Should().HaveCount(4);
@@ -108,14 +106,13 @@ public class AuthorBlueprintTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_PreservesTransactionReferencesAfterRename()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm!.SetTransitionSource(editorVm!.States[2]);
         editorVm!.SelectedState = editorVm!.States[3];
@@ -153,33 +150,33 @@ public class AuthorBlueprintTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC02_BlueprintEditor_RemovesState()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.ClickAddStateButton();
+        _app.Window.GetStateBoxCount().Should().Be(3);
 
-        // Remove the added state
         editorVm!.Mode = new EditorMode.RemoveState();
         editorVm!.SelectedState = editorVm!.States[2];
         editorVm!.RemoveStateCommand.Execute(null);
 
-        editorVm!.States.Should().HaveCount(2); // Back to Main and Init
+        editorVm!.States.Should().HaveCount(2);
     }
 }
 
-public class BlueprintToVisualizationTests : IntegrationTestBase
+public class BlueprintToVisualizationTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task UC11_Blueprint_ConvertsToLismaText()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         var lisma = blueprintProject!.ConvertToLisma();
@@ -190,15 +187,14 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC11_Blueprint_WithTransitions_ConvertsCorrectly()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
-        Window.ClickAddStateButton();
-        Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
+        _app.Window.GetStateBoxCount().Should().Be(4);
 
         editorVm!.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
         editorVm!.SetTransitionSource(editorVm!.States[2]);
@@ -213,13 +209,12 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC11_Blueprint_ModelPersistsStateChanges()
     {
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
 
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
         editorVm!.GetBlueprintModel().States.Should().HaveCount(1);
     }
 
@@ -235,30 +230,23 @@ public class BlueprintToVisualizationTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task UC11_BlueprintSimulation_FullPipeline()
     {
-        // Create blueprint project
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.Flush();
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        // Add a state
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
-        Window.ClickAddStateButton();
+        _app.Window.ClickAddStateButton();
 
-        // Configure simulation parameters
-        ViewModel.SimulationParameters.CauchyInitials.StartTime = 0.0;
-        ViewModel.SimulationParameters.CauchyInitials.EndTime = 10.0;
+        _app.ViewModel.SimulationParameters.CauchyInitials.StartTime = 0.0;
+        _app.ViewModel.SimulationParameters.CauchyInitials.EndTime = 10.0;
 
-        // Mock server
-        MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "blueprint-model" });
-        MockServer.RunHandler = _ => Task.FromResult(1L);
-        MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
-        MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
+        _app.MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "blueprint-model" });
+        _app.MockServer.RunHandler = _ => Task.FromResult(1L);
+        _app.MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
+        _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
-        // Run simulation (this should convert blueprint to LISMA and simulate)
-        Window.ClickMenuItem("MenuRun");
-        Window.Flush();
+        _app.Window.ClickMenuItem("MenuRun");
 
-        ViewModel.SimulationService.IsRunning.Should().BeFalse();
+        _app.ViewModel.SimulationService.IsRunning.Should().BeFalse();
     }
 }

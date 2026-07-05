@@ -18,8 +18,10 @@ namespace ISMA.Tests.Integration;
 /// These tests interact with actual UI controls (TextBox, CheckBox, ComboBox), not just ViewModels.
 /// The Settings Panel is always visible as part of the main window layout.
 /// </summary>
-public class SettingsPanelUiTests : IntegrationTestBase
+public class SettingsPanelUiTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
     private static TextBox? FindTextBoxByAutomationId(IEnumerable<TextBox> textBoxes, string automationId)
     {
         return textBoxes.FirstOrDefault(tb =>
@@ -35,7 +37,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task SettingsPanel_Control_IsAlwaysVisible()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         settingsPanel!.IsVisible.Should().BeTrue();
     }
@@ -43,7 +45,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task CauchyInitials_ControlsExistAndDisplayDefaults()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         settingsPanel.IsVisible.Should().BeTrue();
 
@@ -76,7 +78,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task CauchyInitials_TextBoxUpdatesPropagateToViewModel()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
@@ -87,7 +89,6 @@ public class SettingsPanelUiTests : IntegrationTestBase
 
         // Directly set the ViewModel property (bypasses binding which doesn't work in headless)
         cauchyVm.StartTime = 5.5;
-        Window.Flush();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Task.Delay(200).Wait();
 
@@ -95,13 +96,13 @@ public class SettingsPanelUiTests : IntegrationTestBase
         double.Parse(startTimeBox.Text!).Should().BeApproximately(5.5, 0.01);
 
         // Verify the parent ViewModel also has the updated value
-        ViewModel.SimulationParameters.CauchyInitials.StartTime.Should().Be(5.5);
+        _app.ViewModel.SimulationParameters.CauchyInitials.StartTime.Should().Be(5.5);
     }
 
     [AvaloniaFact]
     public async Task EventDetection_CheckboxExistsAndWorks()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
@@ -112,15 +113,14 @@ public class SettingsPanelUiTests : IntegrationTestBase
         stepLimitCheckBox.IsChecked.Should().BeFalse();
 
         stepLimitCheckBox.IsChecked = true;
-        Window.Flush();
 
-        ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
+        _app.ViewModel.SimulationParameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
     }
 
     [AvaloniaFact]
     public async Task IntegrationMethod_ComboBoxExistsAndShowsOptions()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel!)
             .FirstOrDefault(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
@@ -138,21 +138,20 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task IntegrationMethod_ComboBoxSelectionUpdatesViewModel()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var methodComboBox = UiHelpers.FindDescendants<ComboBox>(settingsPanel!)
             .First(cb => cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-IntegrationMethod-SelectedMethod");
 
         methodComboBox.SelectedIndex = 2;
-        Window.Flush();
 
-        ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().Be("Runge-Kutta 4");
+        _app.ViewModel.SimulationParameters.IntegrationMethod.SelectedMethod.Should().Be("Runge-Kutta 4");
     }
 
     [AvaloniaFact]
     public async Task ResultSaving_ComboBoxExistsAndShowsOptions()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
@@ -173,7 +172,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task ResultSaving_ComboBoxSelectionUpdatesViewModel()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allComboBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<ComboBox>(g)).ToList();
@@ -182,17 +181,16 @@ public class SettingsPanelUiTests : IntegrationTestBase
             cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-ResultSaving-SavingTarget");
 
         savingTargetBox.Text = "File";
-        Window.Flush();
 
-        ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
+        _app.ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
     }
 
-    
+
 
     [AvaloniaFact]
     public async Task ResultProcessing_CheckBoxAndTextBox_ControlsExist()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
         var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
@@ -211,7 +209,7 @@ public class SettingsPanelUiTests : IntegrationTestBase
     [AvaloniaFact]
     public async Task AllSettingsSections_HavePropertiesGridControls()
     {
-        var settingsPanel = Window.FindControl<ScrollViewer>("SettingsPanel");
+        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
 

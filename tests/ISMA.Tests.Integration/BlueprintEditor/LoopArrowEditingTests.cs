@@ -1,3 +1,4 @@
+using Avalonia;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,16 +12,19 @@ namespace ISMA.Tests.Integration;
 /// Integration tests for blueprint editor loop arrow double-click creating text tabs.
 /// Tests the loop content editing feature.
 /// </summary>
-public class LoopArrowEditingTests : IntegrationTestBase
+public class LoopArrowEditingTests
 {
+    private readonly TestApp _app = (TestApp)Application.Current!;
+
+
     [AvaloniaFact]
     public async Task LoopArrow_DoubleClick_CreatesTextTab()
     {
         // Create blueprint project
-        Window.ClickMenuItem("MenuNewBlueprint");
-        Window.GetProjectCount().Should().Be(1);
+        _app.Window.ClickMenuItem("MenuNewBlueprint");
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        var blueprintProject = Window.GetActiveProject() as BlueprintProjectViewModel;
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         blueprintProject.Should().NotBeNull();
 
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
@@ -49,10 +53,10 @@ public class LoopArrowEditingTests : IntegrationTestBase
 
         // The loop arrow double-click should create a new text tab
         // (In headless mode, we verify the ViewModel state rather than UI interaction)
-        var initialTabCount = Window.GetProjectCount();
+        var initialTabCount = _app.Window.GetProjectCount();
 
         // Simulate the loop text update via ContentChanged
-        var activeProject = Window.GetActiveProject();
+        var activeProject = _app.Window.GetActiveProject();
         (activeProject?.Name?.Contains("loop")).Should().BeFalse(); // No loop tab yet
 
         // The actual double-click test would require UI interaction with the LoopArrow control
@@ -63,10 +67,10 @@ public class LoopArrowEditingTests : IntegrationTestBase
     public async Task LismaProjectViewModel_ContentChanged_Event_Fires()
     {
         // Create text project
-        Window.ClickMenuItem("MenuNewText");
-        Window.GetActiveProject().Should().NotBeNull();
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
 
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
+        var project = _app.Window.GetActiveProject() as LismaProjectViewModel;
         project.Should().NotBeNull();
 
         bool eventFired = false;
@@ -88,9 +92,9 @@ public class LoopArrowEditingTests : IntegrationTestBase
     public async Task LismaProjectViewModel_ContentChanged_PropagatesText()
     {
         // Create text project
-        Window.ClickMenuItem("MenuNewText");
+        _app.Window.ClickMenuItem("MenuNewText");
 
-        var project = Window.GetActiveProject() as LismaProjectViewModel;
+        var project = _app.Window.GetActiveProject() as LismaProjectViewModel;
         project.Should().NotBeNull();
 
         string? capturedText = null;
