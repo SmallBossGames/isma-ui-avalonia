@@ -4,7 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Views;
@@ -53,6 +55,8 @@ public partial class BlueprintEditorView : UserControl
     {
         _vm = vm;
         vm.EditArrowRequested += OnEditArrowRequested;
+        vm.StateTextEditorRequested += OnStateTextEditorRequested;
+        vm.LoopTextEditorRequested += OnLoopTextEditorRequested;
         vm.States.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
         vm.Transactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
         vm.LoopTransactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
@@ -61,6 +65,8 @@ public partial class BlueprintEditorView : UserControl
     private void Unsubscribe(BlueprintEditorViewModel vm)
     {
         vm.EditArrowRequested -= OnEditArrowRequested;
+        vm.StateTextEditorRequested -= OnStateTextEditorRequested;
+        vm.LoopTextEditorRequested -= OnLoopTextEditorRequested;
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -179,5 +185,27 @@ public partial class BlueprintEditorView : UserControl
     {
         if (arrow.State == null) return null;
         return _vm?.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
+    }
+
+    private void OnStateTextEditorRequested(BlueprintStateViewModel state)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var window = topLevel as Avalonia.Controls.Window;
+        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+
+        var stateName = state.Name;
+        var title = $"State: {stateName}";
+        mainVm.OpenStateTextEditorTab(state, title);
+    }
+
+    private void OnLoopTextEditorRequested(BlueprintLoopTransactionViewModel loop)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var window = topLevel as Avalonia.Controls.Window;
+        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+
+        var loopStateName = loop.State?.Name ?? "unknown";
+        var title = $"Loop: {loopStateName}";
+        mainVm.OpenLoopTextEditorTab(loop, title);
     }
 }

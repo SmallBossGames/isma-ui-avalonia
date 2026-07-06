@@ -36,6 +36,16 @@ public sealed class ProjectService
         }
     }
 
+    public void AddProject(IProjectViewModel project)
+    {
+        _projects.Add(project);
+    }
+
+    public void SetActiveProject(IProjectViewModel project)
+    {
+        ActiveProject = project;
+    }
+
     public ProjectService(
         IProjectFileService projectFileService,
         ISimulationServerFacade serverFacade,

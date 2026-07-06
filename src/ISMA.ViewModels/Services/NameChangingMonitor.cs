@@ -40,7 +40,6 @@ public class NameChangingMonitor
     public void Clear()
     {
         _existedNames.Clear();
-        _nextNameCounter = 1;
     }
 
     public bool Contains(string name)

@@ -10,6 +10,13 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     [ObservableProperty]
     private string _predicate = "";
 
+    public Action<string?>? PredicateChangedCallback { get; set; }
+
+    partial void OnPredicateChanged(string value)
+    {
+        PredicateChangedCallback?.Invoke(value);
+    }
+
     [ObservableProperty]
     private string _alias = "";
 

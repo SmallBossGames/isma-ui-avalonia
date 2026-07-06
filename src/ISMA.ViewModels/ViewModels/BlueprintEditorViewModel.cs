@@ -584,6 +584,76 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     public void UpdateStateText(BlueprintStateViewModel state, string newText)
     {
         state.Text = newText;
+        UpdateStateTextInModel(state, newText);
+    }
+
+    private void UpdateStateTextInModel(BlueprintStateViewModel state, string newText)
+    {
+        if (state.IsMain && _model.Main != null)
+        {
+            _model = new BlueprintModel
+            {
+                Main = new BlueprintStateModel
+                {
+                    CanvasPositionX = _model.Main.CanvasPositionX,
+                    CanvasPositionY = _model.Main.CanvasPositionY,
+                    Name = _model.Main.Name!,
+                    Text = newText
+                },
+                Init = _model.Init!,
+                States = _model.States,
+                Transactions = _model.Transactions,
+                LoopTransactions = _model.LoopTransactions
+            };
+            ReloadViews();
+            return;
+        }
+
+        if (state.IsInit && _model.Init != null)
+        {
+            _model = new BlueprintModel
+            {
+                Main = _model.Main!,
+                Init = new BlueprintStateModel
+                {
+                    CanvasPositionX = _model.Init.CanvasPositionX,
+                    CanvasPositionY = _model.Init.CanvasPositionY,
+                    Name = _model.Init.Name!,
+                    Text = newText
+                },
+                States = _model.States,
+                Transactions = _model.Transactions,
+                LoopTransactions = _model.LoopTransactions
+            };
+            ReloadViews();
+            return;
+        }
+
+        var statesArray = _model.States.ToArray();
+        for (int i = 0; i < statesArray.Length; i++)
+        {
+            if (statesArray[i].Name == state.Name)
+            {
+                statesArray[i] = new BlueprintStateModel
+                {
+                    CanvasPositionX = statesArray[i].CanvasPositionX,
+                    CanvasPositionY = statesArray[i].CanvasPositionY,
+                    Name = statesArray[i].Name!,
+                    Text = newText
+                };
+                break;
+            }
+        }
+
+        _model = new BlueprintModel
+        {
+            Main = _model.Main!,
+            Init = _model.Init!,
+            States = statesArray.ToImmutableArray(),
+            Transactions = _model.Transactions,
+            LoopTransactions = _model.LoopTransactions
+        };
+        ReloadViews();
     }
 
     public void UpdateLoopText(BlueprintLoopTransactionViewModel loop, string newText)
@@ -670,6 +740,30 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                     Predicate = tx.Predicate,
                     Alias = tx.Alias
                 };
+                var txIndex = _model.Transactions.IndexOf(tx);
+                txVm.PredicateChangedCallback = newValue =>
+                {
+                    var txCount = _model.Transactions.Length;
+                    if (txIndex < 0 || txIndex >= txCount) return;
+                    var oldTx = _model.Transactions[txIndex];
+                    var newTx = new BlueprintTransactionModel
+                    {
+                        StartStateName = oldTx.StartStateName!,
+                        EndStateName = oldTx.EndStateName!,
+                        Predicate = newValue ?? "",
+                        Alias = oldTx.Alias!
+                    };
+                    var txList = _model.Transactions.RemoveAt(txIndex).Insert(txIndex, newTx);
+                    _model = new BlueprintModel
+                    {
+                        Main = _model.Main!,
+                        Init = _model.Init!,
+                        States = _model.States,
+                        Transactions = txList,
+                        LoopTransactions = _model.LoopTransactions
+                    };
+                    ReloadViews();
+                };
                 Transactions.Add(txVm);
                 _canvas.AddTransaction(txVm);
             }
@@ -680,12 +774,40 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             var state = States.FirstOrDefault(s => s.Name == loop.StateName);
             if (state != null)
             {
+                var stateName = loop.StateName!;
                 var loopVm = new BlueprintLoopTransactionViewModel
                 {
                     State = state,
                     Predicate = loop.Predicate,
                     Alias = loop.Alias,
                     Text = loop.Text
+                };
+                loopVm.PredicateChangedCallback = newValue =>
+                {
+                    var loopList = _model.LoopTransactions.ToArray();
+                    for (int i = 0; i < loopList.Length; i++)
+                    {
+                        if (loopList[i].StateName == stateName)
+                        {
+                            loopList[i] = new BlueprintLoopTransactionModel
+                            {
+                                StateName = stateName,
+                                Predicate = newValue ?? "",
+                                Alias = loopList[i].Alias!,
+                                Text = loopList[i].Text!
+                            };
+                            break;
+                        }
+                    }
+                    _model = new BlueprintModel
+                    {
+                        Main = _model.Main!,
+                        Init = _model.Init!,
+                        States = _model.States,
+                        Transactions = _model.Transactions,
+                        LoopTransactions = loopList.ToImmutableArray()
+                    };
+                    ReloadViews();
                 };
                 LoopTransactions.Add(loopVm);
                 _canvas.AddLoop(loopVm);

@@ -76,6 +76,55 @@ public partial class MainWindowViewModel : ObservableObject
         RestoreLastOpenedFiles();
     }
 
+    private readonly List<(LismaProjectViewModel project, BlueprintStateViewModel state)> _stateTextEditorTabs = new();
+    private readonly List<(LismaProjectViewModel project, BlueprintLoopTransactionViewModel loop)> _loopTextEditorTabs = new();
+
+    public void OpenStateTextEditorTab(BlueprintStateViewModel state, string title)
+    {
+        var project = new LismaProjectViewModel(
+            _simulationService.SimulationServerFacade,
+            _projectService.TextEditorFactory,
+            _projectService.ProjectFileService,
+            _syntaxHighlighter,
+            _modelErrorService);
+
+        project.Name = title;
+        project.FullText = state.Text;
+        project.OnBeforeDispose = () =>
+        {
+            state.Text = project.FullText;
+            _stateTextEditorTabs.RemoveAll(t => t.project == project);
+        };
+
+        _stateTextEditorTabs.Add((project, state));
+        _projectService.AddProject(project);
+        _projectService.SetActiveProject(project);
+        SyncProjects();
+    }
+
+    public void OpenLoopTextEditorTab(BlueprintLoopTransactionViewModel loop, string title)
+    {
+        var project = new LismaProjectViewModel(
+            _simulationService.SimulationServerFacade,
+            _projectService.TextEditorFactory,
+            _projectService.ProjectFileService,
+            _syntaxHighlighter,
+            _modelErrorService);
+
+        project.Name = title;
+        project.FullText = loop.Text;
+        project.OnBeforeDispose = () =>
+        {
+            loop.Text = project.FullText;
+            _loopTextEditorTabs.RemoveAll(t => t.project == project);
+        };
+
+        _loopTextEditorTabs.Add((project, loop));
+        _projectService.AddProject(project);
+        ActiveProject = project;
+        SyncProjects();
+    }
+
     public void SyncProjects()
     {
         Projects.Clear();

@@ -216,8 +216,11 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
             ?.Invoke(_editorInstance, null);
     }
 
+    public Action? OnBeforeDispose { get; set; }
+
     public void Dispose()
     {
+        OnBeforeDispose?.Invoke();
         ResetEditor();
     }
 }

@@ -127,7 +127,8 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
 
     public LismaTextModel ConvertToLisma()
     {
-        return BlueprintToLismaConverter.ConvertToLisma(_model);
+        var model = _editorViewModel?.GetBlueprintModel() ?? _model;
+        return BlueprintToLismaConverter.ConvertToLisma(model);
     }
 
     public void SetEditorViewModel(BlueprintEditorViewModel vm)

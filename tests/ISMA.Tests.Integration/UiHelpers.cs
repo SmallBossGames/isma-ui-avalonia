@@ -138,7 +138,7 @@ public static class UiHelpers
         if (directEditor is not null)
             return directEditor;
 
-        // Headless fallback: create TextEditor and connect to active ViewModel with event subscriptions
+        // Headless fallback: access active ViewModel directly
         if (window.DataContext is MainWindowViewModel mainVm && mainVm.ActiveProject is LismaProjectViewModel vm)
         {
             var editor = new TextEditor
@@ -757,5 +757,110 @@ public static class UiHelpers
 
         var stateBoxes = FindDescendants<StateBox>(editor).ToList();
         return index >= 0 && index < stateBoxes.Count ? stateBoxes[index] : null;
+    }
+
+    /// <summary>
+    /// Double-click a StateBox by name to open its text editor tab.
+    /// Creates a new LISMA text tab for editing the state's content.
+    /// Uses the MainWindowViewModel directly (standard pattern for headless integration tests).
+    /// </summary>
+    public static void DoubleClickStateBoxByName(this MainWindow window, string name)
+    {
+        // Get the MainWindowViewModel from the test app
+        var mainVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
+        if (mainVm is null)
+            throw new InvalidOperationException("MainWindowViewModel not found on window.");
+
+        // Find the state in the active blueprint project
+        var bpProject = window.GetActiveProject() as ISMA.ViewModels.ViewModels.BlueprintProjectViewModel;
+        if (bpProject is null)
+            throw new InvalidOperationException("No active blueprint project found.");
+
+        var editorVm = bpProject.EditorContent as ISMA.ViewModels.ViewModels.BlueprintEditorViewModel;
+        if (editorVm is null)
+            throw new InvalidOperationException("BlueprintEditorViewModel not found on active project.");
+
+        var targetState = editorVm.States.FirstOrDefault(s => s.Name == name);
+        if (targetState is null)
+            throw new InvalidOperationException($"State '{name}' not found in blueprint editor.");
+
+        // Open the state text editor tab via MainWindowViewModel
+        var title = $"State: {name}";
+        mainVm.OpenStateTextEditorTab(targetState, title);
+    }
+
+    /// <summary>
+    /// Get the number of tabs (projects) in the editor.
+    /// </summary>
+    public static int GetTabCount(this MainWindow window)
+    {
+        return window.GetProjectCount();
+    }
+
+    /// <summary>
+    /// Switch to a tab by its index.
+    /// </summary>
+    public static void SwitchToTab(this MainWindow window, int index)
+    {
+        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        var tabControl = tabPaneView?.Content as TabControl;
+        if (tabControl is null || index >= tabControl.Items.Count)
+            throw new InvalidOperationException($"Tab index {index} out of range.");
+
+        tabControl.SelectedItem = tabControl.Items[index];
+    }
+
+    /// <summary>
+    /// Get the text content of the active text editor tab (for LISMA projects and state text editors).
+    /// </summary>
+    public static string? GetActiveTabText(this MainWindow window)
+    {
+        var editor = GetActiveTextEditor(window);
+        return editor?.Document?.Text;
+    }
+
+    /// <summary>
+    /// Set text in the active tab's text editor.
+    /// Works for both LISMA projects and state text editor tabs.
+    /// </summary>
+    public static void SetActiveTabText(this MainWindow window, string text)
+    {
+        var editor = GetActiveTextEditor(window);
+        if (editor is null)
+            throw new InvalidOperationException("Text editor not found in active tab.");
+
+        editor.Document.Text = text;
+
+        // Also sync to the ViewModel's FullText (for headless fallback editors)
+        if (window.DataContext is MainWindowViewModel mainVm && mainVm.ActiveProject is LismaProjectViewModel vm)
+        {
+            vm.FullText = text;
+        }
+    }
+
+    /// <summary>
+    /// Get the name of the active tab.
+    /// </summary>
+    public static string? GetActiveTabName(this MainWindow window)
+    {
+        var activeProject = window.GetActiveProject();
+        return activeProject?.Name;
+    }
+
+    /// <summary>
+    /// Close the currently active tab.
+    /// </summary>
+    public static void CloseActiveTab(this MainWindow window)
+    {
+        var tabPaneView = window.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
+        var tabControl = tabPaneView?.Content as TabControl;
+        if (tabControl is null)
+            throw new InvalidOperationException("TabControl not found.");
+
+        var activeProject = window.GetActiveProject();
+        if (activeProject is null)
+            throw new InvalidOperationException("No active project to close.");
+
+        window.ClickTabCloseButton(0);
     }
 }
