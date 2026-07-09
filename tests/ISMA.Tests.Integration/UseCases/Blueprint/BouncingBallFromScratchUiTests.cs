@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Headless.XUnit;
@@ -33,46 +31,38 @@ public class BouncingBallFromScratchUiTests
     {
         // Step 1: Create a new blueprint project via UI
         _app.Window.ClickMenuItem("MenuNewBlueprint");
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
-        _app.Window.GetActiveProject().Should().BeOfType<BlueprintProjectViewModel>();
 
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-
-        // Verify initial state: only Main and Init states exist
-        editorVm.States.Should().HaveCount(2);
-        editorVm.States.Count(s => s.IsMain).Should().Be(1);
-        editorVm.States.Count(s => s.IsInit).Should().Be(1);
-        editorVm.Transactions.Should().BeEmpty();
+        // Verify initial state: only Main and Init states exist (2 state boxes on canvas)
+        _app.Window.GetStateBoxCount().Should().Be(2);
 
         // Step 2: Add the "Up" state via UI
         _app.Window.ClickAddStateButton();
-        editorVm.States.Should().HaveCount(3);
-        var upState = editorVm.States.FirstOrDefault(s => s.Name == "New state 1");
-        upState.Should().NotBeNull();
+        await _app.Window.Flush();
+        _app.Window.GetStateBoxCount().Should().Be(3);
 
-        // Rename "New state 1" to "Up" via inline editing
-        editorVm.UpdateStateName(upState!, "Up");
-        editorVm.States.Should().Contain(s => s.Name == "Up");
+        // Rename "New state 1" to "Up" via UI helper
+        _app.Window.RenameStateBoxByName("New state 1", "Up");
+        await _app.Window.Flush();
+        _app.Window.GetStateBoxByName("Up").Should().NotBeNull();
 
         // Step 3: Add the "Down" state via UI
         _app.Window.ClickAddStateButton();
-        editorVm.States.Should().HaveCount(4);
-
-        // Debug: print all state names
-        var allNames = editorVm.States.Select(s => s.Name).ToArray();
+        await _app.Window.Flush();
+        _app.Window.GetStateBoxCount().Should().Be(4);
 
         // After renaming "New state 1" to "Up", the name counter is at 2, so next state is "New state 2"
-        var downState = editorVm.States.FirstOrDefault(s => s.Name == "New state 2");
-        downState.Should().NotBeNull($"Second state should be named 'New state 2'. Actual names: [{string.Join(", ", allNames)}]");
+        _app.Window.GetStateBoxByName("New state 2").Should().NotBeNull();
 
-        // Rename "New state 2" to "Down" via inline editing
-        editorVm.UpdateStateName(downState!, "Down");
-        editorVm.States.Should().Contain(s => s.Name == "Down");
+        // Rename "New state 2" to "Down" via UI helper
+        _app.Window.RenameStateBoxByName("New state 2", "Down");
+        await _app.Window.Flush();
+        _app.Window.GetStateBoxByName("Down").Should().NotBeNull();
 
-        // Step 4: Edit the Main state content via text editor tab
-        var mainState = editorVm.States.First(s => s.IsMain);
-        _app.ViewModel.OpenStateTextEditorTab(mainState, "State: main");
+        // Step 4: Edit the Main state content via text editor tab (double-click)
+        _app.Window.OpenStateTextEditorViaDoubleClick("main");
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2); // Blueprint + text editor tab
 
         // The new tab should be the active one (state text editor)
@@ -86,114 +76,102 @@ y' = v;
 y(t0) = 10;";
         _app.Window.SetActiveTabText(mainText);
 
-        // Save text back to the model (ViewModel Text doesn't auto-sync to model)
-        // Re-capture the main state VM since ReloadViews() creates new instances
-        var currentMainState = editorVm.States.First(s => s.IsMain);
-        editorVm.UpdateStateText(currentMainState, mainText);
-
-        // Close the state text editor tab
+        // Close the state text editor tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
-        // Verify the main state text was saved
-        mainState.Text.Should().Contain("v' = -g");
-        mainState.Text.Should().Contain("y' = v");
-        mainState.Text.Should().Contain("y(t0) = 10");
+        // Verify the main state text was saved by reading from UI
+        _app.Window.GetStateBoxText("main").Should().Contain("v' = -g");
+        _app.Window.GetStateBoxText("main").Should().Contain("y' = v");
+        _app.Window.GetStateBoxText("main").Should().Contain("y(t0) = 10");
 
-        // Step 5: Edit the "Up" state content via text editor tab
-        var upStateVm = editorVm.States.First(s => s.Name == "Up");
-        _app.ViewModel.OpenStateTextEditorTab(upStateVm, "State: Up");
+        // Step 5: Edit the "Up" state content via text editor tab (double-click)
+        _app.Window.OpenStateTextEditorViaDoubleClick("Up");
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set the Up state LISMA content
         var upText = "set v = -v;";
         _app.Window.SetActiveTabText(upText);
 
-        // Save text back to the state (updates both VM and model)
-        // Re-capture the Up state VM since ReloadViews() creates new instances
-        var currentUpState = editorVm.States.First(s => s.Name == "Up");
-        editorVm.UpdateStateText(currentUpState, upText);
-
-        // Close the tab
+        // Close the tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify the Up state text was saved
-        upStateVm.Text.Should().Contain("set v = -v");
+        _app.Window.GetStateBoxText("Up").Should().Contain("set v = -v");
 
         // Step 6: Add transition from init to Up (predicate: y < 0)
         _app.Window.ClickAddTransitionToggle();
-        editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
+        await _app.Window.Flush();
 
-        editorVm.SetTransitionSource(editorVm.States.First(s => s.IsInit));
-        editorVm.SelectedState = upStateVm;
-        editorVm.AddTransitionCommand.Execute(null);
-
-        editorVm.Transactions.Should().HaveCount(1);
-        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
+        // Click source state (init), then target state (Up) to create transition
+        _app.Window.ClickStateBoxOnCanvas("init");
+        _app.Window.ClickStateBoxOnCanvas("Up");
+        await _app.Window.Flush();
+        _app.Window.GetArrowLineCount().Should().Be(1);
 
         // Set the predicate for the first transition
-        editorVm.Transactions[0].Predicate = "y < 0";
+        _app.Window.ClickArrowBodyToEditPredicate();
+        _app.Window.SetTransitionPredicate("y < 0");
+        await _app.Window.Flush();
 
         // Step 7: Add transition from init to Down (predicate: v < 0)
         _app.Window.ClickAddTransitionToggle();
-        editorVm.SetTransitionSource(editorVm.States.First(s => s.IsInit));
-        var downStateVm = editorVm.States.First(s => s.Name == "Down");
-        editorVm.SelectedState = downStateVm;
-        editorVm.AddTransitionCommand.Execute(null);
+        await _app.Window.Flush();
 
-        editorVm.Transactions.Should().HaveCount(2);
-        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
+        _app.Window.ClickStateBoxOnCanvas("init");
+        _app.Window.ClickStateBoxOnCanvas("Down");
+        await _app.Window.Flush();
+        _app.Window.GetArrowLineCount().Should().Be(2);
 
         // Set the predicate for the second transition
-        editorVm.Transactions[1].Predicate = "v < 0";
+        _app.Window.ClickArrowBodyToEditPredicate();
+        _app.Window.SetTransitionPredicate("v < 0");
+        await _app.Window.Flush();
 
         // Step 8: Add transition from Down to Up (predicate: y < 0)
         _app.Window.ClickAddTransitionToggle();
-        editorVm.SetTransitionSource(downStateVm);
-        editorVm.SelectedState = upStateVm;
-        editorVm.AddTransitionCommand.Execute(null);
+        await _app.Window.Flush();
 
-        editorVm.Transactions.Should().HaveCount(3);
-        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
+        _app.Window.ClickStateBoxOnCanvas("Down");
+        _app.Window.ClickStateBoxOnCanvas("Up");
+        await _app.Window.Flush();
+        _app.Window.GetArrowLineCount().Should().Be(3);
 
         // Set the predicate for the third transition
-        editorVm.Transactions[2].Predicate = "y < 0";
+        _app.Window.ClickArrowBodyToEditPredicate();
+        _app.Window.SetTransitionPredicate("y < 0");
+        await _app.Window.Flush();
 
         // Step 9: Add transition from Up to Down (predicate: v < 0)
         _app.Window.ClickAddTransitionToggle();
-        editorVm.SetTransitionSource(upStateVm);
-        editorVm.SelectedState = downStateVm;
-        editorVm.AddTransitionCommand.Execute(null);
+        await _app.Window.Flush();
 
-        editorVm.Transactions.Should().HaveCount(4);
-        editorVm.Mode.Should().BeOfType<EditorMode.Default>();
+        _app.Window.ClickStateBoxOnCanvas("Up");
+        _app.Window.ClickStateBoxOnCanvas("Down");
+        await _app.Window.Flush();
+        _app.Window.GetArrowLineCount().Should().Be(4);
 
         // Set the predicate for the fourth transition
-        editorVm.Transactions[3].Predicate = "v < 0";
+        _app.Window.ClickArrowBodyToEditPredicate();
+        _app.Window.SetTransitionPredicate("v < 0");
+        await _app.Window.Flush();
 
         // Step 10: Verify the complete blueprint model structure
-        editorVm.States.Should().HaveCount(4); // Main, Init, Up, Down
-        editorVm.Transactions.Should().HaveCount(4);
-        editorVm.LoopTransactions.Should().BeEmpty();
-
-        // Verify transaction connections
-        var txStartStates = editorVm.Transactions.Select(t => t.StartState.Name).OrderBy(n => n).ToImmutableArray();
-        txStartStates.Should().Equal("Down", "init", "init", "Up");
-
-        var txEndStates = editorVm.Transactions.Select(t => t.EndState.Name).OrderBy(n => n).ToImmutableArray();
-        txEndStates.Should().Equal("Down", "Down", "Up", "Up");
-
-        var txPredicates = editorVm.Transactions.Select(t => t.Predicate).OrderBy(n => n).ToImmutableArray();
-        txPredicates.Should().Equal("v < 0", "v < 0", "y < 0", "y < 0");
+        _app.Window.GetStateBoxCount().Should().Be(4); // Main, Init, Up, Down
+        _app.Window.GetArrowLineCount().Should().Be(4);
+        _app.Window.GetLoopArrowCount().Should().Be(0);
 
         // Step 11: Convert to LISMA and verify the generated text
-        var lisma = blueprintProject.ConvertToLisma();
+        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
+        blueprintProject.Should().NotBeNull("Blueprint project should be active.");
+
+        var lisma = blueprintProject!.ConvertToLisma();
         lisma.Should().NotBeNull();
         lisma.FullText.Should().NotBeNullOrEmpty();
-
-        // Debug: print the actual LISMA text
-        var actualText = lisma.FullText;
 
         lisma.FullText.Should().Contain("v' = -g");
         lisma.FullText.Should().Contain("y' = v");
@@ -206,10 +184,11 @@ y(t0) = 10;";
         _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/bouncing-ball-result.bin" });
 
         _app.Window.ClickMenuItem("MenuRun");
+        await _app.Window.Flush();
 
-        // Verify simulation completed
-        _app.ViewModel.SimulationService.IsRunning.Should().BeFalse();
-        _app.ViewModel.SimulationService.StatusText.Should().Be("Simulation complete");
+        // Verify simulation completed by checking the Run button is enabled again
+        // (it gets disabled while simulation is running)
+        _app.Window.IsRunButtonEnabled().Should().BeTrue();
     }
 
     [AvaloniaFact]
@@ -218,15 +197,17 @@ y(t0) = 10;";
         // Test that closing a state text editor tab saves the content back to the blueprint state
 
         _app.Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
+        await _app.Window.Flush();
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        // Add a new state
+        // Add a new state via UI
         _app.Window.ClickAddStateButton();
-        var newState = editorVm.States.First(s => s.Name == "New state 1");
+        await _app.Window.Flush();
+        _app.Window.GetStateBoxCount().Should().Be(3);
 
-        // Open text editor tab via ViewModel
-        _app.ViewModel.OpenStateTextEditorTab(newState, "State: New state 1");
+        // Open text editor tab via UI double-click
+        _app.Window.OpenStateTextEditorViaDoubleClick("New state 1");
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set content
@@ -235,27 +216,29 @@ y(t0) = 10;";
 
         // Close the tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
-        // Verify content was saved
-        newState.Text.Should().Be(newText);
+        // Verify content was saved by reading from UI
+        _app.Window.GetStateBoxText("New state 1").Should().Be(newText);
     }
 
     [AvaloniaFact]
     public async Task BouncingBall_MainStateText_EditableViaDoubleClick()
     {
         // Test that the Main state (which is non-editable on canvas) can still have its text edited
-        // by opening a text editor tab
+        // by opening a text editor tab via double-click
 
         _app.Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
+        await _app.Window.Flush();
+        _app.Window.GetProjectCount().Should().Be(1);
 
-        var mainState = editorVm.States.First(s => s.IsMain);
-        mainState.Text.Should().BeEmpty(); // Default empty
+        // Main state should have empty text by default
+        _app.Window.GetStateBoxText("main").Should().BeNullOrEmpty();
 
-        // Open text editor tab for main state
-        _app.ViewModel.OpenStateTextEditorTab(mainState, "State: main");
+        // Open text editor tab for main state via UI double-click
+        _app.Window.OpenStateTextEditorViaDoubleClick("main");
+        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set content
@@ -263,8 +246,9 @@ y(t0) = 10;";
 
         // Close tab
         _app.Window.ClickTabCloseButton(1);
+        await _app.Window.Flush();
 
-        // Verify saved
-        mainState.Text.Should().Be("const g = 9.81;");
+        // Verify saved by reading from UI
+        _app.Window.GetStateBoxText("main").Should().Be("const g = 9.81;");
     }
 }

@@ -90,9 +90,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         project.Name = title;
         project.FullText = state.Text;
+        var editorVm = FindEditorViewModelForState(state);
         project.OnBeforeDispose = () =>
         {
             state.Text = project.FullText;
+            editorVm?.UpdateStateText(state, project.FullText);
             _stateTextEditorTabs.RemoveAll(t => t.project == project);
         };
 
@@ -100,6 +102,22 @@ public partial class MainWindowViewModel : ObservableObject
         _projectService.AddProject(project);
         _projectService.SetActiveProject(project);
         SyncProjects();
+    }
+
+    private BlueprintEditorViewModel? FindEditorViewModelForState(BlueprintStateViewModel state)
+    {
+        foreach (var project in Projects)
+        {
+            if (project is BlueprintProjectViewModel bpProject)
+            {
+                var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
+                if (editorVm?.States.Contains(state) == true)
+                {
+                    return editorVm;
+                }
+            }
+        }
+        return null;
     }
 
     public void OpenLoopTextEditorTab(BlueprintLoopTransactionViewModel loop, string title)

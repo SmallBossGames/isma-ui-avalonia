@@ -127,6 +127,53 @@ public class StateBox : ContentControl
     /// </summary>
     public event EventHandler<string?>? NameCommitted;
 
+    /// <summary>
+    /// Raises the StateClicked event. For testing purposes.
+    /// </summary>
+    public void RaiseStateClicked()
+    {
+        StateClicked?.Invoke(this, new RoutedEventArgs());
+    }
+
+    /// <summary>
+    /// Raises the StateDoubleClicked event. For testing purposes.
+    /// </summary>
+    public void RaiseStateDoubleClicked()
+    {
+        StateDoubleClicked?.Invoke(this, new RoutedEventArgs());
+    }
+
+    /// <summary>
+    /// Simulates a state press by invoking the ViewModel's OnStatePressed method.
+    /// For testing purposes — bypasses the need to construct internal PointerEventArgs types.
+    /// </summary>
+    public void SimulateStatePressed(double positionX, double positionY)
+    {
+        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        {
+            // Find the parent BlueprintEditorView to get its ViewModel
+            var parent = Parent;
+            while (parent is not null)
+            {
+                if (parent is Avalonia.Controls.UserControl uc &&
+                    uc.DataContext is ISMA.ViewModels.ViewModels.BlueprintEditorViewModel editorVm)
+                {
+                    editorVm.OnStatePressed(stateVm, positionX, positionY);
+                    return;
+                }
+                parent = parent.Parent;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Raises the NameCommitted event with the given new name. For testing purposes.
+    /// </summary>
+    public void RaiseNameCommitted(string? newName)
+    {
+        NameCommitted?.Invoke(this, newName);
+    }
+
     static StateBox()
     {
         AffectsRender<StateBox>(FillColorProperty, StateHeightProperty);

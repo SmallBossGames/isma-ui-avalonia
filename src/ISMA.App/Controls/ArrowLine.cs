@@ -93,6 +93,24 @@ public class ArrowLine : Control
     /// </summary>
     public event EventHandler<ArrowHitTestEventArgs>? ArrowBodyClicked;
 
+    /// <summary>
+    /// Raises the ArrowBodyClicked event. For testing purposes.
+    /// </summary>
+    public void RaiseArrowBodyClicked()
+    {
+        var result = new ArrowHitTestResult { IsArrowBody = true };
+        ArrowBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(0, 0)));
+    }
+
+    /// <summary>
+    /// Raises the ArrowHeadClicked event. For testing purposes.
+    /// </summary>
+    public void RaiseArrowHeadClicked()
+    {
+        var result = new ArrowHitTestResult { IsArrowHead = true };
+        ArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(0, 0)));
+    }
+
     static ArrowLine()
     {
         AffectsRender<ArrowLine>(StartStateProperty, EndStateProperty);
