@@ -14,27 +14,36 @@ No `cd` required — the solution file is at the repo root.
 
 5-layer Clean Architecture, dependency direction is strict:
 
-```
-ISMA.App ──► ISMA.ViewModels ──► ISMA.Domain
-     │              │
-     └──────────────┼──► ISMA.Infrastructure ──► ISMA.Domain
-```
+```mermaid
+graph LR
+    subgraph Presentation
+        App["`**ISMA.App**<br/>Avalonia views, controls, DI wiring`"]
+        VM["`**ISMA.ViewModels**<br/>CommunityToolkit.Mvvm ViewModels`"]
+    end
+    subgraph Infrastructure
+        Infra["`**ISMA.Infrastructure**<br/>gRPC/HTTP clients, file storage`"]
+    end
+    subgraph Domain
+        Dom["`**ISMA.Domain**<br/>Pure models, DTOs, contracts`"]
+    end
+    subgraph Tests
+        UT["`**ISMA.Tests**<br/>xUnit v3 unit tests`"]
+        IT["`**ISMA.Tests.Integration**<br/>xUnit v3 headless UI tests`"]
+    end
 
-| Project | Layer | What it owns |
-|---|---|---|
-| `src/ISMA.Domain` | Domain | Pure models, DTOs, contracts, conversion logic. Zero external deps. |
-| `src/ISMA.Infrastructure` | Infrastructure | gRPC/HTTP clients, file storage, process launchers, chart viewer. |
-| `src/ISMA.ViewModels` | Presentation | CommunityToolkit.Mvvm ViewModels, VM-level services, DI abstractions. |
-| `src/ISMA.App` | Presentation | Avalonia views (AXAML), controls, bootstrapper, concrete DI wiring. |
-| `tests/ISMA.Tests` | Tests | xUnit v3 unit tests (domain + viewmodels). |
-| `tests/ISMA.Tests.Integration` | Tests | xUnit v3 headless UI tests (Avalonia.Headless.XUnit). |
+    App --> VM
+    App --> Infra
+    VM --> Dom
+    Infra --> Dom
+    IT --> App
+```
 
 ## Framework specifics
 
 - **Avalonia 12.0.3** — `AvaloniaUseCompiledBindingsByDefault` is enabled globally in `Directory.Build.props`. All views use `x:DataType`.
 - **CommunityToolkit.Mvvm** — `[ObservableProperty]`, `[RelayCommand]`, source generators. No reactive frameworks.
 - **DI** — `Microsoft.Extensions.DependencyInjection`. App layer registers everything in `ServiceCollectionExtensions.cs`. Tests use `ConfigureAppServices()` and override specific services (e.g. `ISimulationServerFacade`) before calling it.
-- **Server communication** — gRPC over Unix Domain Sockets, with HTTP (gRPC-Web) as fallback. The `ISimulationServerFacade` is the single abstraction.
+- **Server communication** — gRPC over Unix Domain Sockets
 - **No XAML code-behind logic** — Views contain only markup. All logic is in ViewModels or services.
 
 ## Testing
@@ -44,17 +53,16 @@ Two test projects with different scopes:
 **Unit tests** (`tests/ISMA.Tests`): Domain models and ViewModels. Uses Moq for interfaces.
 
 **Integration tests** (`tests/ISMA.Tests.Integration`): Headless Avalonia UI tests.
-- All tests inherit from `IntegrationTestBase` which sets up a headless window with the app's real DI config.
-- The only difference from production DI is `ISimulationServerFacade` is replaced with `MockSimulationServerFacade`.
-- Use `UiHelpers` for UI interactions: `window.Flush()`, `window.ClickMenuItem()`, `window.SetEditorText()`, etc.
-- Always call `window.Flush()` after UI interactions to force layout in headless mode.
-- Integration tests use `[Xunit.Headless]` via `GlobalUsings.cs` (`global using global::Xunit;`).
+- Integration tests checks end-to-end flows with Avalonia Headless Platform
+- Integration tests mock only external dependecises
+- Intergation tests always interact with Avalonia UI components (View layer)
+- Using View Models for UI interactions in tests is prohibited
 
 ## Package management
 
 Centralized via `Directory.Packages.props` at both root and `src/` level. All versions pinned in one place. Never edit a `.csproj` to change a version.
 
-## Codestyle Rules
+## Code Rules
 
 ### C#
 - Prefer primary constructors
@@ -63,6 +71,11 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 - Add XML documentation comments for public interfaces
 - Add XML documentation comments for data models
 - Avoid using reflection
+- Write code as strict as possible
+
+### Avalonia
+- Stricly follow MVVM pattern
+- **No XAML code-behind logic** — Views contain only markup. All logic is in ViewModels or services.
 
 ## Key files
 

@@ -309,6 +309,7 @@ public class StateBox : ContentControl
 
         if (_isDragging)
         {
+            SyncPositionToViewModel();
             StateReleased?.Invoke(this, e);
             _isDragging = false;
             _pointerDownPosition = default;
@@ -344,6 +345,15 @@ public class StateBox : ContentControl
         if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
         {
             stateVm.IsSelected = true;
+        }
+    }
+
+    private void SyncPositionToViewModel()
+    {
+        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        {
+            stateVm.CanvasPositionX = CanvasPositionX;
+            stateVm.CanvasPositionY = CanvasPositionY;
         }
     }
 

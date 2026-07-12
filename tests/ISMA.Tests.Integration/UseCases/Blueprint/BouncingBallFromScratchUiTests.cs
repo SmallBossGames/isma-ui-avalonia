@@ -31,7 +31,6 @@ public class BouncingBallFromScratchUiTests
     {
         // Step 1: Create a new blueprint project via UI
         _app.Window.ClickMenuItem("MenuNewBlueprint");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify initial state: only Main and Init states exist (2 state boxes on canvas)
@@ -39,17 +38,14 @@ public class BouncingBallFromScratchUiTests
 
         // Step 2: Add the "Up" state via UI
         _app.Window.ClickAddStateButton();
-        await _app.Window.Flush();
         _app.Window.GetStateBoxCount().Should().Be(3);
 
         // Rename "New state 1" to "Up" via UI helper
         _app.Window.RenameStateBoxByName("New state 1", "Up");
-        await _app.Window.Flush();
         _app.Window.GetStateBoxByName("Up").Should().NotBeNull();
 
         // Step 3: Add the "Down" state via UI
         _app.Window.ClickAddStateButton();
-        await _app.Window.Flush();
         _app.Window.GetStateBoxCount().Should().Be(4);
 
         // After renaming "New state 1" to "Up", the name counter is at 2, so next state is "New state 2"
@@ -57,12 +53,10 @@ public class BouncingBallFromScratchUiTests
 
         // Rename "New state 2" to "Down" via UI helper
         _app.Window.RenameStateBoxByName("New state 2", "Down");
-        await _app.Window.Flush();
         _app.Window.GetStateBoxByName("Down").Should().NotBeNull();
 
         // Step 4: Edit the Main state content via text editor tab (double-click)
         _app.Window.OpenStateTextEditorViaDoubleClick("main");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2); // Blueprint + text editor tab
 
         // The new tab should be the active one (state text editor)
@@ -78,7 +72,6 @@ y(t0) = 10;";
 
         // Close the state text editor tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify the main state text was saved by reading from UI
@@ -88,7 +81,6 @@ y(t0) = 10;";
 
         // Step 5: Edit the "Up" state content via text editor tab (double-click)
         _app.Window.OpenStateTextEditorViaDoubleClick("Up");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set the Up state LISMA content
@@ -97,7 +89,6 @@ y(t0) = 10;";
 
         // Close the tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify the Up state text was saved
@@ -105,60 +96,48 @@ y(t0) = 10;";
 
         // Step 6: Add transition from init to Up (predicate: y < 0)
         _app.Window.ClickAddTransitionToggle();
-        await _app.Window.Flush();
 
         // Click source state (init), then target state (Up) to create transition
         _app.Window.ClickStateBoxOnCanvas("init");
         _app.Window.ClickStateBoxOnCanvas("Up");
-        await _app.Window.Flush();
         _app.Window.GetArrowLineCount().Should().Be(1);
 
         // Set the predicate for the first transition
         _app.Window.ClickArrowBodyToEditPredicate();
         _app.Window.SetTransitionPredicate("y < 0");
-        await _app.Window.Flush();
 
         // Step 7: Add transition from init to Down (predicate: v < 0)
         _app.Window.ClickAddTransitionToggle();
-        await _app.Window.Flush();
 
         _app.Window.ClickStateBoxOnCanvas("init");
         _app.Window.ClickStateBoxOnCanvas("Down");
-        await _app.Window.Flush();
         _app.Window.GetArrowLineCount().Should().Be(2);
 
         // Set the predicate for the second transition
         _app.Window.ClickArrowBodyToEditPredicate();
         _app.Window.SetTransitionPredicate("v < 0");
-        await _app.Window.Flush();
 
         // Step 8: Add transition from Down to Up (predicate: y < 0)
         _app.Window.ClickAddTransitionToggle();
-        await _app.Window.Flush();
 
         _app.Window.ClickStateBoxOnCanvas("Down");
         _app.Window.ClickStateBoxOnCanvas("Up");
-        await _app.Window.Flush();
         _app.Window.GetArrowLineCount().Should().Be(3);
 
         // Set the predicate for the third transition
         _app.Window.ClickArrowBodyToEditPredicate();
         _app.Window.SetTransitionPredicate("y < 0");
-        await _app.Window.Flush();
 
         // Step 9: Add transition from Up to Down (predicate: v < 0)
         _app.Window.ClickAddTransitionToggle();
-        await _app.Window.Flush();
 
         _app.Window.ClickStateBoxOnCanvas("Up");
         _app.Window.ClickStateBoxOnCanvas("Down");
-        await _app.Window.Flush();
         _app.Window.GetArrowLineCount().Should().Be(4);
 
         // Set the predicate for the fourth transition
         _app.Window.ClickArrowBodyToEditPredicate();
         _app.Window.SetTransitionPredicate("v < 0");
-        await _app.Window.Flush();
 
         // Step 10: Verify the complete blueprint model structure
         _app.Window.GetStateBoxCount().Should().Be(4); // Main, Init, Up, Down
@@ -184,7 +163,6 @@ y(t0) = 10;";
         _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/bouncing-ball-result.bin" });
 
         _app.Window.ClickMenuItem("MenuRun");
-        await _app.Window.Flush();
 
         // Verify simulation completed by checking the Run button is enabled again
         // (it gets disabled while simulation is running)
@@ -197,17 +175,14 @@ y(t0) = 10;";
         // Test that closing a state text editor tab saves the content back to the blueprint state
 
         _app.Window.ClickMenuItem("MenuNewBlueprint");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Add a new state via UI
         _app.Window.ClickAddStateButton();
-        await _app.Window.Flush();
         _app.Window.GetStateBoxCount().Should().Be(3);
 
         // Open text editor tab via UI double-click
         _app.Window.OpenStateTextEditorViaDoubleClick("New state 1");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set content
@@ -216,7 +191,6 @@ y(t0) = 10;";
 
         // Close the tab - content should be saved back
         _app.Window.ClickTabCloseButton(1);
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify content was saved by reading from UI
@@ -230,7 +204,6 @@ y(t0) = 10;";
         // by opening a text editor tab via double-click
 
         _app.Window.ClickMenuItem("MenuNewBlueprint");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Main state should have empty text by default
@@ -238,7 +211,6 @@ y(t0) = 10;";
 
         // Open text editor tab for main state via UI double-click
         _app.Window.OpenStateTextEditorViaDoubleClick("main");
-        await _app.Window.Flush();
         _app.Window.GetProjectCount().Should().Be(2);
 
         // Set content
@@ -246,7 +218,6 @@ y(t0) = 10;";
 
         // Close tab
         _app.Window.ClickTabCloseButton(1);
-        await _app.Window.Flush();
 
         // Verify saved by reading from UI
         _app.Window.GetStateBoxText("main").Should().Be("const g = 9.81;");

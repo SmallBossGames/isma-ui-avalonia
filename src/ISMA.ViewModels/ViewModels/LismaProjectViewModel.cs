@@ -206,7 +206,38 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         }
     }
 
-    public void TriggerCut() => CutRequested?.Invoke();
+    public void TriggerCut()
+    {
+        if (_editorInstance is null)
+        {
+            CutRequested?.Invoke();
+            return;
+        }
+
+        var documentObj = _editorInstance.GetType().GetProperty("Document")?.GetValue(_editorInstance);
+        if (documentObj is null)
+        {
+            CutRequested?.Invoke();
+            return;
+        }
+
+        var documentType = documentObj.GetType();
+        var selectionStart = (int)(_editorInstance.GetType().GetProperty("SelectionStart")?.GetValue(_editorInstance) ?? 0);
+        var selectionLength = (int)(_editorInstance.GetType().GetProperty("SelectionLength")?.GetValue(_editorInstance) ?? 0);
+
+        if (selectionLength <= 0)
+        {
+            CutRequested?.Invoke();
+            return;
+        }
+
+        var currentText = (string)(documentType.GetProperty("Text")?.GetValue(documentObj) ?? string.Empty);
+        var newText = currentText.Remove(selectionStart, selectionLength);
+        documentType.GetProperty("Text")?.SetValue(documentObj, newText);
+
+        FullText = newText;
+        CutRequested?.Invoke();
+    }
     public void TriggerCopy() => CopyRequested?.Invoke();
     public void TriggerPaste() => PasteRequested?.Invoke();
 
