@@ -26,6 +26,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IModelErrorService, ModelErrorService>();
+        services.AddSingleton<IBlueprintValidationService, BlueprintValidationService>();
+        services.AddSingleton<IUndoRedoService, UndoRedoService>();
+        services.AddSingleton<IBlueprintClipboardService, BlueprintClipboardService>();
+        services.AddSingleton<IAutoSaveService>(sp =>
+        {
+            var projectService = sp.GetService<ProjectService>();
+            return new AutoSaveService(() =>
+            {
+                var activeProject = projectService?.ActiveProject as BlueprintProjectViewModel;
+                activeProject?.SaveAsync();
+            });
+        });
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
         services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();

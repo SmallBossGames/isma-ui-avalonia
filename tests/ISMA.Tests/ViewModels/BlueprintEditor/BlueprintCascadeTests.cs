@@ -15,24 +15,24 @@ public class BlueprintCascadeTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(4);
+        viewModel.States.Should().HaveCount(2);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[2]);
-        viewModel.SelectedState = viewModel.States[3];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveState();
-        viewModel.SelectedState = viewModel.States[2];
+        viewModel.SelectedState = viewModel.States[0];
         viewModel.RemoveStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(3);
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.States.Should().HaveCount(1);
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
@@ -41,11 +41,11 @@ public class BlueprintCascadeTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = viewModel.States[2].Name,
+            StateId = viewModel.States[0].Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""
@@ -54,10 +54,10 @@ public class BlueprintCascadeTests
         viewModel.LoopTransactions.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveState();
-        viewModel.SelectedState = viewModel.States[2];
+        viewModel.SelectedState = viewModel.States[0];
         viewModel.RemoveStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(2);
+        viewModel.States.Should().HaveCount(0);
         viewModel.LoopTransactions.Should().BeEmpty();
     }
 
@@ -69,59 +69,53 @@ public class BlueprintCascadeTests
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(5);
+        viewModel.States.Should().HaveCount(3);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[2]);
-        viewModel.SelectedState = viewModel.States[3];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[2]);
-        viewModel.SelectedState = viewModel.States[4];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[2];
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(2);
+        viewModel.Transitions.Should().HaveCount(2);
 
         viewModel.Mode = new EditorMode.RemoveState();
-        viewModel.SelectedState = viewModel.States[2];
+        viewModel.SelectedState = viewModel.States[0];
         viewModel.RemoveStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(4);
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.States.Should().HaveCount(2);
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
     public void RemoveMainState_IsNoOp()
     {
         var viewModel = CreateViewModel();
-        int initialCount = viewModel.States.Count;
-        viewModel.States.Should().Contain(s => s.IsMain);
+        var initialMain = viewModel.MainState;
+        initialMain.Should().NotBeNull("Main state should exist");
 
         viewModel.Mode = new EditorMode.RemoveState();
-        var mainState = viewModel.States.First(s => s.IsMain);
-        viewModel.SelectedState = mainState;
+        viewModel.SelectedState = initialMain;
         viewModel.RemoveStateCommand.Execute(null);
 
-        var mainStateAfter = viewModel.States.FirstOrDefault(s => s.IsMain);
-        mainStateAfter.Should().NotBeNull("Main state should not be removable");
-        viewModel.States.Should().HaveCount(initialCount);
+        viewModel.MainState.Should().Be(initialMain, "Main state should not be removable");
     }
 
     [Fact]
     public void RemoveInitState_IsNoOp()
     {
         var viewModel = CreateViewModel();
-        int initialCount = viewModel.States.Count;
-        viewModel.States.Should().Contain(s => s.IsInit);
+        var initialInit = viewModel.InitState;
+        initialInit.Should().NotBeNull("Init state should exist");
 
         viewModel.Mode = new EditorMode.RemoveState();
-        var initState = viewModel.States.First(s => s.IsInit);
-        viewModel.SelectedState = initState;
+        viewModel.SelectedState = initialInit;
         viewModel.RemoveStateCommand.Execute(null);
 
-        var initStateAfter = viewModel.States.FirstOrDefault(s => s.IsInit);
-        initStateAfter.Should().NotBeNull("Init state should not be removable");
-        viewModel.States.Should().HaveCount(initialCount);
+        viewModel.InitState.Should().Be(initialInit, "Init state should not be removable");
     }
 }

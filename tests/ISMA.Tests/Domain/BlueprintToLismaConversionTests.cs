@@ -14,12 +14,12 @@ public class BlueprintToLismaConversionTests
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.FullText.Should().Contain("}");
 
         result.Regions.Should().HaveCount(2);
-        result.Regions[0].Name.Should().Be("main");
+        result.Regions[0].Name.Should().Be("Main");
         result.Regions[1].Name.Should().Be("init");
     }
 
@@ -39,14 +39,14 @@ public class BlueprintToLismaConversionTests
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.FullText.Should().Contain("state userState {");
         result.FullText.Should().Contain("user code");
         result.FullText.Should().Contain("}");
 
         result.Regions.Should().HaveCount(3);
-        result.Regions[0].Name.Should().Be("main");
+        result.Regions[0].Name.Should().Be("Main");
         result.Regions[1].Name.Should().Be("init");
         result.Regions[2].Name.Should().Be("userState");
     }
@@ -68,14 +68,14 @@ public class BlueprintToLismaConversionTests
 
         var tx1 = new BlueprintTransactionModel
         {
-            StartStateName = "state1",
-            EndStateName = "state2",
+            StartStateId = state1.Id,
+            EndStateId = state2.Id,
             Predicate = "cond1"
         };
         var tx2 = new BlueprintTransactionModel
         {
-            StartStateName = "state2",
-            EndStateName = "state1",
+            StartStateId = state2.Id,
+            EndStateId = state1.Id,
             Predicate = "cond2"
         };
         model = new BlueprintModel
@@ -89,7 +89,7 @@ public class BlueprintToLismaConversionTests
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.FullText.Should().Contain("state state1 {");
         result.FullText.Should().Contain("state state2 {");
@@ -104,9 +104,10 @@ public class BlueprintToLismaConversionTests
     public void Convert_LoopTransitions_GeneratesPseudoStatePattern()
     {
         var model = BlueprintModel.Empty;
+        var state1 = new BlueprintStateModel(100, 200, "state1", "");
         var loopState = new BlueprintLoopTransactionModel
         {
-            StateName = "state1",
+            StateId = state1.Id,
             Predicate = "loopPred",
             Alias = "",
             Text = ""
@@ -115,7 +116,7 @@ public class BlueprintToLismaConversionTests
         {
             Main = model.Main,
             Init = model.Init,
-            States = model.States,
+            States = model.States.Add(state1),
             Transactions = model.Transactions,
             LoopTransactions = model.LoopTransactions.Add(loopState)
         };
@@ -146,14 +147,14 @@ public class BlueprintToLismaConversionTests
 
         var tx1 = new BlueprintTransactionModel
         {
-            StartStateName = "state1",
-            EndStateName = "target",
+            StartStateId = state1.Id,
+            EndStateId = targetState.Id,
             Predicate = "cond"
         };
         var tx2 = new BlueprintTransactionModel
         {
-            StartStateName = "state2",
-            EndStateName = "target",
+            StartStateId = state2.Id,
+            EndStateId = targetState.Id,
             Predicate = "cond"
         };
         model = new BlueprintModel
@@ -188,14 +189,14 @@ public class BlueprintToLismaConversionTests
 
         var tx1 = new BlueprintTransactionModel
         {
-            StartStateName = "state1",
-            EndStateName = "target",
+            StartStateId = state1.Id,
+            EndStateId = targetState.Id,
             Predicate = "cond1"
         };
         var tx2 = new BlueprintTransactionModel
         {
-            StartStateName = "state1",
-            EndStateName = "target",
+            StartStateId = state1.Id,
+            EndStateId = targetState.Id,
             Predicate = "cond2"
         };
         model = new BlueprintModel

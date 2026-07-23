@@ -43,7 +43,7 @@ public class BlueprintToLismaConversionViewModelTests
         var result = project.ConvertToLisma();
 
         result.Should().NotBeNull();
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.FullText.Should().Contain("state state0 {");
         result.Regions.Should().HaveCount(3);
@@ -56,7 +56,7 @@ public class BlueprintToLismaConversionViewModelTests
 
         var result = project.ConvertToLisma();
 
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.Regions.Should().HaveCount(2);
     }
@@ -78,8 +78,8 @@ public class BlueprintToLismaConversionViewModelTests
 
         var tx = new BlueprintTransactionModel
         {
-            StartStateName = "state0",
-            EndStateName = "state1",
+            StartStateId = state0.Id,
+            EndStateId = state1.Id,
             Predicate = "condition"
         };
         model = new BlueprintModel
@@ -97,7 +97,7 @@ public class BlueprintToLismaConversionViewModelTests
 
         var result = project.ConvertToLisma();
 
-        result.FullText.Should().Contain("state main {");
+        result.FullText.Should().Contain("state Main {");
         result.FullText.Should().Contain("state init {");
         result.Regions.Should().HaveCount(5);
     }
@@ -144,7 +144,7 @@ public class BlueprintToLismaConversionViewModelTests
         var currentModel = editorVm.GetBlueprintModel();
 
         currentModel.States.Should().HaveCount(1);
-        currentModel.Main.Name.Should().Be("main");
+        currentModel.Main.Name.Should().Be("Main");
     }
 
     [Fact]

@@ -5,7 +5,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Controls;
 
@@ -28,13 +27,22 @@ public class LoopArrow : Control
     private const double StrokeWidth = 3.0;
     private const double LabelFontSize = 16;
 
-    public static readonly StyledProperty<BlueprintStateViewModel?> StateProperty =
-        AvaloniaProperty.Register<LoopArrow, BlueprintStateViewModel?>(nameof(State));
+    public static readonly StyledProperty<Guid?> StateIdProperty =
+        AvaloniaProperty.Register<LoopArrow, Guid?>(nameof(StateId));
 
-    public BlueprintStateViewModel? State
+    public Guid? StateId
     {
-        get => GetValue(StateProperty);
-        set => SetValue(StateProperty, value);
+        get => GetValue(StateIdProperty);
+        set => SetValue(StateIdProperty, value);
+    }
+
+    public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
+        AvaloniaProperty.Register<LoopArrow, Func<Guid, Point?>?>(nameof(PositionResolver));
+
+    public Func<Guid, Point?>? PositionResolver
+    {
+        get => GetValue(PositionResolverProperty);
+        set => SetValue(PositionResolverProperty, value);
     }
 
     public static readonly StyledProperty<string?> AliasProperty =
@@ -67,14 +75,24 @@ public class LoopArrow : Control
 
     static LoopArrow()
     {
-        AffectsRender<LoopArrow>(StateProperty);
+        AffectsRender<LoopArrow>(StateIdProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        return new Size(200, 200);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        return base.ArrangeOverride(finalSize);
     }
 
     public override void Render(DrawingContext context)
     {
-        if (State == null) return;
+        var center = GetCenter();
+        if (center == default) return;
 
-        var center = GetCenter(State);
         var r = LoopRadius;
 
         // Circle center offset per spec: (60, -40) from state center
@@ -118,20 +136,32 @@ public class LoopArrow : Control
         context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
-    private Point GetCenter(BlueprintStateViewModel state)
+    private Point GetCenter()
     {
-        var height = state.StateHeight > 0 ? state.StateHeight : StateHeight;
-        return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + height / 2);
+        if (StateId == null || PositionResolver == null) return default;
+        return PositionResolver(StateId.Value) ?? default;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
 
-        if (State == null) return;
+        var center = GetCenter();
+        if (center == default) return;
 
-        var position = e.GetPosition(this);
-        var center = GetCenter(State);
+        var parent = Parent;
+        Point? canvasPosition = null;
+        while (parent is not null)
+        {
+            if (parent is Canvas canvas)
+            {
+                canvasPosition = e.GetPosition((Visual)canvas);
+                break;
+            }
+            parent = parent.Parent;
+        }
+
+        var position = canvasPosition ?? e.GetPosition(this);
         var r = LoopRadius;
 
         // Circle center per spec
@@ -147,15 +177,13 @@ public class LoopArrow : Control
         var arrowheadPos = new Point(circleCenter.X + LoopArrowheadX, circleCenter.Y + LoopLabelYOffset);
         var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
 
-        var clickPos = new Point(position.X, position.Y);
-
         if (headDist < ArrowheadSize * 2)
         {
-            LoopArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, clickPos));
+            LoopArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, position));
         }
         else if (distFromEdge < 10)
         {
-            LoopBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowBody = true }, clickPos));
+            LoopBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowBody = true }, position));
         }
 
         e.Handled = true;

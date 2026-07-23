@@ -1,10 +1,10 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.VisualTree;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Controls;
@@ -36,33 +36,70 @@ public class ArrowHitTestEventArgs : EventArgs
 /// <summary>
 /// Renders a transition arrow line between two states with arrowhead and label.
 /// Uses atan2-based perpendicular offset per spec.
+/// Resolves state positions via a callback to decouple from direct ViewModel access.
 /// </summary>
 public class ArrowLine : Control
 {
     private const double ArrowOffset = 10.0;
     private const double ArrowheadSize = 7.0;
-    private const double StateWidth = 110.0;
     private const double StrokeWidth = 3.0;
     private const double LabelFontSize = 16;
     private const double TextOffsetX = 75.0;
     private const double TextOffsetY = 50.0;
 
-    public static readonly StyledProperty<BlueprintStateViewModel?> StartStateProperty =
-        AvaloniaProperty.Register<ArrowLine, BlueprintStateViewModel?>(nameof(StartState));
+    public static readonly StyledProperty<Guid?> StartStateIdProperty =
+        AvaloniaProperty.Register<ArrowLine, Guid?>(nameof(StartStateId));
 
-    public BlueprintStateViewModel? StartState
+    public Guid? StartStateId
     {
-        get => GetValue(StartStateProperty);
-        set => SetValue(StartStateProperty, value);
+        get => GetValue(StartStateIdProperty);
+        set => SetValue(StartStateIdProperty, value);
     }
 
-    public static readonly StyledProperty<BlueprintStateViewModel?> EndStateProperty =
-        AvaloniaProperty.Register<ArrowLine, BlueprintStateViewModel?>(nameof(EndState));
+    public static readonly StyledProperty<Guid?> EndStateIdProperty =
+        AvaloniaProperty.Register<ArrowLine, Guid?>(nameof(EndStateId));
 
-    public BlueprintStateViewModel? EndState
+    public Guid? EndStateId
     {
-        get => GetValue(EndStateProperty);
-        set => SetValue(EndStateProperty, value);
+        get => GetValue(EndStateIdProperty);
+        set => SetValue(EndStateIdProperty, value);
+    }
+
+    public static readonly StyledProperty<Point?> StartStatePositionProperty =
+        AvaloniaProperty.Register<ArrowLine, Point?>(nameof(StartStatePosition));
+
+    /// <summary>
+    /// Canvas position of the start state. When set, used for rendering instead of PositionResolver.
+    /// </summary>
+    public Point? StartStatePosition
+    {
+        get => GetValue(StartStatePositionProperty);
+        set => SetValue(StartStatePositionProperty, value);
+    }
+
+    public static readonly StyledProperty<Point?> EndStatePositionProperty =
+        AvaloniaProperty.Register<ArrowLine, Point?>(nameof(EndStatePosition));
+
+    /// <summary>
+    /// Canvas position of the end state. When set, used for rendering instead of PositionResolver.
+    /// </summary>
+    public Point? EndStatePosition
+    {
+        get => GetValue(EndStatePositionProperty);
+        set => SetValue(EndStatePositionProperty, value);
+    }
+
+    public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
+        AvaloniaProperty.Register<ArrowLine, Func<Guid, Point?>?>(nameof(PositionResolver));
+
+    /// <summary>
+    /// Resolves a state center point by its Guid. Returns null if not found.
+    /// Used as fallback when StartStatePosition/EndStatePosition are not set.
+    /// </summary>
+    public Func<Guid, Point?>? PositionResolver
+    {
+        get => GetValue(PositionResolverProperty);
+        set => SetValue(PositionResolverProperty, value);
     }
 
     public static readonly StyledProperty<string?> AliasProperty =
@@ -113,15 +150,27 @@ public class ArrowLine : Control
 
     static ArrowLine()
     {
-        AffectsRender<ArrowLine>(StartStateProperty, EndStateProperty);
+        AffectsRender<ArrowLine>(StartStateIdProperty, EndStateIdProperty, StartStatePositionProperty, EndStatePositionProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        return new Size(200, 200);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        return base.ArrangeOverride(finalSize);
     }
 
     public override void Render(DrawingContext context)
     {
-        if (StartState == null || EndState == null) return;
+        if (StartStateId == null || EndStateId == null) return;
 
-        var start = GetCenter(StartState);
-        var end = GetCenter(EndState);
+        var start = GetStartCenter();
+        var end = GetEndCenter();
+
+        if (start == default || end == default) return;
 
         var dx = end.X - start.X;
         var dy = end.Y - start.Y;
@@ -188,22 +237,67 @@ public class ArrowLine : Control
         context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
-    private Point GetCenter(BlueprintStateViewModel state)
+    private Point GetStartCenter()
     {
-        var height = state.StateHeight > 0 ? state.StateHeight : StateWidth;
-        return new Point(state.CanvasPositionX + StateWidth / 2, state.CanvasPositionY + height / 2);
+        if (StartStatePosition.HasValue)
+            return StartStatePosition.Value;
+
+        if (StartStateId != null && PositionResolver != null)
+        {
+            var center = PositionResolver(StartStateId.Value);
+            return center ?? default;
+        }
+
+        return default;
+    }
+
+    private Point GetEndCenter()
+    {
+        if (EndStatePosition.HasValue)
+            return EndStatePosition.Value;
+
+        if (EndStateId != null && PositionResolver != null)
+        {
+            var center = PositionResolver(EndStateId.Value);
+            return center ?? default;
+        }
+
+        return default;
+    }
+
+    private Point GetCenter(Guid id)
+    {
+        if (PositionResolver == null)
+            return default;
+
+        var center = PositionResolver(id);
+        return center ?? default;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
 
-        if (StartState == null || EndState == null) return;
+        if (StartStateId == null || EndStateId == null) return;
 
-        var position = e.GetPosition(this);
+        var parent = Parent;
+        Point? canvasPosition = null;
+        while (parent is not null)
+        {
+            if (parent is Canvas canvas)
+            {
+                canvasPosition = e.GetPosition((Visual)canvas);
+                break;
+            }
+            parent = parent.Parent;
+        }
 
-        var start = GetCenter(StartState);
-        var end = GetCenter(EndState);
+        var position = canvasPosition ?? e.GetPosition(this);
+
+        var start = GetStartCenter();
+        var end = GetEndCenter();
+
+        if (start == default || end == default) return;
 
         var dx = end.X - start.X;
         var dy = end.Y - start.Y;
@@ -224,12 +318,12 @@ public class ArrowLine : Control
         if (distanceToArrowhead < ArrowheadSize * 2)
         {
             result.IsArrowHead = true;
-            ArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(position.X, position.Y)));
+            ArrowHeadClicked?.Invoke(this, new ArrowHitTestEventArgs(result, position));
         }
         else
         {
             result.IsArrowBody = true;
-            ArrowBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(result, new Point(position.X, position.Y)));
+            ArrowBodyClicked?.Invoke(this, new ArrowHitTestEventArgs(result, position));
         }
 
         e.Handled = true;

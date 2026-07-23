@@ -29,7 +29,7 @@ public class AuthorBlueprintTests
         var model = blueprintProject!.GetBlueprintModel();
         model.Main.Should().NotBeNull();
         model.Init.Should().NotBeNull();
-        model.Main.Name.Should().Be("main");
+        model.Main.Name.Should().Be("Main");
         model.Init.Name.Should().Be("init");
     }
 
@@ -42,7 +42,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.GetStateBoxCount().Should().Be(2);
     }
 
     [AvaloniaFact]
@@ -54,7 +54,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.GetStateBoxCount().Should().Be(2);
 
         _app.Window.ClickAddTransitionToggle();
 
@@ -76,19 +76,19 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.GetStateBoxCount().Should().Be(1);
 
         var newState = _app.Window.GetStateBoxByName("New state 1");
         newState.Should().NotBeNull();
 
-        // Try to rename "New state 1" to "main" (duplicate of Main state)
+        // Try to rename "New state 1" to "Main" (duplicate of Main state)
         // The NameChangingMonitor should reject this
         var initialCount = _app.Window.GetStateBoxCount();
 
         // Note: Inline editing allows setting any name, but the ViewModel's
         // NameChangingMonitor rejects duplicates. Since we're using ViewModel-based
         // rename in headless mode, duplicate names should be rejected.
-        _app.Window.RenameStateBoxByName("New state 1", "main");
+        _app.Window.RenameStateBoxByName("New state 1", "Main");
 
         // State count should remain the same
         _app.Window.GetStateBoxCount().Should().Be(initialCount);
@@ -103,7 +103,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.GetStateBoxCount().Should().Be(1);
 
         _app.Window.RenameStateBoxByName("New state 1", "UniqueState");
 
@@ -111,7 +111,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.GetStateBoxCount().Should().Be(2);
         _app.Window.GetStateBoxByName("New state 2").Should().NotBeNull();
     }
 
@@ -135,13 +135,13 @@ public class AuthorBlueprintTests
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
         var modelBefore = editorVm!.GetBlueprintModel();
         modelBefore.Transactions.Should().HaveCount(1);
-        var oldTxStartState = modelBefore.Transactions[0].StartStateName;
+        var txStartStateId = modelBefore.Transactions[0].StartStateId;
 
         _app.Window.RenameStateBoxByName("New state 1", "RenamedState");
 
         var modelAfter = editorVm.GetBlueprintModel();
         modelAfter.Transactions.Should().HaveCount(1);
-        modelAfter.Transactions[0].StartStateName.Should().Be("RenamedState");
+        modelAfter.Transactions[0].StartStateId.Should().Be(txStartStateId);
     }
 
     [AvaloniaFact]
@@ -172,7 +172,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.GetStateBoxCount().Should().Be(1);
 
         _app.Window.ClickRemoveStateToggle();
 
@@ -208,7 +208,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddStateButton();
 
-        _app.Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.GetStateBoxCount().Should().Be(2);
 
         _app.Window.ClickAddTransitionToggle();
 

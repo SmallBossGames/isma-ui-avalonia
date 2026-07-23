@@ -14,7 +14,7 @@ public class BlueprintModelTests
 
         model.Main.CanvasPositionX.Should().Be(10);
         model.Main.CanvasPositionY.Should().Be(10);
-        model.Main.Name.Should().Be("main");
+        model.Main.Name.Should().Be("Main");
         model.Main.Text.Should().Be("");
 
         model.Init.CanvasPositionX.Should().Be(10);
@@ -32,6 +32,7 @@ public class BlueprintModelTests
     {
         var state = new BlueprintStateModel(50, 100, "myState", "some code");
 
+        state.Id.Should().NotBe(Guid.Empty);
         state.CanvasPositionX.Should().Be(50);
         state.CanvasPositionY.Should().Be(100);
         state.Name.Should().Be("myState");
@@ -43,6 +44,7 @@ public class BlueprintModelTests
     {
         var state = new BlueprintStateModel();
 
+        state.Id.Should().Be(Guid.Empty);
         state.CanvasPositionX.Should().Be(0);
         state.CanvasPositionY.Should().Be(0);
         state.Name.Should().Be("");
@@ -52,16 +54,19 @@ public class BlueprintModelTests
     [Fact]
     public void CreateTransaction_CreatesTransactionWithStartAndEndStates()
     {
+        var startState = new BlueprintStateModel(10, 10, "main", "");
+        var endState = new BlueprintStateModel(10, 10, "myState", "");
+
         var transaction = new BlueprintTransactionModel
         {
-            StartStateName = "main",
-            EndStateName = "myState",
+            StartStateId = startState.Id,
+            EndStateId = endState.Id,
             Predicate = "condition",
             Alias = "myAlias"
         };
 
-        transaction.StartStateName.Should().Be("main");
-        transaction.EndStateName.Should().Be("myState");
+        transaction.StartStateId.Should().Be(startState.Id);
+        transaction.EndStateId.Should().Be(endState.Id);
         transaction.Predicate.Should().Be("condition");
         transaction.Alias.Should().Be("myAlias");
     }
@@ -69,15 +74,17 @@ public class BlueprintModelTests
     [Fact]
     public void CreateLoopTransaction_CreatesLoopWithStateAndPredicate()
     {
+        var state = new BlueprintStateModel(10, 10, "myState", "");
+
         var loop = new BlueprintLoopTransactionModel
         {
-            StateName = "myState",
+            StateId = state.Id,
             Predicate = "loop condition",
             Alias = "loopAlias",
             Text = "loop code"
         };
 
-        loop.StateName.Should().Be("myState");
+        loop.StateId.Should().Be(state.Id);
         loop.Predicate.Should().Be("loop condition");
         loop.Alias.Should().Be("loopAlias");
         loop.Text.Should().Be("loop code");
@@ -124,8 +131,8 @@ public class BlueprintModelTests
         var model = BlueprintModel.Empty;
         var newTx = new BlueprintTransactionModel
         {
-            StartStateName = "main",
-            EndStateName = "init",
+            StartStateId = model.Main.Id,
+            EndStateId = model.Init.Id,
             Predicate = "condition"
         };
 
@@ -139,7 +146,7 @@ public class BlueprintModelTests
         };
 
         updated.Transactions.Should().HaveCount(1);
-        updated.Transactions[0].StartStateName.Should().Be("main");
-        updated.Transactions[0].EndStateName.Should().Be("init");
+        updated.Transactions[0].StartStateId.Should().Be(model.Main.Id);
+        updated.Transactions[0].EndStateId.Should().Be(model.Init.Id);
     }
 }

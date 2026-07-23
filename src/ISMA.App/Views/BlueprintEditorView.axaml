@@ -3,7 +3,9 @@
               xmlns:vm="using:ISMA.ViewModels.ViewModels"
               xmlns:controls="using:ISMA.App.Controls"
               xmlns:converters="using:ISMA.ViewModels.Converters"
+              xmlns:controlsPresenters="using:Avalonia.Controls.Presenters"
               x:Class="ISMA.App.Views.BlueprintEditorView"
+              x:Name="__root"
               x:CompileBindings="True"
               x:DataType="vm:BlueprintEditorViewModel">
 
@@ -28,22 +30,49 @@
                       VerticalScrollBarVisibility="Auto"
                       Background="White">
             <Canvas x:Name="Canvas"
+                    Width="{Binding CanvasSize.Width}"
+                    Height="{Binding CanvasSize.Height}"
                     AutomationProperties.AutomationId="BlueprintCanvas"
-                    Width="1200"
-                    Height="800"
-                    Background="White">
+                    Background="White"
+                    KeyDown="OnCanvasKeyDown">
 
-                <!-- Transaction arrows layer -->
-                <ItemsControl ItemsSource="{Binding Transactions}">
+                <Canvas.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Add State" Command="{Binding AddStateCommand}" />
+                        <Separator />
+                        <MenuItem Header="Copy" Command="{Binding CopySelectedCommand}" />
+                        <MenuItem Header="Paste" Command="{Binding PasteStatesCommand}" />
+                        <Separator />
+                        <MenuItem Header="Add Transition" Command="{Binding SetAddTransitionModeCommand}" />
+                        <MenuItem Header="Remove State" Command="{Binding SetRemoveStateModeCommand}" />
+                        <MenuItem Header="Remove Transition" Command="{Binding SetRemoveTransitionModeCommand}" />
+                        <Separator />
+                        <MenuItem Header="Undo" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" />
+                        <MenuItem Header="Redo" Command="{Binding RedoCommand}" IsEnabled="{Binding CanRedo}" />
+                    </ContextMenu>
+                </Canvas.ContextMenu>
+
+                <!-- Transaction arrows layer (ZIndex 0 - behind states) -->
+                <ItemsControl x:Name="TransitionsItemsControl"
+                              ZIndex="0"
+                              ItemsSource="{Binding Transitions}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <Canvas Width="1200" Height="800"/>
+                            <Canvas/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerTheme>
+                        <ControlTheme TargetType="ContentControl" x:DataType="vm:BlueprintTransitionViewModel">
+                            <Setter Property="Canvas.Left" Value="{Binding StartState.CanvasPositionX}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding StartState.CanvasPositionY}"/>
+                        </ControlTheme>
+                    </ItemsControl.ItemContainerTheme>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:BlueprintTransactionViewModel">
-                            <controls:ArrowLine StartState="{Binding StartState}"
-                                                EndState="{Binding EndState}"
+                        <DataTemplate x:DataType="vm:BlueprintTransitionViewModel">
+                            <controls:ArrowLine StartStateId="{Binding StartStateId}"
+                                                EndStateId="{Binding EndStateId}"
+                                                StartStatePosition="{Binding StartStatePosition}"
+                                                EndStatePosition="{Binding EndStatePosition}"
                                                 Alias="{Binding Alias}"
                                                 Predicate="{Binding Predicate}"
                                                 ArrowHeadClicked="OnArrowHeadClicked"
@@ -52,18 +81,24 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Loop arrows layer -->
-                <ItemsControl ItemsSource="{Binding LoopTransactions}">
+                <!-- Loop arrows layer (ZIndex 0 - behind states) -->
+                <ItemsControl x:Name="LoopTransactionsItemsControl"
+                              ZIndex="0"
+                              ItemsSource="{Binding LoopTransactions}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <Canvas Width="1200" Height="800"/>
+                            <Canvas/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerTheme>
+                        <ControlTheme TargetType="ContentControl" x:DataType="vm:BlueprintLoopTransactionViewModel">
+                            <Setter Property="Canvas.Left" Value="{Binding State.CanvasPositionX}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding State.CanvasPositionY}"/>
+                        </ControlTheme>
+                    </ItemsControl.ItemContainerTheme>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
-                            <controls:LoopArrow Canvas.Left="{Binding State.CanvasPositionX}"
-                                                Canvas.Top="{Binding State.CanvasPositionY}"
-                                                State="{Binding State}"
+                            <controls:LoopArrow StateId="{Binding StateId}"
                                                 Alias="{Binding Alias}"
                                                 Predicate="{Binding Predicate}"
                                                 LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
@@ -72,32 +107,75 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- States layer -->
-                <ItemsControl ItemsSource="{Binding States}">
+                <!-- Main state (ZIndex 1 - on top of arrows) -->
+                <controls:StateBox Id="{Binding MainState.Id}"
+                                   Width="110"
+                                   Height="{Binding MainState.StateHeight}"
+                                   FillColor="{Binding MainState.FillColor}"
+                                   Canvas.Left="{Binding MainState.CanvasPositionX}"
+                                   Canvas.Top="{Binding MainState.CanvasPositionY}"
+                                   IsEditable="{Binding MainState.IsEditable}"
+                                   IsEnabled="{Binding MainState.IsEnabled}"
+                                   StateHeight="{Binding MainState.StateHeight}"
+                                   Name="{Binding MainState.Name}"
+                                   CanvasPositionX="{Binding MainState.CanvasPositionX, Mode=TwoWay}"
+                                   CanvasPositionY="{Binding MainState.CanvasPositionY, Mode=TwoWay}"
+                                   AutomationProperties.AutomationId="MainState"
+                                   StatePressed="OnStateBoxStatePressed"
+                                   StateReleased="OnStateBoxStateReleased"
+                                   StateClicked="OnStateBoxStateClicked"
+                                   StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                                   NameCommitted="OnStateBoxNameCommitted"/>
+
+                <!-- Init state (ZIndex 1 - on top of arrows) -->
+                <controls:StateBox Id="{Binding InitState.Id}"
+                                   Width="110"
+                                   Height="{Binding InitState.StateHeight}"
+                                   FillColor="{Binding InitState.FillColor}"
+                                   Canvas.Left="{Binding InitState.CanvasPositionX}"
+                                   Canvas.Top="{Binding InitState.CanvasPositionY}"
+                                   IsEditable="{Binding InitState.IsEditable}"
+                                   IsEnabled="{Binding InitState.IsEnabled}"
+                                   StateHeight="{Binding InitState.StateHeight}"
+                                   Name="{Binding InitState.Name}"
+                                   CanvasPositionX="{Binding InitState.CanvasPositionX, Mode=TwoWay}"
+                                   CanvasPositionY="{Binding InitState.CanvasPositionY, Mode=TwoWay}"
+                                   AutomationProperties.AutomationId="InitState"
+                                   StatePressed="OnStateBoxStatePressed"
+                                   StateReleased="OnStateBoxStateReleased"
+                                   StateClicked="OnStateBoxStateClicked"
+                                   StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                                   NameCommitted="OnStateBoxNameCommitted"/>
+
+                <!-- States layer (ZIndex 1 - on top of arrows) -->
+                <ItemsControl x:Name="StatesItemsControl"
+                              ZIndex="1"
+                              ItemsSource="{Binding States}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <Canvas Width="1200" Height="800"/>
+                            <Canvas/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:BlueprintStateViewModel">
-                            <controls:StateBox Width="110"
-                                               Height="{Binding StateHeight}"
-                                               FillColor="{Binding FillColorHex}"
-                                               Canvas.Left="{Binding CanvasPositionX}"
-                                               Canvas.Top="{Binding CanvasPositionY}"
-                                               IsEditable="{Binding IsEditable}"
-                                               IsEnabled="{Binding IsEnabled}"
-                                               StateHeight="{Binding StateHeight}"
-                                               Name="{Binding Name}"
-                                               CanvasPositionX="{Binding CanvasPositionX, Mode=TwoWay}"
-                                               CanvasPositionY="{Binding CanvasPositionY, Mode=TwoWay}"
-                                               AutomationProperties.AutomationId="{Binding Name}"
-                               StatePressed="OnStateBoxStatePressed"
-                               StateReleased="OnStateBoxStateReleased"
-                               StateClicked="OnStateBoxStateClicked"
-                               StateDoubleClicked="OnStateBoxStateDoubleClicked"
-                               NameCommitted="OnStateBoxNameCommitted"/>
+                            <Canvas Canvas.Left="{Binding CanvasPositionX}" Canvas.Top="{Binding CanvasPositionY}">
+                                <controls:StateBox Id="{Binding Id}"
+                                                   Width="110"
+                                                   Height="{Binding StateHeight}"
+                                                   FillColor="{Binding FillColor}"
+                                                   IsEditable="{Binding IsEditable}"
+                                                   IsEnabled="{Binding IsEnabled}"
+                                                   StateHeight="{Binding StateHeight}"
+                                                   Name="{Binding Name}"
+                                                   CanvasPositionX="{Binding CanvasPositionX, Mode=TwoWay}"
+                                                   CanvasPositionY="{Binding CanvasPositionY, Mode=TwoWay}"
+                                                   AutomationProperties.AutomationId="{Binding Name}"
+                                                   StatePressed="OnStateBoxStatePressed"
+                                                   StateReleased="OnStateBoxStateReleased"
+                                                   StateClicked="OnStateBoxStateClicked"
+                                                   StateDoubleClicked="OnStateBoxStateDoubleClicked"
+                                                   NameCommitted="OnStateBoxNameCommitted"/>
+                            </Canvas>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -126,19 +204,16 @@
                 </Button>
 
                 <ToggleButton x:Name="AddTransitionToggle" Content="{Binding AddTransitionButtonContent}"
-                              IsChecked="{Binding IsAddTransitionMode}"
                               Command="{Binding SetAddTransitionModeCommand}"
                               AutomationProperties.AutomationId="BlueprintAddTransition"
                               ToolTip.Tip="Enter Add Transition mode"/>
 
                 <ToggleButton x:Name="RemoveStateToggle" Content="{Binding RemoveStateButtonContent}"
-                              IsChecked="{Binding IsRemoveStateMode}"
                               Command="{Binding SetRemoveStateModeCommand}"
                               AutomationProperties.AutomationId="BlueprintRemoveState"
                               ToolTip.Tip="Enter Remove State mode"/>
 
                 <ToggleButton x:Name="RemoveTransitionToggle" Content="{Binding RemoveTransitionButtonContent}"
-                              IsChecked="{Binding IsRemoveTransitionMode}"
                               Command="{Binding SetRemoveTransitionModeCommand}"
                               AutomationProperties.AutomationId="BlueprintRemoveTransition"
                               ToolTip.Tip="Enter Remove Transition mode"/>
@@ -149,10 +224,10 @@
         </Border>
 
         <Popup x:Name="EditArrowPopup"
-               Grid.RowSpan="2"
-               Placement="Top"
+               IsOpen="{Binding IsPopOverOpen}"
                IsLightDismissEnabled="True"
                VerticalOffset="2">
+            <ContentControl DataContext="{Binding PopOverViewModel}"/>
         </Popup>
     </Grid>
 

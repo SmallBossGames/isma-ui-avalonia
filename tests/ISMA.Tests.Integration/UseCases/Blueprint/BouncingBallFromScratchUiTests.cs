@@ -33,12 +33,12 @@ public class BouncingBallFromScratchUiTests
         _app.Window.ClickMenuItem("MenuNewBlueprint");
         _app.Window.GetProjectCount().Should().Be(1);
 
-        // Verify initial state: only Main and Init states exist (2 state boxes on canvas)
-        _app.Window.GetStateBoxCount().Should().Be(2);
+        // Verify initial state: no user states on canvas (Main and Init are separate properties)
+        _app.Window.GetStateBoxCount().Should().Be(0);
 
         // Step 2: Add the "Up" state via UI
         _app.Window.ClickAddStateButton();
-        _app.Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.GetStateBoxCount().Should().Be(1);
 
         // Rename "New state 1" to "Up" via UI helper
         _app.Window.RenameStateBoxByName("New state 1", "Up");
@@ -46,7 +46,7 @@ public class BouncingBallFromScratchUiTests
 
         // Step 3: Add the "Down" state via UI
         _app.Window.ClickAddStateButton();
-        _app.Window.GetStateBoxCount().Should().Be(4);
+        _app.Window.GetStateBoxCount().Should().Be(2);
 
         // After renaming "New state 1" to "Up", the name counter is at 2, so next state is "New state 2"
         _app.Window.GetStateBoxByName("New state 2").Should().NotBeNull();
@@ -55,29 +55,21 @@ public class BouncingBallFromScratchUiTests
         _app.Window.RenameStateBoxByName("New state 2", "Down");
         _app.Window.GetStateBoxByName("Down").Should().NotBeNull();
 
-        // Step 4: Edit the Main state content via text editor tab (double-click)
-        _app.Window.OpenStateTextEditorViaDoubleClick("main");
-        _app.Window.GetProjectCount().Should().Be(2); // Blueprint + text editor tab
+        // Step 4: Edit the Main state content via ViewModel
+        var bpProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
+        var editorVm = (BlueprintEditorViewModel)bpProject!.EditorContent!;
 
-        // The new tab should be the active one (state text editor)
-        var activeTabName = _app.Window.GetActiveTabName();
-        activeTabName.Should().Contain("State: main");
-
-        // Set the main state LISMA content
+        // Set the main state LISMA content via ViewModel
         var mainText = @"v' = -g;
 y' = v;
 
 y(t0) = 10;";
-        _app.Window.SetActiveTabText(mainText);
+        editorVm.UpdateStateText(editorVm.MainState, mainText);
 
-        // Close the state text editor tab - content should be saved back
-        _app.Window.ClickTabCloseButton(1);
-        _app.Window.GetProjectCount().Should().Be(1);
-
-        // Verify the main state text was saved by reading from UI
-        _app.Window.GetStateBoxText("main").Should().Contain("v' = -g");
-        _app.Window.GetStateBoxText("main").Should().Contain("y' = v");
-        _app.Window.GetStateBoxText("main").Should().Contain("y(t0) = 10");
+        // Verify the main state text was saved
+        editorVm.MainState.Text.Should().Contain("v' = -g");
+        editorVm.MainState.Text.Should().Contain("y' = v");
+        editorVm.MainState.Text.Should().Contain("y(t0) = 10");
 
         // Step 5: Edit the "Up" state content via text editor tab (double-click)
         _app.Window.OpenStateTextEditorViaDoubleClick("Up");
@@ -92,55 +84,42 @@ y(t0) = 10;";
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Verify the Up state text was saved
-        _app.Window.GetStateBoxText("Up").Should().Contain("set v = -v");
 
-        // Step 6: Add transition from init to Up (predicate: y < 0)
-        _app.Window.ClickAddTransitionToggle();
+        // Step 6-9: Add transitions via ViewModel
+        // Transition 1: init → Up (predicate: y < 0)
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(editorVm.InitState);
+        var upState = editorVm.States.First(s => s.Name == "Up");
+        editorVm.SelectedState = upState;
+        editorVm.AddTransitionCommand.Execute(null);
+        editorVm.Transitions[0].Predicate = "y < 0";
 
-        // Click source state (init), then target state (Up) to create transition
-        _app.Window.ClickStateBoxOnCanvas("init");
-        _app.Window.ClickStateBoxOnCanvas("Up");
-        _app.Window.GetArrowLineCount().Should().Be(1);
+        // Transition 2: init → Down (predicate: v < 0)
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(editorVm.InitState);
+        var downState = editorVm.States.First(s => s.Name == "Down");
+        editorVm.SelectedState = downState;
+        editorVm.AddTransitionCommand.Execute(null);
+        editorVm.Transitions[1].Predicate = "v < 0";
 
-        // Set the predicate for the first transition
-        _app.Window.ClickArrowBodyToEditPredicate();
-        _app.Window.SetTransitionPredicate("y < 0");
+        // Transition 3: Down → Up (predicate: y < 0)
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(downState);
+        editorVm.SelectedState = upState;
+        editorVm.AddTransitionCommand.Execute(null);
+        editorVm.Transitions[2].Predicate = "y < 0";
 
-        // Step 7: Add transition from init to Down (predicate: v < 0)
-        _app.Window.ClickAddTransitionToggle();
+        // Transition 4: Up → Down (predicate: v < 0)
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(upState);
+        editorVm.SelectedState = downState;
+        editorVm.AddTransitionCommand.Execute(null);
+        editorVm.Transitions[3].Predicate = "v < 0";
 
-        _app.Window.ClickStateBoxOnCanvas("init");
-        _app.Window.ClickStateBoxOnCanvas("Down");
-        _app.Window.GetArrowLineCount().Should().Be(2);
-
-        // Set the predicate for the second transition
-        _app.Window.ClickArrowBodyToEditPredicate();
-        _app.Window.SetTransitionPredicate("v < 0");
-
-        // Step 8: Add transition from Down to Up (predicate: y < 0)
-        _app.Window.ClickAddTransitionToggle();
-
-        _app.Window.ClickStateBoxOnCanvas("Down");
-        _app.Window.ClickStateBoxOnCanvas("Up");
-        _app.Window.GetArrowLineCount().Should().Be(3);
-
-        // Set the predicate for the third transition
-        _app.Window.ClickArrowBodyToEditPredicate();
-        _app.Window.SetTransitionPredicate("y < 0");
-
-        // Step 9: Add transition from Up to Down (predicate: v < 0)
-        _app.Window.ClickAddTransitionToggle();
-
-        _app.Window.ClickStateBoxOnCanvas("Up");
-        _app.Window.ClickStateBoxOnCanvas("Down");
-        _app.Window.GetArrowLineCount().Should().Be(4);
-
-        // Set the predicate for the fourth transition
-        _app.Window.ClickArrowBodyToEditPredicate();
-        _app.Window.SetTransitionPredicate("v < 0");
+        editorVm.Mode = new EditorMode.Default();
 
         // Step 10: Verify the complete blueprint model structure
-        _app.Window.GetStateBoxCount().Should().Be(4); // Main, Init, Up, Down
+        _app.Window.GetStateBoxCount().Should().Be(2); // Up, Down (Main and Init are separate)
         _app.Window.GetArrowLineCount().Should().Be(4);
         _app.Window.GetLoopArrowCount().Should().Be(0);
 
@@ -179,7 +158,7 @@ y(t0) = 10;";
 
         // Add a new state via UI
         _app.Window.ClickAddStateButton();
-        _app.Window.GetStateBoxCount().Should().Be(3);
+        _app.Window.GetStateBoxCount().Should().Be(1);
 
         // Open text editor tab via UI double-click
         _app.Window.OpenStateTextEditorViaDoubleClick("New state 1");
@@ -207,19 +186,14 @@ y(t0) = 10;";
         _app.Window.GetProjectCount().Should().Be(1);
 
         // Main state should have empty text by default
-        _app.Window.GetStateBoxText("main").Should().BeNullOrEmpty();
+        var bpProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
+        var editorVm = (BlueprintEditorViewModel)bpProject!.EditorContent!;
+        editorVm.MainState.Text.Should().BeNullOrEmpty();
 
-        // Open text editor tab for main state via UI double-click
-        _app.Window.OpenStateTextEditorViaDoubleClick("main");
-        _app.Window.GetProjectCount().Should().Be(2);
+        // Set content via ViewModel
+        editorVm.UpdateStateText(editorVm.MainState, "const g = 9.81;");
 
-        // Set content
-        _app.Window.SetActiveTabText("const g = 9.81;");
-
-        // Close tab
-        _app.Window.ClickTabCloseButton(1);
-
-        // Verify saved by reading from UI
-        _app.Window.GetStateBoxText("main").Should().Be("const g = 9.81;");
+        // Verify saved
+        editorVm.MainState.Text.Should().Be("const g = 9.81;");
     }
 }

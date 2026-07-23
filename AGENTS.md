@@ -68,10 +68,12 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 - Prefer primary constructors
 - Prefer records for data models
 - Prefer `init` instead of `set` in auto-properties
-- Add XML documentation comments for public interfaces
-- Add XML documentation comments for data models
+- Add XML documentation comments for 
+  - public interfaces
+  - data models
 - Avoid using reflection
 - Write code as strict as possible
+- Put each top-level class into a separate file
 
 ### Avalonia
 - Stricly follow MVVM pattern

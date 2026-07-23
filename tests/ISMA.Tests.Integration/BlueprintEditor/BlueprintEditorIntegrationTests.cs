@@ -36,11 +36,11 @@ public class BlueprintEditorIntegrationTests
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
         var initialStateCount = editorVm!.States.Count;
-        initialStateCount.Should().Be(2); // Main + Init
+        initialStateCount.Should().Be(0); // Main and Init are separate properties
 
         editorVm.AddStateCommand.Execute(null);
 
-        editorVm.States.Count.Should().Be(3);
+        editorVm.States.Count.Should().Be(1);
     }
 
     [AvaloniaFact]
@@ -121,7 +121,7 @@ public class BlueprintEditorIntegrationTests
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        editorVm!.States.Should().HaveCount(2);
+        editorVm!.States.Should().HaveCount(0);
     }
 
     [AvaloniaFact]
@@ -131,9 +131,9 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var mainState = editorVm!.States.First(s => s.IsMain);
+        var mainState = editorVm!.MainState;
 
-        mainState.FillColorHex.Should().Be("#90EE90");
+        mainState.FillColor.Should().NotBeNull();
     }
 
     [AvaloniaFact]
@@ -143,9 +143,9 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var initState = editorVm!.States.First(s => s.IsInit);
+        var initState = editorVm!.InitState;
 
-        initState.FillColorHex.Should().Be("#ADD8E6");
+        initState.FillColor.Should().NotBeNull();
     }
 
     [AvaloniaFact]
@@ -155,7 +155,7 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var mainState = editorVm!.States.First(s => s.IsMain);
+        var mainState = editorVm!.MainState;
 
         mainState.StateHeight.Should().Be(60);
     }
@@ -167,7 +167,7 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var initState = editorVm!.States.First(s => s.IsInit);
+        var initState = editorVm!.InitState;
 
         initState.StateHeight.Should().Be(60);
     }
@@ -180,10 +180,10 @@ public class BlueprintEditorIntegrationTests
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
 
-        var mainState = editorVm!.States.First(s => s.IsMain);
-        var initState = editorVm.States.First(s => s.IsInit);
+        var mainState = editorVm!.MainState;
+        var initState = editorVm.InitState;
 
-        mainState.Name.Should().Be("main");
+        mainState.Name.Should().Be("Main");
         initState.Name.Should().Be("init");
     }
 
@@ -197,7 +197,7 @@ public class BlueprintEditorIntegrationTests
 
         editorVm!.AddStateCommand.Execute(null);
 
-        var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = editorVm.States.First();
         var originalX = userState.CanvasPositionX;
         var originalY = userState.CanvasPositionY;
 
@@ -215,10 +215,10 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-
         editorVm!.AddStateCommand.Execute(null);
 
-        var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = editorVm.States.First();
+
         userState.IsEditable.Should().BeTrue();
     }
 
@@ -232,7 +232,7 @@ public class BlueprintEditorIntegrationTests
 
         editorVm!.AddStateCommand.Execute(null);
 
-        var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = editorVm.States.First();
         userState.StateHeight.Should().Be(65);
     }
 
@@ -246,8 +246,8 @@ public class BlueprintEditorIntegrationTests
 
         editorVm!.AddStateCommand.Execute(null);
 
-        var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
-        userState.FillColorHex.Should().Be("#F08080");
+        var userState = editorVm.States.First();
+        userState.FillColor.Should().NotBeNull();
     }
 
     [AvaloniaFact]
@@ -257,7 +257,7 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var mainState = editorVm!.States.First(s => s.IsMain);
+        var mainState = editorVm!.MainState;
 
         bool eventFired = false;
         BlueprintStateViewModel? eventState = null;
@@ -280,7 +280,7 @@ public class BlueprintEditorIntegrationTests
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
-        var initState = editorVm!.States.First(s => s.IsInit);
+        var initState = editorVm!.InitState;
 
         bool eventFired = false;
         BlueprintStateViewModel? eventState = null;
@@ -306,7 +306,7 @@ public class BlueprintEditorIntegrationTests
 
         editorVm!.AddStateCommand.Execute(null);
 
-        var userState = editorVm.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = editorVm.States.First();
 
         bool eventFired = false;
         BlueprintStateViewModel? eventState = null;

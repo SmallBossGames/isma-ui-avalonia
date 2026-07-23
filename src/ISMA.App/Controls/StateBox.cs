@@ -5,13 +5,15 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Controls;
 
 /// <summary>
-/// A canvas state box control with drag detection, click/disambiguation, and inline name editing.
+/// A canvas state box control with drag detection and click/disambiguation.
 /// </summary>
-public class StateBox : ContentControl
+public class StateBox : Control
 {
     private const double DragThreshold = 3.0;
     private const double SingleClickDelay = 200.0;
@@ -20,9 +22,9 @@ public class StateBox : ContentControl
 
     private bool _isDragging;
     private Point _pointerDownPosition;
+    private double _pointerDownCanvasPositionX;
+    private double _pointerDownCanvasPositionY;
     private DispatcherTimer? _singleClickTimer;
-    private TextBlock? _textBlock;
-    private TextBox? _textBox;
     private string? _previousName;
     private bool _timerFired;
 
@@ -62,15 +64,6 @@ public class StateBox : ContentControl
         set => SetValue(IsEditableProperty, value);
     }
 
-    public new static readonly StyledProperty<bool> IsEnabledProperty =
-        AvaloniaProperty.Register<StateBox, bool>(nameof(IsEnabled), defaultValue: true);
-
-    public new bool IsEnabled
-    {
-        get => GetValue(IsEnabledProperty);
-        set => SetValue(IsEnabledProperty, value);
-    }
-
     public static readonly StyledProperty<double> StateHeightProperty =
         AvaloniaProperty.Register<StateBox, double>(nameof(StateHeight), defaultValue: 65.0);
 
@@ -98,9 +91,18 @@ public class StateBox : ContentControl
         set => SetValue(CanvasPositionYProperty, value);
     }
 
-    public double CenterX => CanvasPositionX + StateWidth / 2;
+    public static readonly StyledProperty<Guid?> IdProperty =
+        AvaloniaProperty.Register<StateBox, Guid?>(nameof(Id));
 
-    public double CenterY => CanvasPositionY + (StateHeight > 0 ? StateHeight : StateWidth) / 2;
+    public Guid? Id
+    {
+        get => GetValue(IdProperty);
+        set => SetValue(IdProperty, value);
+    }
+
+    public double CenterX => CanvasPositionX + (base.Width > 0 ? base.Width : StateWidth) / 2;
+
+    public double CenterY => CanvasPositionY + (StateHeight > 0 ? StateHeight : base.Width > 0 ? base.Width : StateWidth) / 2;
 
     /// <summary>
     /// Raised when the state box is pressed.
@@ -151,7 +153,6 @@ public class StateBox : ContentControl
     {
         if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
         {
-            // Find the parent BlueprintEditorView to get its ViewModel
             var parent = Parent;
             while (parent is not null)
             {
@@ -176,79 +177,50 @@ public class StateBox : ContentControl
 
     static StateBox()
     {
-        AffectsRender<StateBox>(FillColorProperty, StateHeightProperty);
+        AffectsRender<StateBox>(FillColorProperty, NameProperty, StateHeightProperty, CanvasPositionXProperty, CanvasPositionYProperty);
     }
 
     public StateBox()
     {
         _singleClickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SingleClickDelay) };
         _singleClickTimer.Tick += OnSingleClickTimerTick;
-        BuildVisualTree();
+        Unloaded += OnUnloaded;
     }
 
-
-
-    private void BuildVisualTree()
+    private void OnUnloaded(object? sender, RoutedEventArgs e)
     {
-        var grid = new Grid
-        {
-            Width = StateWidth,
-            Height = StateHeight > 0 ? StateHeight : StateWidth
-        };
-
-        var rect = new Border
-        {
-            Background = FillColor,
-            BorderBrush = null,
-            BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(BoxCornerRadius)
-        };
-
-        _textBlock = new TextBlock
-        {
-            Text = Name,
-            FontFamily = new FontFamily("Arial"),
-            FontWeight = Avalonia.Media.FontWeight.Bold,
-            FontSize = 16,
-            TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-        };
-
-        grid.Children.Add(rect);
-        grid.Children.Add(_textBlock);
-        Content = grid;
+        _singleClickTimer?.Stop();
     }
 
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    public override void Render(DrawingContext context)
     {
-        base.OnPropertyChanged(change);
+        var width = base.Width > 0 ? base.Width : StateWidth;
+        var height = StateHeight > 0 ? StateHeight : width;
+        var rect = new Rect(0, 0, width, height);
+        var radius = (float)BoxCornerRadius;
 
-        if (change.Property == NameProperty && _textBlock != null)
+        if (FillColor is not null)
         {
-            _textBlock.Text = change.NewValue as string;
+            context.FillRectangle(FillColor, rect, radius);
         }
 
-        if (change.Property == FillColorProperty && Content is Grid grid)
-        {
-            if (grid.Children[0] is Border border)
-            {
-                border.Background = change.NewValue as IBrush;
-            }
-        }
+        context.DrawRectangle(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, 1), rect, radius);
 
-        if (change.Property == StateHeightProperty && Content is Grid g)
+        var text = Name ?? "";
+        if (!string.IsNullOrEmpty(text))
         {
-            g.Height = change.NewValue as double? ?? StateWidth;
+            var formattedText = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), 16, Avalonia.Media.Brushes.Black);
+            var textRect = new Rect(0, 0, width, height);
+            var textPosition = new Point(
+                textRect.X + (textRect.Width - formattedText.Width) / 2,
+                textRect.Y + (textRect.Height - formattedText.Height) / 2);
+            context.DrawText(formattedText, textPosition);
         }
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-
-        var position = e.GetPosition(this);
 
         if (e.ClickCount > 1)
         {
@@ -264,7 +236,9 @@ public class StateBox : ContentControl
             return;
         }
 
-        _pointerDownPosition = position;
+        _pointerDownPosition = e.GetPosition(this);
+        _pointerDownCanvasPositionX = CanvasPositionX;
+        _pointerDownCanvasPositionY = CanvasPositionY;
         _isDragging = false;
         _timerFired = false;
 
@@ -280,25 +254,29 @@ public class StateBox : ContentControl
     {
         base.OnPointerMoved(e);
 
-        if (_isDragging)
+        var position = e.GetPosition(this);
+        var dx = position.X - _pointerDownPosition.X;
+        var dy = position.Y - _pointerDownPosition.Y;
+        var distance = Math.Sqrt(dx * dx + dy * dy);
+
+        if (!_isDragging && distance > DragThreshold)
         {
-            var position = e.GetPosition(this);
-            var dx = position.X - _pointerDownPosition.X;
-            var dy = position.Y - _pointerDownPosition.Y;
-            var distance = Math.Sqrt(dx * dx + dy * dy);
+            _isDragging = true;
+            _singleClickTimer?.Stop();
+            _pointerDownCanvasPositionX = CanvasPositionX;
+            _pointerDownCanvasPositionY = CanvasPositionY;
+        }
 
-            if (distance > DragThreshold)
-            {
-                _isDragging = true;
-                _singleClickTimer?.Stop();
-            }
+        if (_isDragging && DataContext is not null)
+        {
+            CanvasPositionX = Math.Max(0.0, _pointerDownCanvasPositionX + dx);
+            CanvasPositionY = Math.Max(0.0, _pointerDownCanvasPositionY + dy);
 
-            if (DataContext is not null)
+            // Sync to ViewModel during drag for real-time arrow updates
+            if (DataContext is BlueprintStateViewModel stateVm)
             {
-                var newX = Math.Max(0.0, position.X - (_pointerDownPosition.X - CanvasPositionX));
-                var newY = Math.Max(0.0, position.Y - (_pointerDownPosition.Y - CanvasPositionY));
-                CanvasPositionX = newX;
-                CanvasPositionY = newY;
+                stateVm.CanvasPositionX = CanvasPositionX;
+                stateVm.CanvasPositionY = CanvasPositionY;
             }
         }
     }
@@ -378,32 +356,42 @@ public class StateBox : ContentControl
         EnterInlineEditMode();
     }
 
+    private Panel? _inlineEditPanel;
+    private TextBox? _inlineEditTextBox;
+
     private void EnterInlineEditMode()
     {
-        if (Content is not Grid grid)
-            return;
-
         _previousName = Name;
 
-        _textBox = new TextBox
+        var parent = Parent;
+        while (parent is not null)
         {
-            Text = Name,
-            FontSize = 16,
-            FontWeight = Avalonia.Media.FontWeight.Bold,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Width = 90,
-            MaxWidth = 90
-        };
+            if (parent is Panel panel)
+            {
+                var textBox = new TextBox
+                {
+                    Text = Name,
+                    FontSize = 16,
+                    FontWeight = Avalonia.Media.FontWeight.Bold,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    Width = 90,
+                    MaxWidth = 90
+                };
 
-        _textBox.KeyDown += OnTextBoxKeyDown;
-        _textBox.LostFocus += OnTextBoxLostFocus;
+                textBox.KeyDown += OnTextBoxKeyDown;
+                textBox.LostFocus += OnTextBoxLostFocus;
 
-        if (_textBlock is not null)
-            grid.Children.Remove(_textBlock);
-        grid.Children.Add(_textBox);
-        _textBox.Focus();
-        _textBox.SelectAll();
+                panel.Children.Insert(0, textBox);
+                _inlineEditPanel = panel;
+                _inlineEditTextBox = textBox;
+                _singleClickTimer?.Stop();
+                textBox.Focus();
+                textBox.SelectAll();
+                return;
+            }
+            parent = parent.Parent;
+        }
     }
 
     private void OnTextBoxKeyDown(object? sender, KeyEventArgs e)
@@ -425,10 +413,11 @@ public class StateBox : ContentControl
 
     private void CommitName()
     {
-        if (_textBox == null)
+        var textBox = FindTextBox();
+        if (textBox == null)
             return;
 
-        var newName = _textBox.Text?.Trim();
+        var newName = textBox.Text?.Trim();
         if (string.IsNullOrEmpty(newName))
         {
             newName = _previousName;
@@ -441,11 +430,15 @@ public class StateBox : ContentControl
             stateVm.Name = newName ?? _previousName ?? "";
         }
 
-        ExitInlineEditMode();
+        ExitInlineEditMode(textBox);
     }
 
     private void CancelName()
     {
+        var textBox = FindTextBox();
+        if (textBox == null)
+            return;
+
         if (!string.IsNullOrEmpty(_previousName))
         {
             if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
@@ -454,20 +447,31 @@ public class StateBox : ContentControl
             }
         }
 
-        ExitInlineEditMode();
+        ExitInlineEditMode(textBox);
     }
 
-    private void ExitInlineEditMode()
+    private void ExitInlineEditMode(TextBox textBox)
     {
-        if (Content is not Grid grid || _textBox == null)
-            return;
+        textBox.KeyDown -= OnTextBoxKeyDown;
+        textBox.LostFocus -= OnTextBoxLostFocus;
 
-        _textBox.KeyDown -= OnTextBoxKeyDown;
-        _textBox.LostFocus -= OnTextBoxLostFocus;
+        if (_inlineEditPanel != null)
+        {
+            _inlineEditPanel.Children.Remove(textBox);
+        }
 
-        grid.Children.Remove(_textBox);
-        grid.Children.Add(_textBlock!);
-        _textBox = null;
+        _inlineEditPanel = null;
+        _inlineEditTextBox = null;
         _previousName = null;
+    }
+
+    private TextBox? FindTextBox()
+    {
+        if (_inlineEditTextBox != null && _inlineEditPanel != null)
+        {
+            if (_inlineEditPanel.Children.Contains(_inlineEditTextBox))
+                return _inlineEditTextBox;
+        }
+        return null;
     }
 }

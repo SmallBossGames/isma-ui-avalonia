@@ -15,7 +15,7 @@ public class InlineNameEditTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = viewModel.States.First();
         userState.Name.Should().Be("New state 1");
 
         var uniqueName = $"CustomState_{Guid.NewGuid():N}";
@@ -31,20 +31,20 @@ public class InlineNameEditTests
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
 
-        var state1 = viewModel.States[2];
-        var state2 = viewModel.States[3];
+        var state1 = viewModel.States[0];
+        var state2 = viewModel.States[1];
 
         viewModel.UpdateStateName(state2, state1.Name);
         state2.Name.Should().NotBe(state1.Name);
 
-        viewModel.States.Should().HaveCount(4);
+        viewModel.States.Should().HaveCount(2);
     }
 
     [Fact]
     public void InlineNameEdit_MainState_CannotBeRenamed()
     {
         var viewModel = CreateViewModel();
-        var mainState = viewModel.States.First(s => s.IsMain);
+        var mainState = viewModel.MainState;
         var originalName = mainState.Name;
 
         viewModel.UpdateStateName(mainState, "RenamedMain");
@@ -55,7 +55,7 @@ public class InlineNameEditTests
     public void InlineNameEdit_InitState_CannotBeRenamed()
     {
         var viewModel = CreateViewModel();
-        var initState = viewModel.States.First(s => s.IsInit);
+        var initState = viewModel.InitState;
         var originalName = initState.Name;
 
         viewModel.UpdateStateName(initState, "RenamedInit");
@@ -68,7 +68,7 @@ public class InlineNameEditTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States[2];
+        var userState = viewModel.States[0];
 
         var uniqueName = $"RenamedState_{Guid.NewGuid():N}";
         userState.Name = uniqueName;
@@ -81,7 +81,7 @@ public class InlineNameEditTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States[2];
+        var userState = viewModel.States[0];
         var originalName = userState.Name;
 
         userState.Name = "";

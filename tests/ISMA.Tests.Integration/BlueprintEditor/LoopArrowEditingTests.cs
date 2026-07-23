@@ -30,18 +30,18 @@ public class LoopArrowEditingTests
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
         editorVm.Should().NotBeNull();
 
-        // Add a user state (Main and Init already exist)
+        // Add a user state (Main and Init are separate properties)
         editorVm.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3); // Main, Init, New state 1
+        editorVm.States.Should().HaveCount(1);
 
         // Create a loop on the new state
-        var newState = editorVm.States.Last(s => !s.IsMain && !s.IsInit);
+        var newState = editorVm.States.First();
         newState.Should().NotBeNull();
 
         // Set up loop transaction
         var loopModel = new Domain.Models.BlueprintLoopTransactionModel
         {
-            StateName = newState!.Name,
+            StateId = newState!.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = "loop content here"

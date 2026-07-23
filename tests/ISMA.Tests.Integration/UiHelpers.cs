@@ -431,7 +431,7 @@ public static class UiHelpers
         var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
         if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
         {
-            return editorVm.Transactions.Count;
+            return editorVm.Transitions.Count;
         }
 
         return 0;
@@ -869,54 +869,19 @@ public static class UiHelpers
     }
 
     /// <summary>
-    /// Rename a StateBox by its current name. Uses UI-based inline editing.
+    /// Rename a StateBox by its current name. Uses ViewModel-based rename.
     /// </summary>
     public static void RenameStateBoxByName(this MainWindow window, string oldName, string newName)
     {
-        var stateBox = window.GetStateBoxByName(oldName);
-        if (stateBox is null)
+        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
+        if (bpProject is null || bpProject.EditorContent is not BlueprintEditorViewModel editorVm)
+            throw new InvalidOperationException($"Blueprint editor ViewModel not found.");
+
+        var targetState = editorVm.States.FirstOrDefault(s => s.Name == oldName);
+        if (targetState is null)
             throw new InvalidOperationException($"StateBox '{oldName}' not found in blueprint editor.");
 
-        // Try UI-based inline editing first
-        try
-        {
-            stateBox.RaiseStateClicked();
-
-            for (int i = 0; i < 20; i++)
-            {
-                System.Threading.Thread.Sleep(10);
-                var grid = stateBox.Content as Grid;
-                if (grid is not null)
-                {
-                    var textBox = grid.Children.OfType<TextBox>().FirstOrDefault();
-                    if (textBox is not null)
-                    {
-                        textBox.Text = newName;
-                        textBox.SelectAll();
-                        textBox.RaiseEvent(new RoutedEventArgs(TextBox.LostFocusEvent));
-                        return;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // Fall through to ViewModel-based rename
-        }
-
-        // In headless mode, rename via ViewModel through UI's public API
-        var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
-        if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
-        {
-            var targetState = editorVm.States.FirstOrDefault(s => s.Name == oldName);
-            if (targetState is not null)
-            {
-                editorVm.UpdateStateName(targetState, newName);
-                return;
-            }
-        }
-
-        throw new InvalidOperationException($"Could not rename StateBox '{oldName}' - UI inline editor not available and ViewModel not found.");
+        editorVm.UpdateStateName(targetState, newName);
     }
 
     /// <summary>
@@ -981,11 +946,11 @@ public static class UiHelpers
         var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
         if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
         {
-            if (editorVm.Transactions.Count == 0)
+            if (editorVm.Transitions.Count == 0)
                 return false;
 
-            editorVm.SelectedTransaction = editorVm.Transactions[0];
-            editorVm.OnArrowBodyClicked(editorVm.Transactions[0]);
+            editorVm.SelectedTransition = editorVm.Transitions[0];
+            editorVm.OnArrowBodyClicked(editorVm.Transitions[0]);
             return true;
         }
 
@@ -1010,14 +975,14 @@ public static class UiHelpers
         var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
         if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
         {
-            if (editorVm.SelectedTransaction is not null)
+            if (editorVm.SelectedTransition is not null)
             {
-                editorVm.SelectedTransaction.Predicate = predicate;
+                editorVm.SelectedTransition.Predicate = predicate;
                 return;
             }
         }
 
-        throw new InvalidOperationException("EditArrowPopOverView not found and SelectedTransaction not set.");
+        throw new InvalidOperationException("EditArrowPopOverView not found and SelectedTransition not set.");
     }
 
     /// <summary>

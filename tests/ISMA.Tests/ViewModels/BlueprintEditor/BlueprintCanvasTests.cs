@@ -15,7 +15,7 @@ public class BlueprintCanvasTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = viewModel.States.First();
         var originalX = userState.CanvasPositionX;
         var originalY = userState.CanvasPositionY;
 
@@ -56,21 +56,21 @@ public class BlueprintCanvasTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(4);
+        viewModel.States.Should().HaveCount(2);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        viewModel.Mode = new EditorMode.AddTransition();
         viewModel.Mode.Should().BeOfType<EditorMode.AddTransition>();
 
-        var sourceState = viewModel.States[2];
+        var sourceState = viewModel.States[0];
         viewModel.SetTransitionSource(sourceState);
 
-        var targetState = viewModel.States[3];
+        var targetState = viewModel.States[1];
         viewModel.SelectedState = targetState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
-        viewModel.Transactions[0].StartState.Name.Should().Be(sourceState.Name);
-        viewModel.Transactions[0].EndState.Name.Should().Be(targetState.Name);
+        viewModel.Transitions.Should().HaveCount(1);
+        viewModel.Transitions[0].GetStartState(viewModel.States)!.Name.Should().Be(sourceState.Name);
+        viewModel.Transitions[0].GetEndState(viewModel.States)!.Name.Should().Be(targetState.Name);
     }
 
     [Fact]
@@ -79,11 +79,11 @@ public class BlueprintCanvasTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userStateName = viewModel.States.First(s => !s.IsMain && !s.IsInit).Name;
+        var userState = viewModel.States.First();
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = userStateName,
+            StateId = userState.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""
@@ -91,7 +91,7 @@ public class BlueprintCanvasTests
         viewModel.AddLoop(loopModel);
 
         viewModel.LoopTransactions.Should().HaveCount(1);
-        viewModel.LoopTransactions[0].State.Name.Should().Be(userStateName);
+        viewModel.LoopTransactions[0].GetState(viewModel.States)!.Name.Should().Be(userState.Name);
     }
 
     [Fact]
@@ -99,15 +99,15 @@ public class BlueprintCanvasTests
     {
         var viewModel = CreateViewModel();
 
-        var mainState = viewModel.States.First(s => s.IsMain);
+        var mainState = viewModel.MainState;
         mainState.StateHeight.Should().Be(60);
 
-        var initState = viewModel.States.First(s => s.IsInit);
+        var initState = viewModel.InitState;
         initState.StateHeight.Should().Be(60);
 
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States.First(s => !s.IsMain && !s.IsInit);
+        var userState = viewModel.States.First();
         userState.StateHeight.Should().Be(65);
     }
 
@@ -116,10 +116,10 @@ public class BlueprintCanvasTests
     {
         var viewModel = CreateViewModel();
 
-        var mainState = viewModel.States.First(s => s.IsMain);
-        mainState.Name.Should().Be("main");
+        var mainState = viewModel.MainState;
+        mainState.Name.Should().Be("Main");
 
-        var initState = viewModel.States.First(s => s.IsInit);
+        var initState = viewModel.InitState;
         initState.Name.Should().Be("init");
 
         mainState.Text.Should().BeNullOrEmpty();
@@ -132,7 +132,7 @@ public class BlueprintCanvasTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userState = viewModel.States[2];
+        var userState = viewModel.States[0];
 
         userState.CanvasPositionX = 200;
         userState.CanvasPositionY = 200;
@@ -150,7 +150,7 @@ public class BlueprintCanvasTests
         viewModel.RemoveStateButtonContent.Should().Be("Remove State");
         viewModel.RemoveTransitionButtonContent.Should().Be("Remove Transition");
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        viewModel.Mode = new EditorMode.AddTransition();
         viewModel.AddTransitionButtonContent.Should().Be("Stop adding transaction");
         viewModel.RemoveStateButtonContent.Should().Be("Remove State");
         viewModel.RemoveTransitionButtonContent.Should().Be("Remove Transition");

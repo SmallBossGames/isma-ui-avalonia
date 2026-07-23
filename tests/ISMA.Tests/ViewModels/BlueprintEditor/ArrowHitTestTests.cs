@@ -17,14 +17,14 @@ public class ArrowHitTestTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(4);
+        viewModel.States.Should().HaveCount(2);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[2]);
-        viewModel.SelectedState = viewModel.States[3];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
     }
 
     [Fact]
@@ -46,11 +46,12 @@ public class ArrowHitTestTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userStateName = viewModel.States.First(s => !s.IsMain && !s.IsInit).Name;
+        var userState = viewModel.States.First();
+        var userStateName = userState.Name;
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = userStateName,
+            StateId = userState.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""
@@ -58,7 +59,7 @@ public class ArrowHitTestTests
         viewModel.AddLoop(loopModel);
 
         viewModel.LoopTransactions.Should().HaveCount(1);
-        viewModel.LoopTransactions[0].State.Name.Should().Be(userStateName);
+        viewModel.LoopTransactions[0].GetState(viewModel.States)!.Name.Should().Be(userStateName);
     }
 
     [Fact]
@@ -97,18 +98,18 @@ public class ArrowHitTestTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[2]);
-        viewModel.SelectedState = viewModel.States[3];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveTransition();
-        viewModel.SelectedTransaction = viewModel.Transactions[0];
+        viewModel.SelectedTransition = viewModel.Transitions[0];
         viewModel.RemoveTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
@@ -117,11 +118,11 @@ public class ArrowHitTestTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var userStateName = viewModel.States.First(s => !s.IsMain && !s.IsInit).Name;
+        var userState = viewModel.States.First();
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = userStateName,
+            StateId = userState.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""
@@ -129,7 +130,7 @@ public class ArrowHitTestTests
         viewModel.AddLoop(loopModel);
         viewModel.LoopTransactions.Should().HaveCount(1);
 
-        var stateToRemove = viewModel.States.First(s => s.Name == userStateName);
+        var stateToRemove = viewModel.States.First(s => s.Name == userState.Name);
         viewModel.SelectedState = stateToRemove;
         viewModel.RemoveLoopCommand.Execute(null);
 
@@ -142,8 +143,8 @@ public class ArrowHitTestTests
         var viewModel = CreateViewModel();
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
-        var mainState = viewModel.States.First(s => s.IsMain);
-        var userState = viewModel.States.First(s => !s.IsMain && !s.IsInit);
+        var mainState = viewModel.MainState;
+        var userState = viewModel.States.First();
 
         mainState.StateHeight.Should().Be(60);
         userState.StateHeight.Should().Be(65);

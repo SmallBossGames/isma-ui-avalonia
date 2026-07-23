@@ -1,9 +1,13 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ISMA.ViewModels.ViewModels;
 
-public partial class BlueprintStateViewModel : ObservableObject
+public partial class BlueprintStateViewModel : ObservableObject, ISnapPosition
 {
+    [ObservableProperty]
+    private Guid _id = Guid.NewGuid();
+
     [ObservableProperty]
     private double _canvasPositionX;
 
@@ -26,7 +30,7 @@ public partial class BlueprintStateViewModel : ObservableObject
     private bool _isInit;
 
     [ObservableProperty]
-    private string _fillColorHex = "#F08080";
+    private IBrush? _fillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#F08080"));
 
     [ObservableProperty]
     private bool _isSelected;
@@ -36,4 +40,14 @@ public partial class BlueprintStateViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isEnabled;
+
+    public void SnapPositionX(double gridSize)
+    {
+        CanvasPositionX = Math.Round(CanvasPositionX / gridSize) * gridSize;
+    }
+
+    public void SnapPositionY(double gridSize)
+    {
+        CanvasPositionY = Math.Round(CanvasPositionY / gridSize) * gridSize;
+    }
 }

@@ -4,9 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using ISMA.ViewModels.ViewModels;
 
 namespace ISMA.App.Views;
@@ -14,26 +12,18 @@ namespace ISMA.App.Views;
 public partial class BlueprintEditorView : UserControl
 {
     private EditArrowPopOverView? _popOverView;
-    private EditArrowPopOverViewModel? _popOverViewModel;
     private BlueprintEditorViewModel? _vm;
-    private BlueprintTransactionViewModel? _currentEditingTransaction;
+    // PositionResolver is set via XAML bindings on ArrowLine/LoopArrow controls
 
     public BlueprintEditorView()
     {
         InitializeComponent();
-        InitializePopOver();
-        Loaded += OnLoaded;
-    }
-
-    private void InitializePopOver()
-    {
         _popOverView = new EditArrowPopOverView();
-        _popOverViewModel = new EditArrowPopOverViewModel();
-        _popOverView.DataContext = _popOverViewModel;
         _popOverView.DismissRequested += OnPopOverDismissRequested;
         _popOverView.AliasChanged += OnPopOverAliasChanged;
         _popOverView.PredicateChanged += OnPopOverPredicateChanged;
         EditArrowPopup.Child = _popOverView;
+        Loaded += OnLoaded;
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -57,9 +47,7 @@ public partial class BlueprintEditorView : UserControl
         vm.EditArrowRequested += OnEditArrowRequested;
         vm.StateTextEditorRequested += OnStateTextEditorRequested;
         vm.LoopTextEditorRequested += OnLoopTextEditorRequested;
-        vm.States.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-        vm.Transactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
-        vm.LoopTransactions.CollectionChanged += (_, _) => Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        vm.SaveProjectRequested += OnSaveProjectRequested;
     }
 
     private void Unsubscribe(BlueprintEditorViewModel vm)
@@ -67,67 +55,118 @@ public partial class BlueprintEditorView : UserControl
         vm.EditArrowRequested -= OnEditArrowRequested;
         vm.StateTextEditorRequested -= OnStateTextEditorRequested;
         vm.LoopTextEditorRequested -= OnLoopTextEditorRequested;
+        vm.SaveProjectRequested -= OnSaveProjectRequested;
+        _vm = null;
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        Dispatcher.UIThread.InvokeAsync(RecalculateCanvasSize);
+        // ZIndex is declared in XAML via Panel.ZIndex
     }
 
-    private void RecalculateCanvasSize()
+    private void OnEditArrowRequested(BlueprintTransitionViewModel tx, double x, double y)
+    {
+        _vm?.OpenPopOver(tx, x, y);
+        Dispatcher.UIThread.InvokeAsync(() => PositionPopOver(x, y), DispatcherPriority.Normal);
+    }
+
+    private void PositionPopOver(double x, double y)
+    {
+        if (_popOverView == null) return;
+
+        if (EditArrowPopup.Child is Canvas parentCanvas)
+        {
+            Canvas.SetLeft(_popOverView, x);
+            Canvas.SetTop(_popOverView, y);
+        }
+        else
+        {
+            var canvas = new Canvas();
+            canvas.Children.Add(_popOverView);
+            Canvas.SetLeft(_popOverView, x);
+            Canvas.SetTop(_popOverView, y);
+            EditArrowPopup.Child = canvas;
+        }
+    }
+
+    private void OnCanvasKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
     {
         if (_vm == null) return;
-        double minX = double.MaxValue, minY = double.MaxValue;
-        double maxX = double.MinValue, maxY = double.MinValue;
-        foreach (var state in _vm.States)
+
+        var ctrl = e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
+
+        if (e.Key == Avalonia.Input.Key.S && ctrl)
         {
-            minX = Math.Min(minX, state.CanvasPositionX);
-            minY = Math.Min(minY, state.CanvasPositionY);
-            maxX = Math.Max(maxX, state.CanvasPositionX + 110);
-            maxY = Math.Max(maxY, state.CanvasPositionY + state.StateHeight);
+            e.Handled = true;
+            _vm.SaveProjectCommand.Execute(null);
         }
-        if (minX == double.MaxValue) { Canvas.Width = 1200; Canvas.Height = 800; return; }
-        Canvas.Width = Math.Max(400, (maxX - minX) + 200);
-        Canvas.Height = Math.Max(300, (maxY - minY) + 200);
+        else if (e.Key == Avalonia.Input.Key.Z && ctrl && !e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift))
+        {
+            e.Handled = true;
+            _vm.UndoCommand.Execute(null);
+        }
+        else if (e.Key == Avalonia.Input.Key.Y && ctrl)
+        {
+            e.Handled = true;
+            _vm.RedoCommand.Execute(null);
+        }
+        else if (e.Key == Avalonia.Input.Key.C && ctrl)
+        {
+            e.Handled = true;
+            _vm.CopySelectedCommand.Execute(null);
+        }
+        else if (e.Key == Avalonia.Input.Key.V && ctrl)
+        {
+            e.Handled = true;
+            _vm?.SetPasteOffset(50, 50);
+            _vm?.PasteStatesCommand.Execute(null);
+        }
+        else if (e.Key == Avalonia.Input.Key.Delete)
+        {
+            e.Handled = true;
+            _vm.DeleteSelectedCommand.Execute(null);
+        }
     }
 
-    private void OnEditArrowRequested(BlueprintTransactionViewModel tx, double x, double y)
-    {
-        if (_popOverViewModel == null) return;
-        _currentEditingTransaction = tx;
-        _popOverViewModel.Alias = tx.Alias ?? "";
-        _popOverViewModel.Predicate = tx.Predicate ?? "";
-        EditArrowPopup.PlacementTarget = Canvas;
-        EditArrowPopup.Placement = PlacementMode.Pointer;
-        EditArrowPopup.IsOpen = true;
-    }
-
-    private void OnPopOverDismissRequested()
-    {
-        _currentEditingTransaction = null;
-        EditArrowPopup.IsOpen = false;
-    }
-
-    private void OnPopOverAliasChanged()
-    {
-        if (_currentEditingTransaction == null || _popOverViewModel == null) return;
-        _currentEditingTransaction.Alias = _popOverViewModel.Alias ?? "";
-    }
-
-    private void OnPopOverPredicateChanged()
-    {
-        if (_currentEditingTransaction == null || _popOverViewModel == null) return;
-        _currentEditingTransaction.Predicate = _popOverViewModel.Predicate ?? "";
-    }
+    private void OnPopOverDismissRequested() => _vm?.ClosePopOver();
+    private void OnPopOverAliasChanged() => _vm?.OnPopOverAliasChanged();
+    private void OnPopOverPredicateChanged() => _vm?.OnPopOverPredicateChanged();
 
     private void OnStateBoxStatePressed(object? sender, PointerEventArgs e)
     {
         if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
         var position = e.GetPosition(Canvas);
-        _vm?.OnStatePressed(stateVm, position.X, position.Y);
+        var isMultiSelect = e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
+        _vm?.OnStatePressed(stateVm, position.X, position.Y, isMultiSelect);
     }
 
-    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e) => _vm?.OnStateReleased();
+    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e)
+    {
+        _vm?.OnStateReleased();
+
+        if (sender is Controls.StateBox stateBox && stateBox.DataContext is ISnapPosition snapPosition)
+        {
+            var gridSize = GetGridSize();
+            snapPosition.SnapPositionX(gridSize);
+            snapPosition.SnapPositionY(gridSize);
+        }
+    }
+
+    private double GetGridSize()
+    {
+        // Try to get grid size from DI, fall back to hardcoded default
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.DataContext is MainWindowViewModel mainVm)
+        {
+            var projectService = mainVm.ProjectService;
+            if (projectService.ActiveProject is BlueprintProjectViewModel bpProject)
+            {
+                // Use the default grid size since IGridSnappingService is not injected into views
+                // This could be extended to read from preferences in the future
+            }
+        }
+        return 20.0;
+    }
 
     private void OnStateBoxStateClicked(object? sender, RoutedEventArgs e)
     {
@@ -168,6 +207,24 @@ public partial class BlueprintEditorView : UserControl
         if (loop != null) _vm?.OnLoopArrowHeadClicked(loop);
     }
 
+    private void OnLoopArrowEditRequested(BlueprintLoopTransactionViewModel loop)
+    {
+        // Open PopOver for editing loop arrow alias/predicate
+        _vm?.OpenPopOverForLoop(loop);
+        Dispatcher.UIThread.InvokeAsync(() => PositionPopOverForLoop(), DispatcherPriority.Normal);
+    }
+
+    private void PositionPopOverForLoop()
+    {
+        if (_popOverView == null) return;
+
+        if (EditArrowPopup.Child is Canvas parentCanvas)
+        {
+            Canvas.SetLeft(_popOverView, 100);
+            Canvas.SetTop(_popOverView, 100);
+        }
+    }
+
     private void OnLoopBodyClicked(object? sender, Controls.ArrowHitTestEventArgs e)
     {
         if (sender is not Controls.LoopArrow arrow) return;
@@ -175,16 +232,16 @@ public partial class BlueprintEditorView : UserControl
         if (loop != null) _vm?.OnLoopBodyClicked(loop);
     }
 
-    private BlueprintTransactionViewModel? GetTransaction(Controls.ArrowLine arrow)
+    private BlueprintTransitionViewModel? GetTransaction(Controls.ArrowLine arrow)
     {
-        if (arrow.StartState == null || arrow.EndState == null) return null;
-        return _vm?.Transactions.FirstOrDefault(t => t.StartState == arrow.StartState && t.EndState == arrow.EndState);
+        if (arrow.StartStateId == Guid.Empty || arrow.EndStateId == Guid.Empty) return null;
+        return _vm?.Transitions.FirstOrDefault(t => t.StartStateId == arrow.StartStateId && t.EndStateId == arrow.EndStateId);
     }
 
     private BlueprintLoopTransactionViewModel? GetLoop(Controls.LoopArrow arrow)
     {
-        if (arrow.State == null) return null;
-        return _vm?.LoopTransactions.FirstOrDefault(l => l.State == arrow.State);
+        if (arrow.StateId == Guid.Empty) return null;
+        return _vm?.LoopTransactions.FirstOrDefault(l => l.StateId == arrow.StateId);
     }
 
     private void OnStateTextEditorRequested(BlueprintStateViewModel state)
@@ -204,8 +261,21 @@ public partial class BlueprintEditorView : UserControl
         var window = topLevel as Avalonia.Controls.Window;
         if (window?.DataContext is not MainWindowViewModel mainVm) return;
 
-        var loopStateName = loop.State?.Name ?? "unknown";
+        var loopStateName = loop.GetState(_vm?.States ?? [])?.Name ?? "unknown";
         var title = $"Loop: {loopStateName}";
         mainVm.OpenLoopTextEditorTab(loop, title);
+    }
+
+    private void OnSaveProjectRequested()
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        var window = topLevel as Avalonia.Controls.Window;
+        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+
+        var activeProject = mainVm.ProjectService.ActiveProject;
+        if (activeProject is BlueprintProjectViewModel bpProject)
+        {
+            bpProject.SaveAsync();
+        }
     }
 }

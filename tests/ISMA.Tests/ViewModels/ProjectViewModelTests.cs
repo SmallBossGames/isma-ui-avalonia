@@ -179,7 +179,7 @@ public class ProjectViewModelTests
         var model = project.GetBlueprintModel();
 
         model.Should().NotBeNull();
-        model.Main.Name.Should().Be("main");
+        model.Main.Name.Should().Be("Main");
         model.Init.Name.Should().Be("init");
     }
 

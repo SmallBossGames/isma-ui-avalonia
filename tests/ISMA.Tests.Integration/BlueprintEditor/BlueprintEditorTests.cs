@@ -33,16 +33,16 @@ public class BlueprintEditorTests
         _app.Window.ClickAddStateButton();
         _app.Window.ClickAddStateButton();
 
-        // Verify states were added (Main, Init, New state 1, New state 2)
-        editorVm.States.Should().HaveCount(4);
+        // Verify states were added (2 user states, Main and Init are separate properties)
+        editorVm.States.Should().HaveCount(2);
 
         // Verify state names
-        var mainState = editorVm.States.First(s => s.IsMain);
-        var initState = editorVm.States.First(s => s.IsInit);
+        var mainState = editorVm.MainState;
+        var initState = editorVm.InitState;
         var userState1 = editorVm.States.First(s => s.Name == "New state 1");
         var userState2 = editorVm.States.First(s => s.Name == "New state 2");
 
-        mainState.Name.Should().Be("main");
+        mainState.Name.Should().Be("Main");
         initState.Name.Should().Be("init");
         userState1.Name.Should().Be("New state 1");
         userState2.Name.Should().Be("New state 2");
@@ -59,17 +59,17 @@ public class BlueprintEditorTests
         // Add states first via UI
         _app.Window.ClickAddStateButton();
         _app.Window.ClickAddStateButton();
-        editorVm.States.Should().HaveCount(4);
+        editorVm.States.Should().HaveCount(2);
 
         // Add transition between two user states via UI toggles
         _app.Window.ClickAddTransitionToggle();
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(editorVm.States[0]);
+        editorVm.SelectedState = editorVm.States[1];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was added
-        editorVm.Transactions.Should().HaveCount(1);
+        editorVm.Transitions.Should().HaveCount(1);
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
     }
 
@@ -83,16 +83,16 @@ public class BlueprintEditorTests
 
         // Add a state via UI
         _app.Window.ClickAddStateButton();
-        editorVm.States.Should().HaveCount(3);
+        editorVm.States.Should().HaveCount(1);
 
         // Remove the user state via UI toggle
         _app.Window.ClickRemoveStateToggle();
         editorVm.Mode = new EditorMode.RemoveState();
-        editorVm.SelectedState = editorVm.States[2];
+        editorVm.SelectedState = editorVm.States[0];
         editorVm.RemoveStateCommand.Execute(null);
 
-        // Verify state was removed (Main, Init only)
-        editorVm.States.Should().HaveCount(2);
+        // Verify state was removed (no user states)
+        editorVm.States.Should().HaveCount(0);
     }
 
     [AvaloniaFact]
@@ -107,21 +107,21 @@ public class BlueprintEditorTests
         _app.Window.ClickAddStateButton();
         _app.Window.ClickAddStateButton();
         _app.Window.ClickAddTransitionToggle();
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(editorVm.States[0]);
+        editorVm.SelectedState = editorVm.States[1];
         editorVm.AddTransitionCommand.Execute(null);
 
-        editorVm.Transactions.Should().HaveCount(1);
+        editorVm.Transitions.Should().HaveCount(1);
 
         // Remove the transition via UI toggle
         _app.Window.ClickRemoveTransitionToggle();
         editorVm.Mode = new EditorMode.RemoveTransition();
-        editorVm.SelectedTransaction = editorVm.Transactions[0];
+        editorVm.SelectedTransition = editorVm.Transitions[0];
         editorVm.RemoveTransitionCommand.Execute(null);
 
         // Verify transition was removed
-        editorVm.Transactions.Should().BeEmpty();
+        editorVm.Transitions.Should().BeEmpty();
     }
 
     [AvaloniaFact]
@@ -148,7 +148,7 @@ public class BlueprintEditorTests
 
         // Add states via UI
         _app.Window.ClickAddStateButton();
-        editorVm.States.Should().HaveCount(3);
+        editorVm.States.Should().HaveCount(1);
 
         // Convert to LISMA
         var lisma = blueprintProject.ConvertToLisma();
@@ -166,11 +166,11 @@ public class BlueprintEditorTests
 
         // Add first state via UI
         _app.Window.ClickAddStateButton();
-        var firstStateName = editorVm.States[2].Name;
+        var firstStateName = editorVm.States[0].Name;
 
         // Try to add another state with the same name (should fail)
         editorVm.AddStateWithName(firstStateName, 200, 200);
-        editorVm.States.Should().HaveCount(3); // Still 3 (Main, Init, New state 1)
+        editorVm.States.Should().HaveCount(1); // Still 1 (duplicate name rejected)
     }
 
     [AvaloniaFact]
@@ -185,7 +185,7 @@ public class BlueprintEditorTests
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
 
         // Set AddTransition mode
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        editorVm.Mode = new EditorMode.AddTransition();
         editorVm.Mode.Should().BeOfType<EditorMode.AddTransition>();
 
         // Reset mode via UI

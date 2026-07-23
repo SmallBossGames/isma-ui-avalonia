@@ -11,6 +11,17 @@ public static class BlueprintToLismaConverter
         var regions = new List<CodeRegion>();
         var lineIndex = 0;
 
+        // Build Guid -> Name map from all states
+        var stateMap = new Dictionary<Guid, string>
+        {
+            [model.Main.Id] = model.Main.Name,
+            [model.Init.Id] = model.Init.Name
+        };
+        foreach (var state in model.States)
+        {
+            stateMap[state.Id] = state.Name;
+        }
+
         // Main state
         var mainLines = new List<string>();
         mainLines.Add($"state {model.Main.Name} {{");
@@ -56,52 +67,77 @@ public static class BlueprintToLismaConverter
             regions.Add(new CodeRegion(state.Name, stateStart, lineIndex - 1));
         }
 
-        // Transactions
-        var transactionGroups = new Dictionary<string, (string startState, List<string> predicates)>();
+        // Transactions - group by target state and alias/predicate
+        var transactionGroups = new Dictionary<string, (string startState, List<(string predicate, string alias)>)>();
         foreach (var tx in model.Transactions)
         {
-            var key = CreateTransactionKey(tx.EndStateName, tx.Predicate);
+            if (tx.StartStateId == Guid.Empty || tx.EndStateId == Guid.Empty)
+                continue;
+
+            if (!stateMap.TryGetValue(tx.StartStateId, out var startStateName) ||
+                !stateMap.TryGetValue(tx.EndStateId, out var endStateName))
+                continue;
+
+            var displayKey = !string.IsNullOrEmpty(tx.Alias) ? tx.Alias : CreateTransactionKey(endStateName, tx.Predicate);
+            var key = CreateTransactionKey(endStateName, tx.Predicate);
+
             if (!transactionGroups.TryGetValue(key, out var group))
             {
-                group = (tx.StartStateName, new List<string>());
+                group = (startStateName, new List<(string predicate, string alias)>());
                 transactionGroups[key] = group;
             }
-            group.predicates.Add(tx.Predicate);
+            group.Item2.Add((tx.Predicate, tx.Alias ?? ""));
         }
 
-        foreach (var (key, (startState, predicates)) in transactionGroups)
+        foreach (var (key, (startState, transactions)) in transactionGroups)
         {
             var txLines = new List<string>();
-            txLines.Add($"state \"{key}\" {{");
+            // Use the display key (alias if available, otherwise targetState (predicate))
+            var displayKey = transactions.Count == 1 && !string.IsNullOrEmpty(transactions[0].alias)
+                ? transactions[0].alias
+                : key;
+            txLines.Add($"state \"{displayKey}\" {{");
             txLines.Add($"  from {startState};");
             txLines.Add("}");
             var txStart = lineIndex;
             lines.AddRange(txLines);
             lineIndex += txLines.Count;
-            regions.Add(new CodeRegion(key, txStart, lineIndex - 1));
+            regions.Add(new CodeRegion(displayKey, txStart, lineIndex - 1));
         }
 
-        // Loop transactions
+        // Loop transactions - track which user states already had loop regions to avoid duplicates
+        var statesWithLoopRegions = new HashSet<string>();
         foreach (var loop in model.LoopTransactions)
         {
-            var pseudoName = $"{loop.StateName}_pseudo_1";
+            if (loop.StateId == Guid.Empty)
+                continue;
+
+            if (!stateMap.TryGetValue(loop.StateId, out var stateName))
+                continue;
+
+            var pseudoName = $"{stateName}_pseudo_1";
             var pseudoLines = new List<string>();
             pseudoLines.Add($"state {pseudoName} ({loop.Predicate}) {{");
-            pseudoLines.Add($"  from {loop.StateName};");
+            pseudoLines.Add($"  from {stateName};");
             pseudoLines.Add("}");
             var pseudoStart = lineIndex;
             lines.AddRange(pseudoLines);
             lineIndex += pseudoLines.Count;
             regions.Add(new CodeRegion(pseudoName, pseudoStart, lineIndex - 1));
 
-            var loopStateLines = new List<string>();
-            loopStateLines.Add($"state {loop.StateName} (1 > 0) {{");
-            loopStateLines.Add($"  from {pseudoName};");
-            loopStateLines.Add("}");
-            var loopStart = lineIndex;
-            lines.AddRange(loopStateLines);
-            lineIndex += loopStateLines.Count;
-            regions.Add(new CodeRegion(loop.StateName, loopStart, lineIndex - 1));
+            // Only add the loop state region if we haven't already added one for this state
+            if (!statesWithLoopRegions.Contains(stateName))
+            {
+                var loopStateLines = new List<string>();
+                loopStateLines.Add($"state {stateName} (1 > 0) {{");
+                loopStateLines.Add($"  from {pseudoName};");
+                loopStateLines.Add("}");
+                var loopStart = lineIndex;
+                lines.AddRange(loopStateLines);
+                lineIndex += loopStateLines.Count;
+                regions.Add(new CodeRegion(stateName, loopStart, lineIndex - 1));
+                statesWithLoopRegions.Add(stateName);
+            }
         }
 
         var fullText = string.Join('\n', lines);

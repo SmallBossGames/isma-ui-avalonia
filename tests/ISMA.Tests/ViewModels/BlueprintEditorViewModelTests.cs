@@ -14,19 +14,19 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.States.Should().HaveCount(2);
+        viewModel.States.Should().HaveCount(0);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        viewModel.Mode = new EditorMode.AddTransition();
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(2);
+        viewModel.States.Should().HaveCount(0);
 
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
-        var newState = viewModel.States[2];
+        var newState = viewModel.States[0];
         newState.Name.Should().StartWith("New state");
     }
 
@@ -38,10 +38,10 @@ public class BlueprintEditorViewModelTests
         viewModel.Mode = new EditorMode.Default();
 
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
         viewModel.AddStateCommand.Execute(null);
-        viewModel.States.Should().HaveCount(4);
+        viewModel.States.Should().HaveCount(2);
     }
 
     [Fact]
@@ -52,13 +52,13 @@ public class BlueprintEditorViewModelTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveState();
-        viewModel.SelectedState = viewModel.States[2];
+        viewModel.SelectedState = viewModel.States[0];
         viewModel.RemoveStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(2);
+        viewModel.States.Should().HaveCount(0);
         viewModel.SelectedState.Should().BeNull();
     }
 
@@ -70,13 +70,13 @@ public class BlueprintEditorViewModelTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveState();
         viewModel.SelectedState = null;
         viewModel.RemoveStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
     }
 
     [Fact]
@@ -84,14 +84,14 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[0]);
-        viewModel.SelectedState = viewModel.States[1];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.MainState);
+        viewModel.SelectedState = viewModel.InitState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
         viewModel.Mode.Should().BeOfType<EditorMode.Default>();
     }
 
@@ -100,11 +100,11 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        viewModel.Mode = new EditorMode.AddTransition();
         viewModel.SelectedState = null;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
@@ -113,10 +113,10 @@ public class BlueprintEditorViewModelTests
         var viewModel = CreateViewModel();
 
         viewModel.Mode = new EditorMode.Default();
-        viewModel.SelectedState = viewModel.States[0];
+        viewModel.SelectedState = viewModel.MainState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
@@ -124,19 +124,19 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[0]);
-        viewModel.SelectedState = viewModel.States[1];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.MainState);
+        viewModel.SelectedState = viewModel.InitState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveTransition();
-        viewModel.SelectedTransaction = viewModel.Transactions[0];
+        viewModel.SelectedTransition = viewModel.Transitions[0];
         viewModel.RemoveTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().BeEmpty();
-        viewModel.SelectedTransaction.Should().BeNull();
+        viewModel.Transitions.Should().BeEmpty();
+        viewModel.SelectedTransition.Should().BeNull();
     }
 
     [Fact]
@@ -144,18 +144,18 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[0]);
-        viewModel.SelectedState = viewModel.States[1];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.MainState);
+        viewModel.SelectedState = viewModel.InitState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
 
         viewModel.Mode = new EditorMode.RemoveTransition();
-        viewModel.SelectedTransaction = null;
+        viewModel.SelectedTransition = null;
         viewModel.RemoveTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class BlueprintEditorViewModelTests
         var model = viewModel.GetBlueprintModel();
 
         model.States.Should().HaveCount(1);
-        model.Main.Name.Should().Be("main");
+        model.Main.Name.Should().Be("Main");
         model.Init.Name.Should().Be("init");
     }
 
@@ -190,7 +190,7 @@ public class BlueprintEditorViewModelTests
         var viewModel = CreateViewModel();
         viewModel.SetBlueprintModel(model);
 
-        viewModel.States.Should().HaveCount(3);
+        viewModel.States.Should().HaveCount(1);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
+        viewModel.Mode = new EditorMode.AddTransition();
         viewModel.ResetEditorModeCommand.Execute(null);
 
         viewModel.Mode.Should().BeOfType<EditorMode.Default>();
@@ -213,15 +213,15 @@ public class BlueprintEditorViewModelTests
         viewModel.AddStateCommand.Execute(null);
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        viewModel.SetTransitionSource(viewModel.States[0]);
-        viewModel.SelectedState = viewModel.States[1];
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.MainState);
+        viewModel.SelectedState = viewModel.InitState;
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.Dispose();
 
         viewModel.States.Should().BeEmpty();
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
         viewModel.LoopTransactions.Should().BeEmpty();
     }
 
@@ -241,8 +241,8 @@ public class BlueprintEditorViewModelTests
 
         var viewModel = new BlueprintEditorViewModel(model);
 
-        viewModel.States.Should().HaveCount(3);
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.States.Should().HaveCount(1);
+        viewModel.Transitions.Should().BeEmpty();
     }
 
     [Fact]
@@ -253,11 +253,11 @@ public class BlueprintEditorViewModelTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
 
-        var mainState = viewModel.States.First(s => s.IsMain);
-        var initState = viewModel.States.First(s => s.IsInit);
-        var userState = viewModel.States.First(s => !s.IsMain && !s.IsInit);
+        var mainState = viewModel.MainState;
+        var initState = viewModel.InitState;
+        var userState = viewModel.States.First();
 
-        mainState.Name.Should().Be("main");
+        mainState.Name.Should().Be("Main");
         initState.Name.Should().Be("init");
         userState.Name.Should().StartWith("New state");
     }
@@ -267,14 +267,14 @@ public class BlueprintEditorViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        var targetState = viewModel.States[1];
+        viewModel.Mode = new EditorMode.AddTransition();
+        var targetState = viewModel.InitState;
         viewModel.SetTransitionSource(targetState);
         viewModel.SelectedState = targetState;
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.LoopTransactions.Should().HaveCount(1);
-        viewModel.Transactions.Should().BeEmpty();
+        viewModel.Transitions.Should().BeEmpty();
         viewModel.Mode.Should().BeOfType<EditorMode.Default>();
     }
 
@@ -285,18 +285,18 @@ public class BlueprintEditorViewModelTests
         viewModel.AddStateCommand.Execute(null); // New state 1
         viewModel.AddStateCommand.Execute(null); // New state 2
 
-        viewModel.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        var sourceState = viewModel.States[2];
-        var targetState = viewModel.States[3];
+        viewModel.Mode = new EditorMode.AddTransition();
+        var sourceState = viewModel.States[0];
+        var targetState = viewModel.States[1];
         viewModel.SetTransitionSource(sourceState);
         viewModel.SelectedState = targetState;
         viewModel.AddTransitionCommand.Execute(null);
 
-        viewModel.Transactions.Should().HaveCount(1);
+        viewModel.Transitions.Should().HaveCount(1);
         viewModel.LoopTransactions.Should().BeEmpty();
-        var tx = viewModel.Transactions[0];
-        tx.StartState.Name.Should().Be(sourceState.Name);
-        tx.EndState.Name.Should().Be(targetState.Name);
+        var tx = viewModel.Transitions[0];
+        tx.GetStartState(viewModel.States)!.Name.Should().Be(sourceState.Name);
+        tx.GetEndState(viewModel.States)!.Name.Should().Be(targetState.Name);
         viewModel.Mode.Should().BeOfType<EditorMode.Default>();
     }
 }

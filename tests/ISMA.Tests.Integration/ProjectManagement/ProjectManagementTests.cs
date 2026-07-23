@@ -160,7 +160,7 @@ public class ProjectManagementTests
         var model = blueprintProject!.GetBlueprintModel();
         model.Main.Should().NotBeNull();
         model.Init.Should().NotBeNull();
-        model.Main.Name.Should().Be("main");
+        model.Main.Name.Should().Be("Main");
         model.Init.Name.Should().Be("init");
     }
 
@@ -176,8 +176,8 @@ public class ProjectManagementTests
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
 
-        // Verify states were added
-        editorVm.States.Should().HaveCount(4); // Main, Init, New state 1, New state 2
+        // Verify states were added (2 user states, Main and Init are separate)
+        editorVm.States.Should().HaveCount(2);
     }
 
     [AvaloniaFact]
@@ -191,16 +191,16 @@ public class ProjectManagementTests
         // Add two states first
         editorVm!.AddStateCommand.Execute(null);
         editorVm.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(4);
+        editorVm.States.Should().HaveCount(2);
 
         // Add transition between two user states
-        editorVm.Mode = new EditorMode.AddTransition(new List<BlueprintStateViewModel>());
-        editorVm.SetTransitionSource(editorVm.States[2]);
-        editorVm.SelectedState = editorVm.States[3];
+        editorVm.Mode = new EditorMode.AddTransition();
+        editorVm.SetTransitionSource(editorVm.States[0]);
+        editorVm.SelectedState = editorVm.States[1];
         editorVm.AddTransitionCommand.Execute(null);
 
         // Verify transition was added
-        editorVm.Transactions.Should().HaveCount(1);
+        editorVm.Transitions.Should().HaveCount(1);
     }
 
     [AvaloniaFact]

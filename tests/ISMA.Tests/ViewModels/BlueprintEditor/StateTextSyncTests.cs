@@ -42,7 +42,7 @@ public class StateTextSyncTests
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = userState.Name,
+            StateId = userState.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""
@@ -89,7 +89,7 @@ public class StateTextSyncTests
 
         var loopModel = new BlueprintLoopTransactionModel
         {
-            StateName = userState.Name,
+            StateId = userState.Id,
             Predicate = "1 > 0",
             Alias = "",
             Text = ""

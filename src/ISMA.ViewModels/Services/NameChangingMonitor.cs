@@ -47,6 +47,8 @@ public class NameChangingMonitor
         return _existedNames.Contains(name);
     }
 
+    public IEnumerable<string> ExposedNames => _existedNames;
+
     public void AddNames(IEnumerable<string> names)
     {
         foreach (var name in names)
@@ -61,5 +63,15 @@ public class NameChangingMonitor
         {
             _existedNames.Remove(name);
         }
+    }
+
+    public void CopyFrom(NameChangingMonitor source)
+    {
+        Clear();
+        foreach (var name in source.ExposedNames)
+        {
+            _existedNames.Add(name);
+        }
+        _nextNameCounter = source._nextNameCounter;
     }
 }

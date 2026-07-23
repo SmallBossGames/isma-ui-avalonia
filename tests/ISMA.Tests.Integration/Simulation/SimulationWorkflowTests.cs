@@ -212,7 +212,7 @@ state ""initial"" (1 > 0) {
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
         editorVm.Should().NotBeNull();
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(3); // Main, Init, New state 1
+        editorVm.States.Should().HaveCount(1); // New state 1 (Main and Init are not in States)
 
         // Step 3: Convert to LISMA text
         var lisma = blueprintProject.ConvertToLisma();
