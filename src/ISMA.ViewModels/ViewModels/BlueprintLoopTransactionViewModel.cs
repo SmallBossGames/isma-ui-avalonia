@@ -95,4 +95,20 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// Gets the associated state view model for XAML bindings.
     /// </summary>
     public BlueprintStateViewModel? State => GetState(_states ?? []);
+
+    /// <summary>
+    /// Resolves the canvas center position of a state by its GUID.
+    /// Used by <see cref="Controls.LoopArrow"/> to position loop arrows on the canvas.
+    /// </summary>
+    /// <param name="stateId">The GUID of the state to resolve.</param>
+    /// <returns>The center point of the state, or null if not found.</returns>
+    public Avalonia.Point? ResolveStatePosition(Guid stateId)
+    {
+        var state = _states?.FirstOrDefault(s => s.Id == stateId);
+        if (state == null) return null;
+
+        var width = 110.0;
+        var height = state.StateHeight > 0 ? state.StateHeight : width;
+        return new Avalonia.Point(state.CanvasPositionX + width / 2, state.CanvasPositionY + height / 2);
+    }
 }
