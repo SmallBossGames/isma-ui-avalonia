@@ -92,6 +92,11 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
         : null;
 
     /// <summary>
+    /// Resolves a state center point by its Guid. Used by <c>LoopArrow</c> as a fallback when <c>StatePosition</c> is not bound.
+    /// </summary>
+    public Func<Guid, Avalonia.Point?>? PositionResolver => _ => ResolveStatePosition(StateId);
+
+    /// <summary>
     /// Gets the associated state view model for XAML bindings.
     /// </summary>
     public BlueprintStateViewModel? State => GetState(_states ?? []);

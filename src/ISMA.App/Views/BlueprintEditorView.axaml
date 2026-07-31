@@ -101,7 +101,7 @@
                         <DataTemplate x:DataType="vm:BlueprintLoopTransactionViewModel">
                             <controls:LoopArrow StateId="{Binding StateId}"
                                                 StatePosition="{Binding StatePosition}"
-                                                PositionResolver="{Binding ResolveStatePosition}"
+                                                PositionResolver="{Binding PositionResolver}"
                                                 Alias="{Binding Alias}"
                                                 Predicate="{Binding Predicate}"
                                                 LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
