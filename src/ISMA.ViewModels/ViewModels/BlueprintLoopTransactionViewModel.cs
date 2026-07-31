@@ -85,6 +85,13 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     public double? StatePositionY => State?.CanvasPositionY + (State?.StateHeight > 0 ? State.StateHeight / 2 : 32.5);
 
     /// <summary>
+    /// Gets the canvas center position of the associated state as a single Point.
+    /// </summary>
+    public Avalonia.Point? StatePosition => State != null
+        ? new Avalonia.Point(StatePositionX ?? 0, StatePositionY ?? 0)
+        : null;
+
+    /// <summary>
     /// Gets the associated state view model for XAML bindings.
     /// </summary>
     public BlueprintStateViewModel? State => GetState(_states ?? []);

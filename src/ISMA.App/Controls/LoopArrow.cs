@@ -43,25 +43,12 @@ public class LoopArrow : Control
         AvaloniaProperty.Register<LoopArrow, Point?>(nameof(StatePosition));
 
     /// <summary>
-    /// Canvas position of the associated state. When set, used for rendering instead of PositionResolver.
+    /// Canvas position of the associated state.
     /// </summary>
     public Point? StatePosition
     {
         get => GetValue(StatePositionProperty);
         set => SetValue(StatePositionProperty, value);
-    }
-
-    public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
-        AvaloniaProperty.Register<LoopArrow, Func<Guid, Point?>?>(nameof(PositionResolver));
-
-    /// <summary>
-    /// Resolves a state center point by its Guid. Returns null if not found.
-    /// Used as fallback when StatePosition is not set.
-    /// </summary>
-    public Func<Guid, Point?>? PositionResolver
-    {
-        get => GetValue(PositionResolverProperty);
-        set => SetValue(PositionResolverProperty, value);
     }
 
     public static readonly StyledProperty<string?> AliasProperty =
