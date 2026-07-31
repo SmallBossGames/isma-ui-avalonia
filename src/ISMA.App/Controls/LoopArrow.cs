@@ -81,7 +81,7 @@ public class LoopArrow : Control
 
     static LoopArrow()
     {
-        AffectsRender<LoopArrow>(StateIdProperty, StatePositionProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
+        AffectsRender<LoopArrow>(StateIdProperty, StatePositionProperty, AliasProperty, PredicateProperty);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -144,16 +144,7 @@ public class LoopArrow : Control
 
     private Point GetCenter()
     {
-        if (StatePosition.HasValue)
-            return StatePosition.Value;
-
-        if (StateId != null && PositionResolver != null)
-        {
-            var center = PositionResolver(StateId.Value);
-            return center ?? default;
-        }
-
-        return default;
+        return StatePosition ?? default;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
