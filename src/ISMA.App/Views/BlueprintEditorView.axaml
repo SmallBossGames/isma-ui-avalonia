@@ -69,7 +69,8 @@
                     </ItemsControl.ItemContainerTheme>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:BlueprintTransitionViewModel">
-                            <controls:ArrowLine StartStateId="{Binding StartStateId}"
+                            <controls:ArrowLine Id="{Binding Id}"
+                                                StartStateId="{Binding StartStateId}"
                                                 EndStateId="{Binding EndStateId}"
                                                 StartStatePosition="{Binding StartStatePosition}"
                                                 EndStatePosition="{Binding EndStatePosition}"

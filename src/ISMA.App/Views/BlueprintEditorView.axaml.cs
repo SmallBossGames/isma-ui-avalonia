@@ -234,6 +234,11 @@ public partial class BlueprintEditorView : UserControl
 
     private BlueprintTransitionViewModel? GetTransaction(Controls.ArrowLine arrow)
     {
+        if (arrow.Id != null)
+        {
+            return _vm?.Transitions.FirstOrDefault(t => t.Id == arrow.Id);
+        }
+
         if (arrow.StartStateId == Guid.Empty || arrow.EndStateId == Guid.Empty) return null;
         return _vm?.Transitions.FirstOrDefault(t => t.StartStateId == arrow.StartStateId && t.EndStateId == arrow.EndStateId);
     }

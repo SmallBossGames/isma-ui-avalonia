@@ -47,6 +47,22 @@ public class ArrowLine : Control
     private const double TextOffsetX = 75.0;
     private const double TextOffsetY = 50.0;
 
+    /// <summary>
+    /// Stable identity of the transition this arrow represents.
+    /// Used for exact matching when multiple transitions exist between the same state pair.
+    /// </summary>
+    public static readonly StyledProperty<Guid?> IdProperty =
+        AvaloniaProperty.Register<ArrowLine, Guid?>(nameof(Id));
+
+    /// <summary>
+    /// Gets or sets the stable identity of the transition this arrow represents.
+    /// </summary>
+    public Guid? Id
+    {
+        get => GetValue(IdProperty);
+        set => SetValue(IdProperty, value);
+    }
+
     public static readonly StyledProperty<Guid?> StartStateIdProperty =
         AvaloniaProperty.Register<ArrowLine, Guid?>(nameof(StartStateId));
 
