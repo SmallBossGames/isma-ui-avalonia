@@ -80,6 +80,24 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _canRedo;
 
+    /// <summary>
+    /// Resolves a state's center position by its Guid. Used by <c>LoopArrow</c> for rendering.
+    /// </summary>
+    public Func<Guid, Point?>? PositionResolver => GetStatePosition;
+
+    private Point? GetStatePosition(Guid stateId)
+    {
+        if (MainState.Id == stateId)
+            return new Point(MainState.CanvasPositionX + 55, MainState.CanvasPositionY + MainState.StateHeight / 2);
+
+        if (InitState.Id == stateId)
+            return new Point(InitState.CanvasPositionX + 55, InitState.CanvasPositionY + InitState.StateHeight / 2);
+
+        return States.FirstOrDefault(s => s.Id == stateId) is { } state
+            ? new Point(state.CanvasPositionX + 55, state.CanvasPositionY + state.StateHeight / 2)
+            : null;
+    }
+
     [RelayCommand]
     private void Undo()
     {
@@ -223,7 +241,9 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var newStates = _clipboardService.PasteStates(this, _pasteOffsetX, _pasteOffsetY).ToList();
         foreach (var newState in newStates)
         {
-            _nameMonitor.TryRegister(newState.Name);
+            if (!_nameMonitor.TryRegister(newState.Name))
+                continue;
+
             States.Add(newState);
         }
 
