@@ -5,7 +5,7 @@ namespace ISMA.ViewModels.Services;
 
 public class NameChangingMonitor
 {
-    private readonly HashSet<string> _existedNames = new();
+    private readonly HashSet<string> _existedNames = new(StringComparer.OrdinalIgnoreCase);
     private int _nextNameCounter = 1;
     private static readonly Regex DefaultNameRegex = new(@"^New state (\d+)$", RegexOptions.Compiled);
 
