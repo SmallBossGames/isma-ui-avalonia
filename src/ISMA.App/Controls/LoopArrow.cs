@@ -30,15 +30,34 @@ public class LoopArrow : Control
     public static readonly StyledProperty<Guid?> StateIdProperty =
         AvaloniaProperty.Register<LoopArrow, Guid?>(nameof(StateId));
 
+    /// <summary>
+    /// Gets or sets the stable identity of the state this loop arrow is associated with.
+    /// </summary>
     public Guid? StateId
     {
         get => GetValue(StateIdProperty);
         set => SetValue(StateIdProperty, value);
     }
 
+    public static readonly StyledProperty<Point?> StatePositionProperty =
+        AvaloniaProperty.Register<LoopArrow, Point?>(nameof(StatePosition));
+
+    /// <summary>
+    /// Canvas position of the associated state. When set, used for rendering instead of PositionResolver.
+    /// </summary>
+    public Point? StatePosition
+    {
+        get => GetValue(StatePositionProperty);
+        set => SetValue(StatePositionProperty, value);
+    }
+
     public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
         AvaloniaProperty.Register<LoopArrow, Func<Guid, Point?>?>(nameof(PositionResolver));
 
+    /// <summary>
+    /// Resolves a state center point by its Guid. Returns null if not found.
+    /// Used as fallback when StatePosition is not set.
+    /// </summary>
     public Func<Guid, Point?>? PositionResolver
     {
         get => GetValue(PositionResolverProperty);
@@ -75,7 +94,7 @@ public class LoopArrow : Control
 
     static LoopArrow()
     {
-        AffectsRender<LoopArrow>(StateIdProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
+        AffectsRender<LoopArrow>(StateIdProperty, StatePositionProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -138,8 +157,16 @@ public class LoopArrow : Control
 
     private Point GetCenter()
     {
-        if (StateId == null || PositionResolver == null) return default;
-        return PositionResolver(StateId.Value) ?? default;
+        if (StatePosition.HasValue)
+            return StatePosition.Value;
+
+        if (StateId != null && PositionResolver != null)
+        {
+            var center = PositionResolver(StateId.Value);
+            return center ?? default;
+        }
+
+        return default;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
