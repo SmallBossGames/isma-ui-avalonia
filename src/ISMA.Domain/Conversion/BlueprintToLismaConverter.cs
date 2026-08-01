@@ -148,6 +148,11 @@ public static class BlueprintToLismaConverter
             var pseudoName = $"{stateName}_pseudo_1";
             var pseudoLines = new List<string>();
             pseudoLines.Add($"state {pseudoName} ({loop.Predicate}) {{");
+            if (!string.IsNullOrWhiteSpace(loop.Text))
+            {
+                foreach (var line in loop.Text.Split('\n'))
+                    pseudoLines.Add(line.TrimEnd());
+            }
             pseudoLines.Add($"  from {stateName};");
             pseudoLines.Add("}");
             var pseudoStart = lineIndex;

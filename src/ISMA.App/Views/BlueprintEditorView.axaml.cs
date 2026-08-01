@@ -17,6 +17,7 @@ public partial class BlueprintEditorView : UserControl
     private BlueprintStateViewModel? _draggingState;
     private Point _dragStartPointerPosition;
     private Point _dragStartCanvasPosition;
+    private bool _wasDragging;
     // PositionResolver is set via XAML bindings on ArrowLine/LoopArrow controls
 
     public BlueprintEditorView()
@@ -90,26 +91,36 @@ public partial class BlueprintEditorView : UserControl
 
         var savedDataContext = _popOverView.DataContext;
 
-        double left = x;
-        if (EditArrowPopup.Child is Canvas parentCanvas)
+        var scrollViewer = this.FindControl<ScrollViewer>("CanvasScrollViewer");
+        var offset = scrollViewer?.Offset ?? default;
+
+        var popOverWidth = _popOverView.DesiredSize.Width;
+        double left = x - popOverWidth / 2 - offset.X;
+        Canvas.SetLeft(_popOverView, left);
+        Canvas.SetTop(_popOverView, y - offset.Y);
+
+        if (popOverWidth == 0)
         {
-            var scrollViewer = this.FindControl<ScrollViewer>("CanvasScrollViewer");
-            var offset = scrollViewer?.Offset ?? default;
-            var popOverWidth = _popOverView.DesiredSize.Width;
-            left = x - popOverWidth / 2 - offset.X;
-            Canvas.SetLeft(_popOverView, left);
-            Canvas.SetTop(_popOverView, y - offset.Y);
+            EventHandler<SizeChangedEventArgs>? handler = null;
+            handler = (s, ev) =>
+            {
+                if (_popOverView != null)
+                {
+                    _popOverView.SizeChanged -= handler;
+                    var newWidth = _popOverView.DesiredSize.Width;
+                    if (newWidth > 0)
+                    {
+                        Canvas.SetLeft(_popOverView, x - newWidth / 2 - offset.X);
+                    }
+                }
+            };
+            _popOverView.SizeChanged += handler;
         }
-        else
+
+        if (EditArrowPopup.Child is not Avalonia.Controls.Canvas)
         {
-            var scrollViewer = this.FindControl<ScrollViewer>("CanvasScrollViewer");
-            var offset = scrollViewer?.Offset ?? default;
-            var popOverWidth = _popOverView.DesiredSize.Width;
-            left = x - popOverWidth / 2 - offset.X;
             var canvas = new Canvas();
             canvas.Children.Add(_popOverView);
-            Canvas.SetLeft(_popOverView, left);
-            Canvas.SetTop(_popOverView, y - offset.Y);
             EditArrowPopup.Child = canvas;
         }
 
@@ -168,6 +179,7 @@ public partial class BlueprintEditorView : UserControl
         _draggingState = stateVm;
         _dragStartPointerPosition = e.GetPosition(Canvas);
         _dragStartCanvasPosition = new Point(stateVm.CanvasPositionX, stateVm.CanvasPositionY);
+        _wasDragging = false;
         e.Pointer.Capture(Canvas);
     }
 
@@ -191,8 +203,11 @@ public partial class BlueprintEditorView : UserControl
         var position = e.GetPosition(Canvas);
         var dx = position.X - _dragStartPointerPosition.X;
         var dy = position.Y - _dragStartPointerPosition.Y;
-        _draggingState.CanvasPositionX = Math.Max(0.0, _dragStartCanvasPosition.X + dx);
-        _draggingState.CanvasPositionY = Math.Max(0.0, _dragStartCanvasPosition.Y + dy);
+        if (_wasDragging)
+        {
+            _draggingState.CanvasPositionX = Math.Max(0.0, _dragStartCanvasPosition.X + dx);
+            _draggingState.CanvasPositionY = Math.Max(0.0, _dragStartCanvasPosition.Y + dy);
+        }
     }
 
     private double GetGridSize()
@@ -226,7 +241,8 @@ public partial class BlueprintEditorView : UserControl
     private void OnStateBoxNameCommitted(object? sender, Controls.StateNameCommittedEventArgs e)
     {
         if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
-        e.Handled = _vm?.OnStateNameCommitted(stateVm, e.NewName) ?? false;
+        var result = _vm?.OnStateNameCommitted(stateVm, e.NewName) ?? false;
+        e.Handled = !result;
     }
 
     private void OnArrowHeadClicked(object? sender, Controls.ArrowHitTestEventArgs e)
@@ -282,12 +298,34 @@ public partial class BlueprintEditorView : UserControl
 
         _popOverView.DataContext = _vm?.PopOverViewModel;
 
-        if (EditArrowPopup.Child is Canvas parentCanvas)
+        var pos = _loopArrowClickPosition ?? new Point(100, 100);
+        var popOverWidth = _popOverView.DesiredSize.Width;
+        Canvas.SetLeft(_popOverView, pos.X - popOverWidth / 2 - offset.X);
+        Canvas.SetTop(_popOverView, pos.Y - offset.Y);
+
+        if (popOverWidth == 0)
         {
-            var pos = _loopArrowClickPosition ?? new Point(100, 100);
-            var popOverWidth = _popOverView.DesiredSize.Width;
-            Canvas.SetLeft(_popOverView, pos.X - popOverWidth / 2 - offset.X);
-            Canvas.SetTop(_popOverView, pos.Y - offset.Y);
+            EventHandler<SizeChangedEventArgs>? handler = null;
+            handler = (s, ev) =>
+            {
+                if (_popOverView != null)
+                {
+                    _popOverView.SizeChanged -= handler;
+                    var newWidth = _popOverView.DesiredSize.Width;
+                    if (newWidth > 0)
+                    {
+                        Canvas.SetLeft(_popOverView, pos.X - newWidth / 2 - offset.X);
+                    }
+                }
+            };
+            _popOverView.SizeChanged += handler;
+        }
+
+        if (EditArrowPopup.Child is not Avalonia.Controls.Canvas)
+        {
+            var canvas = new Canvas();
+            canvas.Children.Add(_popOverView);
+            EditArrowPopup.Child = canvas;
         }
     }
 
@@ -328,7 +366,7 @@ public partial class BlueprintEditorView : UserControl
         if (window?.DataContext is not MainWindowViewModel mainVm) return;
 
         var loopStateName = loop.GetState(_vm?.States ?? [])?.Name ?? "unknown";
-        var title = $"Loop: {loopStateName}";
+        var title = $"{loopStateName} (loop)";
         mainVm.OpenLoopTextEditorTab(loop, title);
     }
 

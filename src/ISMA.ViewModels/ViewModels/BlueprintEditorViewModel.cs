@@ -16,6 +16,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     private readonly IBlueprintValidationService? _validationService;
     private readonly IUndoRedoService? _undoRedoService;
     private readonly IBlueprintClipboardService? _clipboardService;
+    private Guid _blueprintId;
 
     public ObservableCollection<BlueprintStateViewModel> States { get; } = new();
 
@@ -414,6 +415,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         foreach (var state in States)
         {
             state.IsEnabled = Mode is not EditorMode.AddTransition and not EditorMode.RemoveState;
+            state.IsEditable = Mode is not EditorMode.AddTransition and not EditorMode.RemoveState;
         }
     }
 
@@ -443,6 +445,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         _validationService = validationService;
         _undoRedoService = undoRedoService;
         _clipboardService = clipboardService;
+        _blueprintId = Guid.NewGuid();
         LoadFromModel(BlueprintModel.Empty);
     }
 
@@ -455,6 +458,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public void LoadFromModel(BlueprintModel model)
     {
+        _blueprintId = model.Id;
         var main = model.Main;
         var init = model.Init;
         var states = model.States;
@@ -634,6 +638,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         return new BlueprintModel
         {
+            Id = _blueprintId,
             Main = MapState(MainState, true, false),
             Init = MapState(InitState, false, true),
             States = statesArray,
@@ -649,7 +654,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             Id = vm.Id,
             CanvasPositionX = vm.CanvasPositionX,
             CanvasPositionY = vm.CanvasPositionY,
-            Name = isMain ? "Main" : isInit ? "init" : vm.Name,
+            Name = vm.Name,
             Text = vm.Text
         };
     }
@@ -722,18 +727,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
     }
 
-    public int SelectedStateCount
-    {
-        get
-        {
-            if (SelectedState == null)
-                return SelectedStates.Count;
-
-            // Use Id-based comparison since SelectedState may be set via XAML binding
-            // with a different object instance representing the same state
-            return SelectedStates.Any(s => s.Id == SelectedState.Id) ? SelectedStates.Count : SelectedStates.Count + 1;
-        }
-    }
+    public int SelectedStateCount => SelectedStates.Count;
 
     public void OnStateReleased()
     {
@@ -827,13 +821,23 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         States.Add(newState);
         UpdateStateEditability();
         UpdateCanvasSize();
-        PushUndo($"Add state '{newStateName}'", () => { }, () =>
-        {
-            _nameMonitor.TryUnregister(newStateName);
-            States.Remove(newState);
-            UpdateStateEditability();
-            UpdateCanvasSize();
-        });
+        PushUndo($"Add state '{newStateName}'",
+            () =>
+            {
+                // Redo: re-remove the state
+                _nameMonitor.TryUnregister(newStateName);
+                States.Remove(newState);
+                UpdateStateEditability();
+                UpdateCanvasSize();
+            },
+            () =>
+            {
+                // Undo: re-add the state
+                _nameMonitor.TryRegister(newStateName);
+                States.Add(newState);
+                UpdateStateEditability();
+                UpdateCanvasSize();
+            });
     }
 
     public void AddStateWithName(string name, double x, double y)

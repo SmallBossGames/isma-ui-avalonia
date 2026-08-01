@@ -106,7 +106,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// <summary>
     /// Gets the canvas Y position of the center of the associated state.
     /// </summary>
-    public double? StatePositionY => State?.CanvasPositionY + (State?.StateHeight > 0 ? State.StateHeight / 2 : 55.0);
+    public double? StatePositionY => State?.CanvasPositionY + (State?.StateHeight > 0 ? State.StateHeight / 2 : 32.5);
 
     /// <summary>
     /// Gets the canvas center position of the associated state as a single Point.

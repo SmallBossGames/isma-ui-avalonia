@@ -197,6 +197,10 @@ public partial class BlueprintTransitionViewModel : ObservableObject
         if (state != null)
         {
             state.PropertyChanged -= OnStatePropertyChanged;
+            if (ReferenceEquals(state, _previousStartState))
+                _previousStartState = null;
+            if (ReferenceEquals(state, _previousEndState))
+                _previousEndState = null;
         }
     }
 
