@@ -965,7 +965,24 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         PushUndo($"Remove state '{stateName}'",
             () =>
             {
-                // Redo: remove again (no-op if already removed)
+                // Redo: re-remove the state (after undo re-added it)
+                if (States.Any(s => s.Id == stateId))
+                {
+                    States.Remove(States.First(s => s.Id == stateId));
+                    foreach (var tx in transitionsToRemove)
+                    {
+                        if (Transitions.All(t => t.StartStateId != tx.StartStateId || t.EndStateId != tx.EndStateId))
+                        {
+                            Transitions.Remove(tx);
+                        }
+                    }
+                    foreach (var loop in loopsToRemove)
+                    {
+                        LoopTransactions.Remove(loop);
+                    }
+                    _nameMonitor.TryUnregister(stateName);
+                    UpdateCanvasSize();
+                }
             },
             () =>
             {
