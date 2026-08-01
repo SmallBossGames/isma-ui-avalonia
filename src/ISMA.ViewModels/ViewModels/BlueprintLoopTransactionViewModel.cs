@@ -16,18 +16,22 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// <summary>
     /// Creates a new loop transaction with a generated identity.
     /// </summary>
-    public BlueprintLoopTransactionViewModel()
+    /// <param name="states">The collection of available blueprint states for resolving state references.</param>
+    public BlueprintLoopTransactionViewModel(IEnumerable<BlueprintStateViewModel> states)
     {
         Id = Guid.NewGuid();
+        _states = states;
     }
 
     /// <summary>
     /// Creates a new loop transaction with the specified identity.
     /// </summary>
     /// <param name="id">The stable identity for this loop transaction.</param>
-    public BlueprintLoopTransactionViewModel(Guid id)
+    /// <param name="states">The collection of available blueprint states for resolving state references.</param>
+    public BlueprintLoopTransactionViewModel(Guid id, IEnumerable<BlueprintStateViewModel> states)
     {
         Id = id;
+        _states = states;
     }
 
     /// <summary>
@@ -55,9 +59,9 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     private bool _isSelected;
 
     /// <summary>
-    /// States collection for resolving state references. Set by the parent ViewModel.
+    /// States collection for resolving state references. Set at construction time.
     /// </summary>
-    internal IEnumerable<BlueprintStateViewModel>? _states;
+    private readonly IEnumerable<BlueprintStateViewModel> _states;
 
     /// <summary>
     /// Resolves the <see cref="BlueprintStateViewModel"/> by <see cref="StateId"/>.
@@ -72,7 +76,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// <summary>
     /// Gets the name of the associated state.
     /// </summary>
-    public string? StateName => GetState(_states ?? [])?.Name;
+    public string? StateName => GetState(_states)?.Name;
 
     /// <summary>
     /// Gets the canvas X position of the center of the associated state.
@@ -99,7 +103,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// <summary>
     /// Gets the associated state view model for XAML bindings.
     /// </summary>
-    public BlueprintStateViewModel? State => GetState(_states ?? []);
+    public BlueprintStateViewModel? State => GetState(_states);
 
     /// <summary>
     /// Resolves the canvas center position of a state by its GUID.

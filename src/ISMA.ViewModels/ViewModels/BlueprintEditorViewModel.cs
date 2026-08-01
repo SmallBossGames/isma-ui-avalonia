@@ -480,14 +480,14 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                 var endState = tempStates.FirstOrDefault(s => s.Id == tx.EndStateId);
                 if (startState != null && endState != null)
                 {
-                    var txVm = new BlueprintTransitionViewModel(tx.Id)
+                    var txVm = new BlueprintTransitionViewModel(tx.Id, tempStates)
                     {
                         StartStateId = tx.StartStateId,
                         EndStateId = tx.EndStateId,
                         Predicate = tx.Predicate,
                         Alias = tx.Alias
                     };
-                    txVm._states = tempStates;
+
                     tempTransitions.Add(txVm);
                 }
             }
@@ -500,14 +500,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                 var state = tempStates.FirstOrDefault(s => s.Id == loop.StateId);
                 if (state != null)
                 {
-                    var loopVm = new BlueprintLoopTransactionViewModel(loop.Id)
+                    var loopVm = new BlueprintLoopTransactionViewModel(loop.Id, tempStates)
                     {
                         StateId = loop.StateId,
                         Predicate = loop.Predicate,
                         Alias = loop.Alias,
                         Text = loop.Text
                     };
-                    loopVm._states = tempStates;
                     tempLoopTransactions.Add(loopVm);
                 }
             }
@@ -904,7 +903,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
         else
         {
-            var newTx = new BlueprintTransitionViewModel
+            var newTx = new BlueprintTransitionViewModel(States)
             {
                 StartStateId = firstState.Id,
                 EndStateId = SelectedState.Id,
@@ -1035,7 +1034,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             {
                 if (Transitions.All(t => t.StartStateId != startStateId || t.EndStateId != endStateId || t.Predicate != predicate))
                 {
-                    Transitions.Add(new BlueprintTransitionViewModel
+                    Transitions.Add(new BlueprintTransitionViewModel(States)
                     {
                         StartStateId = startStateId,
                         EndStateId = endStateId,
@@ -1082,14 +1081,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var newLoop = new BlueprintLoopTransactionViewModel(loopModel.Id)
+        var newLoop = new BlueprintLoopTransactionViewModel(loopModel.Id, States)
         {
             StateId = loopModel.StateId,
             Predicate = loopModel.Predicate,
             Alias = loopModel.Alias,
             Text = loopModel.Text
         };
-        newLoop._states = States;
         LoopTransactions.Add(newLoop);
         UpdateCanvasSize();
     }
@@ -1120,7 +1118,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                     // Undo: re-add the loop
                     if (LoopTransactions.All(l => l.StateId != stateId))
                     {
-                        LoopTransactions.Add(new BlueprintLoopTransactionViewModel
+                        LoopTransactions.Add(new BlueprintLoopTransactionViewModel(States)
                         {
                             StateId = stateId,
                             Predicate = predicate,

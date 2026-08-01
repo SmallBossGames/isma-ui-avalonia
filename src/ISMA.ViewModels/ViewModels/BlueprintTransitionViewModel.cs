@@ -29,18 +29,22 @@ public partial class BlueprintTransitionViewModel : ObservableObject
     /// <summary>
     /// Creates a new transition with a generated identity.
     /// </summary>
-    public BlueprintTransitionViewModel()
+    /// <param name="states">The collection of available blueprint states for resolving state references.</param>
+    public BlueprintTransitionViewModel(IEnumerable<BlueprintStateViewModel> states)
     {
         Id = Guid.NewGuid();
+        _states = states;
     }
 
     /// <summary>
     /// Creates a new transition with the specified identity.
     /// </summary>
     /// <param name="id">The stable identity for this transition.</param>
-    public BlueprintTransitionViewModel(Guid id)
+    /// <param name="states">The collection of available blueprint states for resolving state references.</param>
+    public BlueprintTransitionViewModel(Guid id, IEnumerable<BlueprintStateViewModel> states)
     {
         Id = id;
+        _states = states;
     }
 
     /// <summary>
@@ -72,9 +76,9 @@ public partial class BlueprintTransitionViewModel : ObservableObject
     }
 
     /// <summary>
-    /// States collection for resolving state references. Set by the parent ViewModel.
+    /// States collection for resolving state references. Set at construction time.
     /// </summary>
-    internal IEnumerable<BlueprintStateViewModel>? _states;
+    private readonly IEnumerable<BlueprintStateViewModel> _states;
 
     /// <summary>
     /// Resolves the start state from a collection by matching <see cref="StartStateId"/>.
@@ -95,12 +99,12 @@ public partial class BlueprintTransitionViewModel : ObservableObject
     /// <summary>
     /// Gets the start state view model for XAML bindings.
     /// </summary>
-    public BlueprintStateViewModel? StartState => GetStartState(_states ?? []);
+    public BlueprintStateViewModel? StartState => GetStartState(_states);
 
     /// <summary>
     /// Gets the end state view model for XAML bindings.
     /// </summary>
-    public BlueprintStateViewModel? EndState => GetEndState(_states ?? []);
+    public BlueprintStateViewModel? EndState => GetEndState(_states);
 
     /// <summary>
     /// Gets the canvas position of the start state center for arrow rendering.
