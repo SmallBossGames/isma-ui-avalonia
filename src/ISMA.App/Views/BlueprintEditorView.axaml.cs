@@ -180,10 +180,10 @@ public partial class BlueprintEditorView : UserControl
         _vm?.OnStateDoubleClicked(stateVm);
     }
 
-    private void OnStateBoxNameCommitted(object? sender, string? newName)
+    private void OnStateBoxNameCommitted(object? sender, Controls.StateNameCommittedEventArgs e)
     {
         if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
-        _vm?.OnStateNameCommitted(stateVm, newName);
+        e.Handled = _vm?.OnStateNameCommitted(stateVm, e.NewName) ?? false;
     }
 
     private void OnArrowHeadClicked(object? sender, Controls.ArrowHitTestEventArgs e)

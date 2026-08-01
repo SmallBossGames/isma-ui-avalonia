@@ -11,6 +11,25 @@ using ISMA.ViewModels.ViewModels;
 namespace ISMA.App.Controls;
 
 /// <summary>
+/// Event arguments for the <see cref="StateBox.NameCommitted"/> event.
+/// </summary>
+/// <param name="newName">The proposed new name for the state.</param>
+/// <param name="handled">Set to <see langword="true"/> to reject the name change.</param>
+public sealed class StateNameCommittedEventArgs(string? newName, bool handled) : EventArgs
+{
+    /// <summary>
+    /// Gets the proposed new name for the state.
+    /// </summary>
+    public string? NewName { get; } = newName;
+
+    /// <summary>
+    /// Gets or sets whether the name change was handled (rejected).
+    /// Set to <see langword="true"/> to prevent the control from committing the name.
+    /// </summary>
+    public bool Handled { get; set; } = handled;
+}
+
+/// <summary>
 /// A canvas state box control with drag detection and click/disambiguation.
 /// </summary>
 public class StateBox : Control
@@ -126,8 +145,9 @@ public class StateBox : Control
 
     /// <summary>
     /// Raised when the inline name editor commits a new name.
+    /// Set <see cref="StateNameCommittedEventArgs.Handled"/> to <see langword="true"/> to reject the name change.
     /// </summary>
-    public event EventHandler<string?>? NameCommitted;
+    public event EventHandler<StateNameCommittedEventArgs>? NameCommitted;
 
     /// <summary>
     /// Raises the StateClicked event. For testing purposes.
@@ -170,9 +190,13 @@ public class StateBox : Control
     /// <summary>
     /// Raises the NameCommitted event with the given new name. For testing purposes.
     /// </summary>
-    public void RaiseNameCommitted(string? newName)
+    /// <param name="newName">The proposed new name.</param>
+    /// <returns><see langword="true"/> if the name change was rejected (Handled); <see langword="false"/> otherwise.</returns>
+    public bool RaiseNameCommitted(string? newName)
     {
-        NameCommitted?.Invoke(this, newName);
+        var args = new StateNameCommittedEventArgs(newName, false);
+        NameCommitted?.Invoke(this, args);
+        return args.Handled;
     }
 
     static StateBox()
@@ -423,9 +447,11 @@ public class StateBox : Control
             newName = _previousName;
         }
 
-        NameCommitted?.Invoke(this, newName);
+        var args = new StateNameCommittedEventArgs(newName, false);
+        NameCommitted?.Invoke(this, args);
 
-        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        // Only commit the name if the handler did not reject it
+        if (!args.Handled && DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
         {
             stateVm.Name = newName ?? _previousName ?? "";
         }

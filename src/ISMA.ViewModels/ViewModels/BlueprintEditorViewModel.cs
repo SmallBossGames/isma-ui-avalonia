@@ -726,10 +726,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         OpenStateTextEditor(state);
     }
 
-    public void OnStateNameCommitted(BlueprintStateViewModel state, string? newName)
+    public bool OnStateNameCommitted(BlueprintStateViewModel state, string? newName)
     {
         var finalName = string.IsNullOrEmpty(newName) ? state.Name : newName;
-        UpdateStateName(state, finalName);
+        return UpdateStateName(state, finalName);
     }
 
     public void OnArrowHeadClicked(BlueprintTransitionViewModel transition, double clickX, double clickY)
@@ -839,20 +839,21 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         UpdateCanvasSize();
     }
 
-    public void UpdateStateName(BlueprintStateViewModel state, string newName)
+    public bool UpdateStateName(BlueprintStateViewModel state, string newName)
     {
         if (state.IsMain || state.IsInit)
-            return;
+            return false;
 
         var oldName = state.Name;
         if (oldName == newName)
-            return;
+            return false;
 
         if (!_nameMonitor.TryRegister(newName))
-            return;
+            return false;
 
         _nameMonitor.TryUnregister(oldName);
         state.Name = newName;
+        return true;
     }
 
     private bool HasDuplicateTransition(Guid startStateId, Guid endStateId)
