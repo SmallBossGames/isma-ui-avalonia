@@ -308,14 +308,30 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public void OnPopOverAliasChanged()
     {
-        if (_currentEditingTransition == null || PopOverViewModel == null) return;
-        _currentEditingTransition.Alias = PopOverViewModel.Alias ?? "";
+        if (PopOverViewModel == null) return;
+
+        if (_currentEditingTransition != null)
+        {
+            _currentEditingTransition.Alias = PopOverViewModel.Alias ?? "";
+        }
+        else if (_currentEditingLoop != null)
+        {
+            _currentEditingLoop.Alias = PopOverViewModel.Alias ?? "";
+        }
     }
 
     public void OnPopOverPredicateChanged()
     {
-        if (_currentEditingTransition == null || PopOverViewModel == null) return;
-        _currentEditingTransition.Predicate = PopOverViewModel.Predicate ?? "";
+        if (PopOverViewModel == null) return;
+
+        if (_currentEditingTransition != null)
+        {
+            _currentEditingTransition.Predicate = PopOverViewModel.Predicate ?? "";
+        }
+        else if (_currentEditingLoop != null)
+        {
+            _currentEditingLoop.Predicate = PopOverViewModel.Predicate ?? "";
+        }
     }
 
     private BlueprintStateViewModel? _draggingState;
