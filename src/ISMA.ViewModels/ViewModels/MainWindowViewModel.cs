@@ -131,9 +131,10 @@ public partial class MainWindowViewModel : ObservableObject
 
         project.Name = title;
         project.FullText = loop.Text;
+        var capturedLoop = loop;
         project.OnBeforeDispose = () =>
         {
-            loop.Text = project.FullText;
+            capturedLoop.Text = project.FullText;
             _loopTextEditorTabs.RemoveAll(t => t.project == project);
         };
 

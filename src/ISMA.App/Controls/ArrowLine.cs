@@ -171,6 +171,42 @@ public class ArrowLine : Control
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        var start = StartStatePosition;
+        var end = EndStatePosition;
+
+        if (start.HasValue && end.HasValue)
+        {
+            var minX = Math.Min(start.Value.X, end.Value.X);
+            var minY = Math.Min(start.Value.Y, end.Value.Y);
+            var maxX = Math.Max(start.Value.X, end.Value.X);
+            var maxY = Math.Max(start.Value.Y, end.Value.Y);
+
+            var padding = Math.Max(ArrowheadSize * 4, TextOffsetX + 20);
+            var width = Math.Max(200, (maxX - minX) + padding * 2);
+            var height = Math.Max(200, (maxY - minY) + padding * 2);
+
+            return new Size(width, height);
+        }
+
+        if (StartStateId != null && EndStateId != null && PositionResolver != null)
+        {
+            var s = PositionResolver(StartStateId.Value);
+            var e = PositionResolver(EndStateId.Value);
+            if (s.HasValue && e.HasValue)
+            {
+            var minX = Math.Min(s.Value.X, e.Value.X);
+            var minY = Math.Min(s.Value.Y, e.Value.Y);
+            var maxX = Math.Max(s.Value.X, e.Value.X);
+            var maxY = Math.Max(s.Value.Y, e.Value.Y);
+
+            var padding = Math.Max(ArrowheadSize * 4, TextOffsetX + 20);
+            var width = Math.Max(200, (maxX - minX) + padding * 2);
+            var height = Math.Max(200, (maxY - minY) + padding * 2);
+
+                return new Size(width, height);
+            }
+        }
+
         return new Size(200, 200);
     }
 
@@ -186,10 +222,10 @@ public class ArrowLine : Control
         var start = GetStartCenter();
         var end = GetEndCenter();
 
-        if (start == default || end == default) return;
+        if (!start.HasValue || !end.HasValue) return;
 
-        var dx = end.X - start.X;
-        var dy = end.Y - start.Y;
+        var dx = end.Value.X - start.Value.X;
+        var dy = end.Value.Y - start.Value.Y;
         var length = Math.Sqrt(dx * dx + dy * dy);
         if (length < 1.0) return;
 
@@ -202,8 +238,8 @@ public class ArrowLine : Control
         var offsetY = ArrowOffset * cos;
 
         // Line endpoints with perpendicular offset
-        var startOffset = new Point(start.X + offsetX, start.Y + offsetY);
-        var endOffset = new Point(end.X + offsetX, end.Y + offsetY);
+        var startOffset = new Point(start.Value.X + offsetX, start.Value.Y + offsetY);
+        var endOffset = new Point(end.Value.X + offsetX, end.Value.Y + offsetY);
 
         // Draw line with spec stroke width
         context.DrawLine(new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), startOffset, endOffset);
@@ -253,32 +289,30 @@ public class ArrowLine : Control
         context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
-    private Point GetStartCenter()
+    private Point? GetStartCenter()
     {
         if (StartStatePosition.HasValue)
-            return StartStatePosition.Value;
+            return StartStatePosition;
 
         if (StartStateId != null && PositionResolver != null)
         {
-            var center = PositionResolver(StartStateId.Value);
-            return center ?? default;
+            return PositionResolver(StartStateId.Value);
         }
 
-        return default;
+        return null;
     }
 
-    private Point GetEndCenter()
+    private Point? GetEndCenter()
     {
         if (EndStatePosition.HasValue)
-            return EndStatePosition.Value;
+            return EndStatePosition;
 
         if (EndStateId != null && PositionResolver != null)
         {
-            var center = PositionResolver(EndStateId.Value);
-            return center ?? default;
+            return PositionResolver(EndStateId.Value);
         }
 
-        return default;
+        return null;
     }
 
     private Point GetCenter(Guid id)
@@ -313,10 +347,10 @@ public class ArrowLine : Control
         var start = GetStartCenter();
         var end = GetEndCenter();
 
-        if (start == default || end == default) return;
+        if (!start.HasValue || !end.HasValue) return;
 
-        var dx = end.X - start.X;
-        var dy = end.Y - start.Y;
+        var dx = end.Value.X - start.Value.X;
+        var dy = end.Value.Y - start.Value.Y;
         var length = Math.Sqrt(dx * dx + dy * dy);
 
         if (length < 1.0) return;
@@ -325,7 +359,7 @@ public class ArrowLine : Control
         var angle = Math.Atan2(dx, dy) + Math.PI / 2;
         var offsetX = ArrowOffset * Math.Sin(angle);
         var offsetY = ArrowOffset * Math.Cos(angle);
-        var endOffset = new Point(end.X + offsetX, end.Y + offsetY);
+        var endOffset = new Point(end.Value.X + offsetX, end.Value.Y + offsetY);
 
         var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - endOffset.X, 2) + Math.Pow(position.Y - endOffset.Y, 2));
 

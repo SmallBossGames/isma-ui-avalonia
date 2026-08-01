@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -48,6 +49,7 @@ public partial class BlueprintEditorView : UserControl
         vm.StateTextEditorRequested += OnStateTextEditorRequested;
         vm.LoopTextEditorRequested += OnLoopTextEditorRequested;
         vm.SaveProjectRequested += OnSaveProjectRequested;
+        vm.PropertyChanged += OnVmPropertyChanged;
     }
 
     private void Unsubscribe(BlueprintEditorViewModel vm)
@@ -56,7 +58,16 @@ public partial class BlueprintEditorView : UserControl
         vm.StateTextEditorRequested -= OnStateTextEditorRequested;
         vm.LoopTextEditorRequested -= OnLoopTextEditorRequested;
         vm.SaveProjectRequested -= OnSaveProjectRequested;
+        vm.PropertyChanged -= OnVmPropertyChanged;
         _vm = null;
+    }
+
+    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BlueprintEditorViewModel.PopOverViewModel) && _popOverView != null)
+        {
+            _popOverView.DataContext = _vm?.PopOverViewModel;
+        }
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -74,19 +85,28 @@ public partial class BlueprintEditorView : UserControl
     {
         if (_popOverView == null) return;
 
+        var savedDataContext = _popOverView.DataContext;
+
+        double left = x;
         if (EditArrowPopup.Child is Canvas parentCanvas)
         {
-            Canvas.SetLeft(_popOverView, x);
+            var popOverWidth = _popOverView.DesiredSize.Width;
+            left = x - popOverWidth / 2;
+            Canvas.SetLeft(_popOverView, left);
             Canvas.SetTop(_popOverView, y);
         }
         else
         {
+            var popOverWidth = _popOverView.DesiredSize.Width;
+            left = x - popOverWidth / 2;
             var canvas = new Canvas();
             canvas.Children.Add(_popOverView);
-            Canvas.SetLeft(_popOverView, x);
+            Canvas.SetLeft(_popOverView, left);
             Canvas.SetTop(_popOverView, y);
             EditArrowPopup.Child = canvas;
         }
+
+        _popOverView.DataContext = savedDataContext;
     }
 
     private void OnCanvasKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
@@ -200,11 +220,27 @@ public partial class BlueprintEditorView : UserControl
         if (tx != null) _vm?.OnArrowBodyClicked(tx);
     }
 
+    private Point? _loopArrowClickPosition;
+
     private void OnLoopArrowHeadClickedEvent(object? sender, Controls.ArrowHitTestEventArgs e)
     {
         if (sender is not Controls.LoopArrow arrow) return;
         var loop = GetLoop(arrow);
-        if (loop != null) _vm?.OnLoopArrowHeadClicked(loop);
+        if (loop != null)
+        {
+            _loopArrowClickPosition = e.ClickPosition;
+            _vm?.OnLoopArrowHeadClicked(loop);
+        }
+    }
+
+    private void OnLoopArrowDoubleClick(object? sender, Controls.ArrowHitTestEventArgs e)
+    {
+        if (sender is not Controls.LoopArrow arrow) return;
+        var loop = GetLoop(arrow);
+        if (loop != null)
+        {
+            _vm?.OpenLoopTextEditor(loop);
+        }
     }
 
     private void OnLoopArrowEditRequested(BlueprintLoopTransactionViewModel loop)
@@ -218,10 +254,14 @@ public partial class BlueprintEditorView : UserControl
     {
         if (_popOverView == null) return;
 
+        _popOverView.DataContext = _vm?.PopOverViewModel;
+
         if (EditArrowPopup.Child is Canvas parentCanvas)
         {
-            Canvas.SetLeft(_popOverView, 100);
-            Canvas.SetTop(_popOverView, 100);
+            var pos = _loopArrowClickPosition ?? new Point(100, 100);
+            var popOverWidth = _popOverView.DesiredSize.Width;
+            Canvas.SetLeft(_popOverView, pos.X - popOverWidth / 2);
+            Canvas.SetTop(_popOverView, pos.Y);
         }
     }
 

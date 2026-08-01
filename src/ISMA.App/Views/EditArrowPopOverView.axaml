@@ -11,8 +11,7 @@
             Background="White"
             BorderBrush="#D3D3D3"
             BorderThickness="1"
-            BoxShadow="0 0 20 5 #D3D3D3"
-            PointerExited="OnPointerExited">
+            BoxShadow="0 0 20 5 #D3D3D3">
         <StackPanel Spacing="8">
             <TextBlock Text="Edit Transition"
                        FontWeight="Bold"

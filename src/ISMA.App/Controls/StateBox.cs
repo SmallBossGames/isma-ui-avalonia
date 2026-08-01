@@ -41,11 +41,13 @@ public class StateBox : Control
 
     private bool _isDragging;
     private Point _pointerDownPosition;
+    private bool _wasDragging;
+    private Avalonia.Input.IPointer? _pointerDownPointer;
+    private Point _lastPointerPosition;
     private double _pointerDownCanvasPositionX;
     private double _pointerDownCanvasPositionY;
     private DispatcherTimer? _singleClickTimer;
     private string? _previousName;
-    private bool _timerFired;
 
     public new static readonly StyledProperty<string?> NameProperty =
         AvaloniaProperty.Register<StateBox, string?>(nameof(Name));
@@ -261,10 +263,11 @@ public class StateBox : Control
         }
 
         _pointerDownPosition = e.GetPosition(this);
+        _pointerDownPointer = e.Pointer;
+        _lastPointerPosition = _pointerDownPosition;
         _pointerDownCanvasPositionX = CanvasPositionX;
         _pointerDownCanvasPositionY = CanvasPositionY;
         _isDragging = false;
-        _timerFired = false;
 
         _singleClickTimer?.Stop();
         _singleClickTimer?.Start();
@@ -279,6 +282,7 @@ public class StateBox : Control
         base.OnPointerMoved(e);
 
         var position = e.GetPosition(this);
+        _lastPointerPosition = position;
         var dx = position.X - _pointerDownPosition.X;
         var dy = position.Y - _pointerDownPosition.Y;
         var distance = Math.Sqrt(dx * dx + dy * dy);
@@ -286,22 +290,15 @@ public class StateBox : Control
         if (!_isDragging && distance > DragThreshold)
         {
             _isDragging = true;
+            _wasDragging = true;
             _singleClickTimer?.Stop();
-            _pointerDownCanvasPositionX = CanvasPositionX;
-            _pointerDownCanvasPositionY = CanvasPositionY;
+            e.Pointer.Capture(this);
         }
 
         if (_isDragging && DataContext is not null)
         {
             CanvasPositionX = Math.Max(0.0, _pointerDownCanvasPositionX + dx);
             CanvasPositionY = Math.Max(0.0, _pointerDownCanvasPositionY + dy);
-
-            // Sync to ViewModel during drag for real-time arrow updates
-            if (DataContext is BlueprintStateViewModel stateVm)
-            {
-                stateVm.CanvasPositionX = CanvasPositionX;
-                stateVm.CanvasPositionY = CanvasPositionY;
-            }
         }
     }
 
@@ -309,37 +306,40 @@ public class StateBox : Control
     {
         base.OnPointerReleased(e);
 
+        _pointerDownPointer?.Capture(null);
+
         if (_isDragging)
         {
             SyncPositionToViewModel();
             StateReleased?.Invoke(this, e);
             _isDragging = false;
+            _wasDragging = false;
             _pointerDownPosition = default;
         }
         else
         {
             _singleClickTimer?.Stop();
 
-            if (!_timerFired)
+            if (DataContext is not null && !_wasDragging)
             {
                 StateClicked?.Invoke(this, new RoutedEventArgs());
-
-                var position = e.GetPosition(this);
-                var dx = position.X - _pointerDownPosition.X;
-                var dy = position.Y - _pointerDownPosition.Y;
-                var distance = Math.Sqrt(dx * dx + dy * dy);
-
-                if (distance <= DragThreshold)
-                {
-                    SelectState();
-                }
+                SelectState();
             }
 
             _isDragging = false;
+            _wasDragging = false;
             _pointerDownPosition = default;
         }
 
         e.Handled = true;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _isDragging = false;
+        _wasDragging = false;
+        _singleClickTimer?.Stop();
     }
 
     private void SelectState()
@@ -366,7 +366,11 @@ public class StateBox : Control
         if (_isDragging)
             return;
 
-        _timerFired = true;
+        var dx = _lastPointerPosition.X - _pointerDownPosition.X;
+        var dy = _lastPointerPosition.Y - _pointerDownPosition.Y;
+        var distance = Math.Sqrt(dx * dx + dy * dy);
+        if (distance > DragThreshold)
+            return;
 
         if (!IsEditable)
             return;
@@ -380,42 +384,53 @@ public class StateBox : Control
         EnterInlineEditMode();
     }
 
-    private Panel? _inlineEditPanel;
+    private Canvas? _inlineEditCanvas;
+    private Canvas? _inlineEditOverlay;
     private TextBox? _inlineEditTextBox;
 
     private void EnterInlineEditMode()
     {
         _previousName = Name;
 
-        var parent = Parent;
-        while (parent is not null)
+        var canvas = Parent;
+        while (canvas is not null && canvas is not Canvas)
         {
-            if (parent is Panel panel)
-            {
-                var textBox = new TextBox
-                {
-                    Text = Name,
-                    FontSize = 16,
-                    FontWeight = Avalonia.Media.FontWeight.Bold,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    Width = 90,
-                    MaxWidth = 90
-                };
-
-                textBox.KeyDown += OnTextBoxKeyDown;
-                textBox.LostFocus += OnTextBoxLostFocus;
-
-                panel.Children.Insert(0, textBox);
-                _inlineEditPanel = panel;
-                _inlineEditTextBox = textBox;
-                _singleClickTimer?.Stop();
-                textBox.Focus();
-                textBox.SelectAll();
-                return;
-            }
-            parent = parent.Parent;
+            canvas = canvas.Parent;
         }
+
+        if (canvas is not Canvas parentCanvas)
+            return;
+
+        var textBox = new TextBox
+        {
+            Text = Name,
+            FontSize = 16,
+            FontWeight = Avalonia.Media.FontWeight.Bold,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Width = 90,
+            MaxWidth = 90
+        };
+
+        textBox.KeyDown += OnTextBoxKeyDown;
+        textBox.LostFocus += OnTextBoxLostFocus;
+
+        var overlay = new Canvas
+        {
+            Background = null
+        };
+        Canvas.SetLeft(overlay, CanvasPositionX);
+        Canvas.SetTop(overlay, CanvasPositionY);
+        overlay.ZIndex = 10;
+        overlay.Children.Add(textBox);
+
+        _inlineEditCanvas = parentCanvas;
+        _inlineEditOverlay = overlay;
+        _inlineEditTextBox = textBox;
+        _singleClickTimer?.Stop();
+        parentCanvas.Children.Add(overlay);
+        textBox.Focus();
+        textBox.SelectAll();
     }
 
     private void OnTextBoxKeyDown(object? sender, KeyEventArgs e)
@@ -450,10 +465,16 @@ public class StateBox : Control
         var args = new StateNameCommittedEventArgs(newName, false);
         NameCommitted?.Invoke(this, args);
 
-        // Only commit the name if the handler did not reject it
-        if (!args.Handled && DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
         {
-            stateVm.Name = newName ?? _previousName ?? "";
+            if (args.Handled)
+            {
+                stateVm.Name = _previousName ?? "";
+            }
+            else
+            {
+                stateVm.Name = newName ?? _previousName ?? "";
+            }
         }
 
         ExitInlineEditMode(textBox);
@@ -481,21 +502,23 @@ public class StateBox : Control
         textBox.KeyDown -= OnTextBoxKeyDown;
         textBox.LostFocus -= OnTextBoxLostFocus;
 
-        if (_inlineEditPanel != null)
+        if (_inlineEditOverlay != null && _inlineEditCanvas != null)
         {
-            _inlineEditPanel.Children.Remove(textBox);
+            _inlineEditCanvas.Children.Remove(_inlineEditOverlay);
         }
 
-        _inlineEditPanel = null;
+        _inlineEditCanvas = null;
+        _inlineEditOverlay = null;
         _inlineEditTextBox = null;
         _previousName = null;
     }
 
     private TextBox? FindTextBox()
     {
-        if (_inlineEditTextBox != null && _inlineEditPanel != null)
+        if (_inlineEditTextBox != null && _inlineEditOverlay != null && _inlineEditCanvas != null)
         {
-            if (_inlineEditPanel.Children.Contains(_inlineEditTextBox))
+            if (_inlineEditCanvas.Children.Contains(_inlineEditOverlay) &&
+                _inlineEditOverlay.Children.Contains(_inlineEditTextBox))
                 return _inlineEditTextBox;
         }
         return null;

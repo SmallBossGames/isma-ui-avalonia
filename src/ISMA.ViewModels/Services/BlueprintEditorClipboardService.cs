@@ -62,6 +62,11 @@ public class BlueprintClipboardService : IBlueprintClipboardService
 
         foreach (var originalState in _clipboardData.States)
         {
+            var fillColor = originalState.FillColor;
+            var newFillColor = fillColor is Avalonia.Media.SolidColorBrush solidBrush
+                ? new Avalonia.Media.SolidColorBrush(solidBrush.Color)
+                : fillColor;
+
             var newState = new BlueprintStateViewModel
             {
                 Id = Guid.NewGuid(),
@@ -72,7 +77,7 @@ public class BlueprintClipboardService : IBlueprintClipboardService
                 IsEditable = true,
                 IsMain = false,
                 IsInit = false,
-                FillColor = originalState.FillColor,
+                FillColor = newFillColor,
                 StateHeight = originalState.StateHeight
             };
 

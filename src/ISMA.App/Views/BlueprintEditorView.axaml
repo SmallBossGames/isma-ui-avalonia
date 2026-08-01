@@ -63,8 +63,8 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerTheme>
                         <ControlTheme TargetType="ContentControl" x:DataType="vm:BlueprintTransitionViewModel">
-                            <Setter Property="Canvas.Left" Value="{Binding StartState.CanvasPositionX}"/>
-                            <Setter Property="Canvas.Top" Value="{Binding StartState.CanvasPositionY}"/>
+                            <Setter Property="Canvas.Left" Value="0"/>
+                            <Setter Property="Canvas.Top" Value="0"/>
                         </ControlTheme>
                     </ItemsControl.ItemContainerTheme>
                     <ItemsControl.ItemTemplate>
@@ -93,8 +93,8 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerTheme>
                         <ControlTheme TargetType="ContentControl" x:DataType="vm:BlueprintLoopTransactionViewModel">
-                            <Setter Property="Canvas.Left" Value="{Binding State.CanvasPositionX}"/>
-                            <Setter Property="Canvas.Top" Value="{Binding State.CanvasPositionY}"/>
+                            <Setter Property="Canvas.Left" Value="0"/>
+                            <Setter Property="Canvas.Top" Value="0"/>
                         </ControlTheme>
                     </ItemsControl.ItemContainerTheme>
                     <ItemsControl.ItemTemplate>
@@ -104,8 +104,9 @@
                                                 PositionResolver="{Binding PositionResolver}"
                                                 Alias="{Binding Alias}"
                                                 Predicate="{Binding Predicate}"
-                                                LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
-                                                LoopBodyClicked="OnLoopBodyClicked"/>
+                                                 LoopArrowHeadClicked="OnLoopArrowHeadClickedEvent"
+                                                 LoopArrowDoubleClick="OnLoopArrowDoubleClick"
+                                                 LoopBodyClicked="OnLoopBodyClicked"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -118,7 +119,7 @@
                                    Canvas.Left="{Binding MainState.CanvasPositionX}"
                                    Canvas.Top="{Binding MainState.CanvasPositionY}"
                                    IsEditable="{Binding MainState.IsEditable}"
-                                   IsEnabled="{Binding MainState.IsEnabled}"
+                                    IsEnabled="True"
                                    StateHeight="{Binding MainState.StateHeight}"
                                    Name="{Binding MainState.Name}"
                                    CanvasPositionX="{Binding MainState.CanvasPositionX, Mode=TwoWay}"
@@ -138,7 +139,7 @@
                                    Canvas.Left="{Binding InitState.CanvasPositionX}"
                                    Canvas.Top="{Binding InitState.CanvasPositionY}"
                                    IsEditable="{Binding InitState.IsEditable}"
-                                   IsEnabled="{Binding InitState.IsEnabled}"
+                                    IsEnabled="True"
                                    StateHeight="{Binding InitState.StateHeight}"
                                    Name="{Binding InitState.Name}"
                                    CanvasPositionX="{Binding InitState.CanvasPositionX, Mode=TwoWay}"
@@ -230,7 +231,6 @@
                IsOpen="{Binding IsPopOverOpen}"
                IsLightDismissEnabled="True"
                VerticalOffset="2">
-            <ContentControl DataContext="{Binding PopOverViewModel}"/>
         </Popup>
     </Grid>
 

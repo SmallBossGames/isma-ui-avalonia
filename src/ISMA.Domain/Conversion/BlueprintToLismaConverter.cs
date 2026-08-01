@@ -67,8 +67,8 @@ public static class BlueprintToLismaConverter
             regions.Add(new CodeRegion(state.Name, stateStart, lineIndex - 1));
         }
 
-        // Transactions - group by target state and alias/predicate
-        var transactionGroups = new Dictionary<string, (string startState, List<(string predicate, string alias)>)>();
+        // Transactions - group by target state and predicate, collecting all source states
+        var transactionGroups = new Dictionary<string, (List<string> startStates, List<(string predicate, string alias)>)>();
         foreach (var tx in model.Transactions)
         {
             if (tx.StartStateId == Guid.Empty || tx.EndStateId == Guid.Empty)
@@ -79,26 +79,56 @@ public static class BlueprintToLismaConverter
                 continue;
 
             var displayKey = !string.IsNullOrEmpty(tx.Alias) ? tx.Alias : CreateTransactionKey(endStateName, tx.Predicate);
-            var key = CreateTransactionKey(endStateName, tx.Predicate);
+            var groupKey = CreateTransactionKey(endStateName, tx.Predicate);
 
-            if (!transactionGroups.TryGetValue(key, out var group))
+            if (!transactionGroups.TryGetValue(groupKey, out var group))
             {
-                group = (startStateName, new List<(string predicate, string alias)>());
-                transactionGroups[key] = group;
+                group = (new List<string>(), new List<(string predicate, string alias)>());
+                transactionGroups[groupKey] = group;
             }
+
+            // Add start state if not already present
+            if (!group.Item1.Contains(startStateName))
+                group.Item1.Add(startStateName);
+
             group.Item2.Add((tx.Predicate, tx.Alias ?? ""));
         }
 
-        foreach (var (key, (startState, transactions)) in transactionGroups)
+        foreach (var (groupKey, (startStates, transactions)) in transactionGroups)
         {
             var txLines = new List<string>();
-            // Use the display key (alias if available, otherwise targetState (predicate))
             var displayKey = transactions.Count == 1 && !string.IsNullOrEmpty(transactions[0].alias)
                 ? transactions[0].alias
-                : key;
+                : groupKey;
+
+            // Extract target state name from key (format: "TargetState (predicate)")
+            var parenIndex = groupKey.LastIndexOf(" (");
+            var targetStateName = parenIndex > 0 ? groupKey.Substring(0, parenIndex) : groupKey;
+
+            // Find target state model for body text
+            BlueprintStateModel? targetStateModel = null;
+            foreach (var tx in model.Transactions)
+            {
+                if (tx.EndStateId != Guid.Empty && stateMap.ContainsKey(tx.EndStateId) && stateMap[tx.EndStateId] == targetStateName)
+                {
+                    targetStateModel = model.States.FirstOrDefault(s => s.Id == tx.EndStateId);
+                    if (targetStateModel != null) break;
+                }
+            }
+
             txLines.Add($"state \"{displayKey}\" {{");
-            txLines.Add($"  from {startState};");
-            txLines.Add("}");
+
+            // Include target state body text
+            if (targetStateModel != null && !string.IsNullOrWhiteSpace(targetStateModel.Text))
+            {
+                foreach (var line in targetStateModel.Text.Split('\n'))
+                    txLines.Add(line.TrimEnd());
+            }
+
+            // Close state and add from clause with comma-separated sources on same line
+            var sourceStateList = string.Join(",", startStates);
+            txLines.Add($"}} from {sourceStateList};");
+
             var txStart = lineIndex;
             lines.AddRange(txLines);
             lineIndex += txLines.Count;

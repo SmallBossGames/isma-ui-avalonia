@@ -92,6 +92,11 @@ public class LoopArrow : Control
     /// </summary>
     public event EventHandler<ArrowHitTestEventArgs>? LoopBodyClicked;
 
+    /// <summary>
+    /// Raised when the loop arrowhead is double-clicked.
+    /// </summary>
+    public event EventHandler<ArrowHitTestEventArgs>? LoopArrowDoubleClick;
+
     static LoopArrow()
     {
         AffectsRender<LoopArrow>(StateIdProperty, StatePositionProperty, PositionResolverProperty, AliasProperty, PredicateProperty);
@@ -99,6 +104,20 @@ public class LoopArrow : Control
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        var center = GetCenter();
+        if (center != default)
+        {
+            var circleCenterX = center.X + LoopCircleCenterX;
+            var arrowheadX = circleCenterX + LoopArrowheadX;
+            var labelX = circleCenterX + LoopLabelX;
+            var maxExtentX = Math.Max(arrowheadX, labelX) + ArrowheadSize;
+            var maxExtentY = center.Y + LoopRadius + ArrowheadSize;
+            var minExtentX = center.X - LoopRadius - ArrowheadSize;
+            var minExtentY = center.Y - LoopRadius * 2 - ArrowheadSize;
+            return new Size(
+                Math.Max(200, maxExtentX - minExtentX),
+                Math.Max(200, maxExtentY - minExtentY));
+        }
         return new Size(200, 200);
     }
 
@@ -172,6 +191,13 @@ public class LoopArrow : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+
+        if (e.ClickCount > 1)
+        {
+            LoopArrowDoubleClick?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, e.GetPosition(this)));
+            e.Handled = true;
+            return;
+        }
 
         var center = GetCenter();
         if (center == default) return;

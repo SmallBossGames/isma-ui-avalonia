@@ -8,11 +8,20 @@ public partial class BlueprintStateViewModel : ObservableObject, ISnapPosition
     [ObservableProperty]
     private Guid _id = Guid.NewGuid();
 
-    [ObservableProperty]
     private double _canvasPositionX;
-
-    [ObservableProperty]
     private double _canvasPositionY;
+
+    public double CanvasPositionX
+    {
+        get => _canvasPositionX;
+        set => SetProperty(ref _canvasPositionX, Math.Max(0, value));
+    }
+
+    public double CanvasPositionY
+    {
+        get => _canvasPositionY;
+        set => SetProperty(ref _canvasPositionY, Math.Max(0, value));
+    }
 
     [ObservableProperty]
     private string _name = "";

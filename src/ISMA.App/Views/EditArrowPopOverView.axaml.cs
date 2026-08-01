@@ -1,7 +1,6 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using ISMA.ViewModels.ViewModels;
 
@@ -70,11 +69,6 @@ public partial class EditArrowPopOverView : UserControl
         {
             PredicateChanged?.Invoke();
         }
-    }
-
-    private void OnPointerExited(object? sender, PointerEventArgs e)
-    {
-        DismissRequested?.Invoke();
     }
 
     private void OnOkClick(object? sender, RoutedEventArgs e)
