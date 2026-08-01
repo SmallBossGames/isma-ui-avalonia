@@ -1095,6 +1095,11 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             PushUndo($"Remove loop",
                 () =>
                 {
+                    // Redo: remove again (no-op since already removed synchronously)
+                },
+                () =>
+                {
+                    // Undo: re-add the loop
                     if (LoopTransactions.All(l => l.StateId != stateId))
                     {
                         LoopTransactions.Add(new BlueprintLoopTransactionViewModel
@@ -1103,14 +1108,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                             Predicate = predicate,
                             Alias = alias
                         });
-                    }
-                },
-                () =>
-                {
-                    var loop = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
-                    if (loop != null)
-                    {
-                        LoopTransactions.Remove(loop);
                     }
                 });
         }

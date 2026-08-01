@@ -34,4 +34,4 @@ private void RemoveLoop()
 
 ~~**Impact:** Removing a loop transaction is not reversible via Undo. This is inconsistent with the behavior of removing states and transitions, which are undoable. Users lose data when they accidentally remove a loop.~~
 
-The `RemoveLoop` method now calls `PushUndo` with proper execute/undo callbacks, consistent with `RemoveState` and `RemoveTransition`.
+The `RemoveLoop` method calls `PushUndo` with proper execute/undo callbacks, consistent with `RemoveState` and `RemoveTransition`. The `execute` callback is a no-op (since removal happens synchronously before `PushUndo`), and the `undo` callback re-adds the loop transaction.
