@@ -1087,33 +1087,36 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var loopToRemove = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
         if (loopToRemove != null)
         {
+            var alias = loopToRemove.Alias ?? "";
+            var predicate = loopToRemove.Predicate ?? "";
+
             LoopTransactions.Remove(loopToRemove);
+
+            PushUndo($"Remove loop",
+                () =>
+                {
+                    if (LoopTransactions.All(l => l.StateId != stateId))
+                    {
+                        LoopTransactions.Add(new BlueprintLoopTransactionViewModel
+                        {
+                            StateId = stateId,
+                            Predicate = predicate,
+                            Alias = alias
+                        });
+                    }
+                },
+                () =>
+                {
+                    var loop = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
+                    if (loop != null)
+                    {
+                        LoopTransactions.Remove(loop);
+                    }
+                });
         }
 
         SelectedState = null;
         Mode = new EditorMode.Default();
-
-        PushUndo($"Remove loop",
-            () =>
-            {
-                if (LoopTransactions.All(l => l.StateId != stateId))
-                {
-                    LoopTransactions.Add(new BlueprintLoopTransactionViewModel
-                    {
-                        StateId = stateId,
-                        Predicate = "",
-                        Alias = ""
-                    });
-                }
-            },
-            () =>
-            {
-                var loop = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
-                if (loop != null)
-                {
-                    LoopTransactions.Remove(loop);
-                }
-            });
     }
 
     public void SetBlueprintModel(BlueprintModel model)
