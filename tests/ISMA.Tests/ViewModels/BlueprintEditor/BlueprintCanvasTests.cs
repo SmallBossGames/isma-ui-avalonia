@@ -100,10 +100,10 @@ public class BlueprintCanvasTests
         var viewModel = CreateViewModel();
 
         var mainState = viewModel.MainState;
-        mainState.StateHeight.Should().Be(60);
+        mainState.StateHeight.Should().Be(65);
 
         var initState = viewModel.InitState;
-        initState.StateHeight.Should().Be(60);
+        initState.StateHeight.Should().Be(65);
 
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);

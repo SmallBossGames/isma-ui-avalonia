@@ -81,38 +81,38 @@ public class ArrowLine : Control
         set => SetValue(EndStateIdProperty, value);
     }
 
-    public static readonly StyledProperty<Point?> StartStatePositionProperty =
-        AvaloniaProperty.Register<ArrowLine, Point?>(nameof(StartStatePosition));
+    public static readonly StyledProperty<(double X, double Y)?> StartStatePositionProperty =
+        AvaloniaProperty.Register<ArrowLine, (double X, double Y)?>(nameof(StartStatePosition));
 
     /// <summary>
     /// Canvas position of the start state. When set, used for rendering instead of PositionResolver.
     /// </summary>
-    public Point? StartStatePosition
+    public (double X, double Y)? StartStatePosition
     {
         get => GetValue(StartStatePositionProperty);
         set => SetValue(StartStatePositionProperty, value);
     }
 
-    public static readonly StyledProperty<Point?> EndStatePositionProperty =
-        AvaloniaProperty.Register<ArrowLine, Point?>(nameof(EndStatePosition));
+    public static readonly StyledProperty<(double X, double Y)?> EndStatePositionProperty =
+        AvaloniaProperty.Register<ArrowLine, (double X, double Y)?>(nameof(EndStatePosition));
 
     /// <summary>
     /// Canvas position of the end state. When set, used for rendering instead of PositionResolver.
     /// </summary>
-    public Point? EndStatePosition
+    public (double X, double Y)? EndStatePosition
     {
         get => GetValue(EndStatePositionProperty);
         set => SetValue(EndStatePositionProperty, value);
     }
 
-    public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
-        AvaloniaProperty.Register<ArrowLine, Func<Guid, Point?>?>(nameof(PositionResolver));
+    public static readonly StyledProperty<Func<Guid, (double X, double Y)?>?> PositionResolverProperty =
+        AvaloniaProperty.Register<ArrowLine, Func<Guid, (double X, double Y)?>?>(nameof(PositionResolver));
 
     /// <summary>
     /// Resolves a state center point by its Guid. Returns null if not found.
     /// Used as fallback when StartStatePosition/EndStatePosition are not set.
     /// </summary>
-    public Func<Guid, Point?>? PositionResolver
+    public Func<Guid, (double X, double Y)?>? PositionResolver
     {
         get => GetValue(PositionResolverProperty);
         set => SetValue(PositionResolverProperty, value);
@@ -289,7 +289,7 @@ public class ArrowLine : Control
         context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
-    private Point? GetStartCenter()
+    private (double X, double Y)? GetStartCenter()
     {
         if (StartStatePosition.HasValue)
             return StartStatePosition;
@@ -302,7 +302,7 @@ public class ArrowLine : Control
         return null;
     }
 
-    private Point? GetEndCenter()
+    private (double X, double Y)? GetEndCenter()
     {
         if (EndStatePosition.HasValue)
             return EndStatePosition;
@@ -315,7 +315,7 @@ public class ArrowLine : Control
         return null;
     }
 
-    private Point GetCenter(Guid id)
+    private (double X, double Y) GetCenter(Guid id)
     {
         if (PositionResolver == null)
             return default;

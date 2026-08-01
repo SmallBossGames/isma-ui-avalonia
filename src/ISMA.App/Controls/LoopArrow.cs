@@ -39,26 +39,26 @@ public class LoopArrow : Control
         set => SetValue(StateIdProperty, value);
     }
 
-    public static readonly StyledProperty<Point?> StatePositionProperty =
-        AvaloniaProperty.Register<LoopArrow, Point?>(nameof(StatePosition));
+    public static readonly StyledProperty<(double X, double Y)?> StatePositionProperty =
+        AvaloniaProperty.Register<LoopArrow, (double X, double Y)?>(nameof(StatePosition));
 
     /// <summary>
     /// Canvas position of the associated state. When set, used for rendering instead of PositionResolver.
     /// </summary>
-    public Point? StatePosition
+    public (double X, double Y)? StatePosition
     {
         get => GetValue(StatePositionProperty);
         set => SetValue(StatePositionProperty, value);
     }
 
-    public static readonly StyledProperty<Func<Guid, Point?>?> PositionResolverProperty =
-        AvaloniaProperty.Register<LoopArrow, Func<Guid, Point?>?>(nameof(PositionResolver));
+    public static readonly StyledProperty<Func<Guid, (double X, double Y)?>?> PositionResolverProperty =
+        AvaloniaProperty.Register<LoopArrow, Func<Guid, (double X, double Y)?>?>(nameof(PositionResolver));
 
     /// <summary>
     /// Resolves a state center point by its Guid. Returns null if not found.
     /// Used as fallback when StatePosition is not set.
     /// </summary>
-    public Func<Guid, Point?>? PositionResolver
+    public Func<Guid, (double X, double Y)?>? PositionResolver
     {
         get => GetValue(PositionResolverProperty);
         set => SetValue(PositionResolverProperty, value);
@@ -174,7 +174,7 @@ public class LoopArrow : Control
         context.DrawGeometry(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), polygon);
     }
 
-    private Point GetCenter()
+    private (double X, double Y) GetCenter()
     {
         if (StatePosition.HasValue)
             return StatePosition.Value;

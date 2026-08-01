@@ -39,13 +39,9 @@ public class StateBox : Control
     private const double StateWidth = 110.0;
     private const double BoxCornerRadius = 10.0;
 
-    private bool _isDragging;
     private Point _pointerDownPosition;
     private bool _wasDragging;
     private Avalonia.Input.IPointer? _pointerDownPointer;
-    private Point _lastPointerPosition;
-    private double _pointerDownCanvasPositionX;
-    private double _pointerDownCanvasPositionY;
     private DispatcherTimer? _singleClickTimer;
     private string? _previousName;
 
@@ -67,10 +63,10 @@ public class StateBox : Control
         set => SetValue(TextProperty, value);
     }
 
-    public static readonly StyledProperty<IBrush?> FillColorProperty =
-        AvaloniaProperty.Register<StateBox, IBrush?>(nameof(FillColor));
+    public static readonly StyledProperty<string?> FillColorProperty =
+        AvaloniaProperty.Register<StateBox, string?>(nameof(FillColor));
 
-    public IBrush? FillColor
+    public string? FillColor
     {
         get => GetValue(FillColorProperty);
         set => SetValue(FillColorProperty, value);
@@ -129,11 +125,6 @@ public class StateBox : Control
     /// Raised when the state box is pressed.
     /// </summary>
     public event EventHandler<PointerEventArgs>? StatePressed;
-
-    /// <summary>
-    /// Raised when the state box is released after dragging.
-    /// </summary>
-    public event EventHandler<PointerEventArgs>? StateReleased;
 
     /// <summary>
     /// Raised when the state box is clicked (not dragged).
@@ -225,9 +216,9 @@ public class StateBox : Control
         var rect = new Rect(0, 0, width, height);
         var radius = (float)BoxCornerRadius;
 
-        if (FillColor is not null)
+        if (!string.IsNullOrEmpty(FillColor) && Avalonia.Media.Color.TryParse(FillColor, out var fillColor))
         {
-            context.FillRectangle(FillColor, rect, radius);
+            context.FillRectangle(new Avalonia.Media.SolidColorBrush(fillColor), rect, radius);
         }
 
         context.DrawRectangle(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, 1), rect, radius);
@@ -247,7 +238,6 @@ public class StateBox : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-
         if (e.ClickCount > 1)
         {
             _singleClickTimer?.Stop();
@@ -255,91 +245,32 @@ public class StateBox : Control
             e.Handled = true;
             return;
         }
-
         if (!IsEnabled)
         {
             e.Handled = true;
             return;
         }
-
         _pointerDownPosition = e.GetPosition(this);
         _pointerDownPointer = e.Pointer;
-        _lastPointerPosition = _pointerDownPosition;
-        _pointerDownCanvasPositionX = CanvasPositionX;
-        _pointerDownCanvasPositionY = CanvasPositionY;
-        _isDragging = false;
-
         _singleClickTimer?.Stop();
         _singleClickTimer?.Start();
-
         StatePressed?.Invoke(this, e);
-
         e.Handled = true;
-    }
-
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        base.OnPointerMoved(e);
-
-        var position = e.GetPosition(this);
-        _lastPointerPosition = position;
-        var dx = position.X - _pointerDownPosition.X;
-        var dy = position.Y - _pointerDownPosition.Y;
-        var distance = Math.Sqrt(dx * dx + dy * dy);
-
-        if (!_isDragging && distance > DragThreshold)
-        {
-            _isDragging = true;
-            _wasDragging = true;
-            _singleClickTimer?.Stop();
-            e.Pointer.Capture(this);
-        }
-
-        if (_isDragging && DataContext is not null)
-        {
-            CanvasPositionX = Math.Max(0.0, _pointerDownCanvasPositionX + dx);
-            CanvasPositionY = Math.Max(0.0, _pointerDownCanvasPositionY + dy);
-        }
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-
         _pointerDownPointer?.Capture(null);
-
-        if (_isDragging)
-        {
-            SyncPositionToViewModel();
-            StateReleased?.Invoke(this, e);
-            _isDragging = false;
-            _wasDragging = false;
-            _pointerDownPosition = default;
-        }
-        else
-        {
-            _singleClickTimer?.Stop();
-
-            if (DataContext is not null && !_wasDragging)
-            {
-                StateClicked?.Invoke(this, new RoutedEventArgs());
-                SelectState();
-            }
-
-            _isDragging = false;
-            _wasDragging = false;
-            _pointerDownPosition = default;
-        }
-
-        e.Handled = true;
-    }
-
-    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-    {
-        base.OnPointerCaptureLost(e);
-        _isDragging = false;
-        _wasDragging = false;
         _singleClickTimer?.Stop();
+        if (!_wasDragging)
+        {
+            StateClicked?.Invoke(this, new RoutedEventArgs());
+            SelectState();
+        }
+        _wasDragging = false;
+        _pointerDownPosition = default;
+        e.Handled = true;
     }
 
     private void SelectState()
@@ -350,27 +281,9 @@ public class StateBox : Control
         }
     }
 
-    private void SyncPositionToViewModel()
-    {
-        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
-        {
-            stateVm.CanvasPositionX = CanvasPositionX;
-            stateVm.CanvasPositionY = CanvasPositionY;
-        }
-    }
-
     private void OnSingleClickTimerTick(object? sender, EventArgs e)
     {
         _singleClickTimer?.Stop();
-
-        if (_isDragging)
-            return;
-
-        var dx = _lastPointerPosition.X - _pointerDownPosition.X;
-        var dy = _lastPointerPosition.Y - _pointerDownPosition.Y;
-        var distance = Math.Sqrt(dx * dx + dy * dy);
-        if (distance > DragThreshold)
-            return;
 
         if (!IsEditable)
             return;

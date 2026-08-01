@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Avalonia;
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Models;
@@ -83,18 +81,18 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Resolves a state's center position by its Guid. Used by <c>LoopArrow</c> for rendering.
     /// </summary>
-    public Func<Guid, Point?>? PositionResolver => GetStatePosition;
+    public Func<Guid, (double X, double Y)?>? PositionResolver => GetStatePosition;
 
-    private Point? GetStatePosition(Guid stateId)
+    private (double X, double Y)? GetStatePosition(Guid stateId)
     {
         if (MainState.Id == stateId)
-            return new Point(MainState.CanvasPositionX + 55, MainState.CanvasPositionY + MainState.StateHeight / 2);
+            return (MainState.CanvasPositionX + 55, MainState.CanvasPositionY + MainState.StateHeight / 2);
 
         if (InitState.Id == stateId)
-            return new Point(InitState.CanvasPositionX + 55, InitState.CanvasPositionY + InitState.StateHeight / 2);
+            return (InitState.CanvasPositionX + 55, InitState.CanvasPositionY + InitState.StateHeight / 2);
 
         return States.FirstOrDefault(s => s.Id == stateId) is { } state
-            ? new Point(state.CanvasPositionX + 55, state.CanvasPositionY + state.StateHeight / 2)
+            ? (state.CanvasPositionX + 55, state.CanvasPositionY + state.StateHeight / 2)
             : null;
     }
 
@@ -166,6 +164,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         var transitionsToRemove = Transitions.Where(tx => tx.StartStateId == stateId || tx.EndStateId == stateId).ToList();
         var loopsToRemove = LoopTransactions.Where(l => l.StateId == stateId).ToList();
+
+        foreach (var tx in transitionsToRemove)
+        {
+            tx.UnsubscribeFromState(state);
+        }
+        foreach (var loop in loopsToRemove)
+        {
+            loop.UnsubscribeFromState(state);
+        }
 
         States.Remove(state);
         foreach (var tx in transitionsToRemove)
@@ -334,10 +341,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
     }
 
-    private BlueprintStateViewModel? _draggingState;
+    public record CanvasSizeDto(double Width, double Height);
 
     [ObservableProperty]
-    private Size _canvasSize = new(1200, 800);
+    private CanvasSizeDto _canvasSize = new(1200, 800);
 
     private void UpdateCanvasSize()
     {
@@ -373,11 +380,11 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         if (minX == double.MaxValue)
         {
-            CanvasSize = new Size(1200, 800);
+            CanvasSize = new CanvasSizeDto(1200, 800);
         }
         else
         {
-            CanvasSize = new Size(Math.Max(400, (maxX - minX) + 200), Math.Max(300, (maxY - minY) + 200));
+            CanvasSize = new CanvasSizeDto(Math.Max(400, (maxX - minX) + 200), Math.Max(300, (maxY - minY) + 200));
         }
     }
 
@@ -686,8 +693,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             SelectedStates.Clear();
             SelectedState = state;
         }
-
-        _draggingState = state;
     }
 
     public void ToggleStateSelection(BlueprintStateViewModel state)
@@ -732,7 +737,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public void OnStateReleased()
     {
-        _draggingState = null;
     }
 
     public void OnStateClicked(BlueprintStateViewModel state)
@@ -815,7 +819,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsEditable = true,
             IsMain = false,
             IsInit = false,
-            FillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#F08080")),
+            FillColor = "#F08080",
             StateHeight = 65.0
         };
 
@@ -849,7 +853,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsEditable = true,
             IsMain = false,
             IsInit = false,
-            FillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#F08080")),
+            FillColor = "#F08080",
             StateHeight = 65.0
         };
 
@@ -973,6 +977,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         var transitionsToRemove = Transitions.Where(tx => tx.StartStateId == stateId || tx.EndStateId == stateId).ToList();
         var loopsToRemove = LoopTransactions.Where(l => l.StateId == stateId).ToList();
+
+        foreach (var tx in transitionsToRemove)
+        {
+            tx.UnsubscribeFromState(SelectedState);
+        }
+        foreach (var loop in loopsToRemove)
+        {
+            loop.UnsubscribeFromState(SelectedState);
+        }
 
         // Perform the removal immediately
         States.Remove(SelectedState!);
@@ -1235,18 +1248,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     private BlueprintStateViewModel MapState(BlueprintStateModel model, bool isMain, bool isInit)
     {
-        var fillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#F08080"));
-        var stateHeight = 65.0;
+        var fillColor = "#F08080";
 
         if (isMain)
         {
-            fillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#90EE90"));
-            stateHeight = 60.0;
+            fillColor = "#90EE90";
         }
         else if (isInit)
         {
-            fillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#ADD8E6"));
-            stateHeight = 60.0;
+            fillColor = "#ADD8E6";
         }
 
         return new BlueprintStateViewModel
@@ -1260,7 +1270,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsMain = isMain,
             IsInit = isInit,
             FillColor = fillColor,
-            StateHeight = stateHeight,
+            StateHeight = 65.0,
             IsEnabled = !(isMain || isInit)
         };
     }
@@ -1275,13 +1285,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         _nameMonitor.Clear();
     }
 
-    public Point? ResolveStatePosition(Guid stateId)
+    public (double X, double Y)? ResolveStatePosition(Guid stateId)
     {
         var state = States.FirstOrDefault(s => s.Id == stateId);
         if (state == null) return null;
 
         var width = 110.0;
         var height = state.StateHeight > 0 ? state.StateHeight : width;
-        return new Point(state.CanvasPositionX + width / 2, state.CanvasPositionY + height / 2);
+        return (state.CanvasPositionX + width / 2, state.CanvasPositionY + height / 2);
     }
 }

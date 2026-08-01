@@ -25,7 +25,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0"
+        <ScrollViewer x:Name="CanvasScrollViewer" Grid.Row="0"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
                       Background="White">
@@ -34,7 +34,8 @@
                     Height="{Binding CanvasSize.Height}"
                     AutomationProperties.AutomationId="BlueprintCanvas"
                     Background="White"
-                    KeyDown="OnCanvasKeyDown">
+                    KeyDown="OnCanvasKeyDown"
+                    PointerMoved="OnCanvasPointerMoved">
 
                 <Canvas.ContextMenu>
                     <ContextMenu>
@@ -124,10 +125,9 @@
                                    Name="{Binding MainState.Name}"
                                    CanvasPositionX="{Binding MainState.CanvasPositionX, Mode=TwoWay}"
                                    CanvasPositionY="{Binding MainState.CanvasPositionY, Mode=TwoWay}"
-                                   AutomationProperties.AutomationId="MainState"
-                                   StatePressed="OnStateBoxStatePressed"
-                                   StateReleased="OnStateBoxStateReleased"
-                                   StateClicked="OnStateBoxStateClicked"
+                                    AutomationProperties.AutomationId="MainState"
+                                    StatePressed="OnStateBoxStatePressed"
+                                    StateClicked="OnStateBoxStateClicked"
                                    StateDoubleClicked="OnStateBoxStateDoubleClicked"
                                    NameCommitted="OnStateBoxNameCommitted"/>
 
@@ -144,10 +144,9 @@
                                    Name="{Binding InitState.Name}"
                                    CanvasPositionX="{Binding InitState.CanvasPositionX, Mode=TwoWay}"
                                    CanvasPositionY="{Binding InitState.CanvasPositionY, Mode=TwoWay}"
-                                   AutomationProperties.AutomationId="InitState"
-                                   StatePressed="OnStateBoxStatePressed"
-                                   StateReleased="OnStateBoxStateReleased"
-                                   StateClicked="OnStateBoxStateClicked"
+                                    AutomationProperties.AutomationId="InitState"
+                                    StatePressed="OnStateBoxStatePressed"
+                                    StateClicked="OnStateBoxStateClicked"
                                    StateDoubleClicked="OnStateBoxStateDoubleClicked"
                                    NameCommitted="OnStateBoxNameCommitted"/>
 
@@ -173,10 +172,9 @@
                                                    Name="{Binding Name}"
                                                    CanvasPositionX="{Binding CanvasPositionX, Mode=TwoWay}"
                                                    CanvasPositionY="{Binding CanvasPositionY, Mode=TwoWay}"
-                                                   AutomationProperties.AutomationId="{Binding Name}"
-                                                   StatePressed="OnStateBoxStatePressed"
-                                                   StateReleased="OnStateBoxStateReleased"
-                                                   StateClicked="OnStateBoxStateClicked"
+                                                    AutomationProperties.AutomationId="{Binding Name}"
+                                                    StatePressed="OnStateBoxStatePressed"
+                                                    StateClicked="OnStateBoxStateClicked"
                                                    StateDoubleClicked="OnStateBoxStateDoubleClicked"
                                                    NameCommitted="OnStateBoxNameCommitted"/>
                             </Canvas>

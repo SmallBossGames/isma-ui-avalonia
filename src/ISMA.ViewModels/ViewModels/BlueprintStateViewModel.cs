@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ISMA.ViewModels.ViewModels;
@@ -39,7 +38,7 @@ public partial class BlueprintStateViewModel : ObservableObject, ISnapPosition
     private bool _isInit;
 
     [ObservableProperty]
-    private IBrush? _fillColor = new SolidColorBrush(Avalonia.Media.Color.Parse("#F08080"));
+    private string? _fillColor = "#F08080";
 
     [ObservableProperty]
     private bool _isSelected;

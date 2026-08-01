@@ -6,12 +6,15 @@ using AvaloniaEdit.Highlighting;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace ISMA.App.Services;
 
 public class TextEditorFactory : ITextEditorFactory
 {
+    private readonly ConcurrentDictionary<TextEditor, EventHandler> _eventHandlers = new();
+
     public object CreateTextEditor(string text, Action<string>? onTextChanged, string? highlightingDefinitionName = null)
     {
         var editor = new TextEditor
@@ -33,10 +36,13 @@ public class TextEditorFactory : ITextEditorFactory
             editor.Text = text;
         }
 
-        editor.TextChanged += (s, e) =>
+        EventHandler handler = (s, e) =>
         {
             onTextChanged?.Invoke(editor.Text);
         };
+
+        editor.TextChanged += handler;
+        _eventHandlers.TryAdd(editor, handler);
 
         return editor;
     }
@@ -78,10 +84,13 @@ public class TextEditorFactory : ITextEditorFactory
 
     public void DisposeInstance(object editor)
     {
-        if (editor is TextEditor te)
+        if (editor is not TextEditor te) return;
+
+        if (_eventHandlers.TryRemove(te, out var handler))
         {
-            te.TextChanged -= null!;
-            te.SyntaxHighlighting = null;
+            te.TextChanged -= handler;
         }
+
+        te.SyntaxHighlighting = null;
     }
 }

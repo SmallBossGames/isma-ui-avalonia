@@ -12,7 +12,7 @@ public class BlueprintModelTests
     {
         var model = BlueprintModel.Empty;
 
-        model.Main.CanvasPositionX.Should().Be(20);
+        model.Main.CanvasPositionX.Should().Be(10);
         model.Main.CanvasPositionY.Should().Be(0);
         model.Main.Name.Should().Be("Main");
         model.Main.Text.Should().Be("");

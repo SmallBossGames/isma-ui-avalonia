@@ -99,8 +99,8 @@ public partial class BlueprintTransitionViewModel : ObservableObject
         return states.FirstOrDefault(s => s.Id == EndStateId);
     }
 
-    private Avalonia.Point? _startStatePosition;
-    private Avalonia.Point? _endStatePosition;
+    private (double X, double Y)? _startStatePosition;
+    private (double X, double Y)? _endStatePosition;
     private BlueprintStateViewModel? _previousStartState;
     private BlueprintStateViewModel? _previousEndState;
 
@@ -117,7 +117,7 @@ public partial class BlueprintTransitionViewModel : ObservableObject
     /// <summary>
     /// Gets the canvas position of the start state center for arrow rendering.
     /// </summary>
-    public Avalonia.Point? StartStatePosition
+    public (double X, double Y)? StartStatePosition
     {
         get => _startStatePosition;
         private set => SetProperty(ref _startStatePosition, value);
@@ -126,7 +126,7 @@ public partial class BlueprintTransitionViewModel : ObservableObject
     /// <summary>
     /// Gets the canvas position of the end state for arrow rendering.
     /// </summary>
-    public Avalonia.Point? EndStatePosition
+    public (double X, double Y)? EndStatePosition
     {
         get => _endStatePosition;
         private set => SetProperty(ref _endStatePosition, value);
@@ -143,7 +143,7 @@ public partial class BlueprintTransitionViewModel : ObservableObject
         {
             var width = 110.0;
             var height = start.StateHeight > 0 ? start.StateHeight : width;
-            _startStatePosition = new Avalonia.Point(start.CanvasPositionX + width / 2, start.CanvasPositionY + height / 2);
+            _startStatePosition = (start.CanvasPositionX + width / 2, start.CanvasPositionY + height / 2);
         }
         else
         {
@@ -155,7 +155,7 @@ public partial class BlueprintTransitionViewModel : ObservableObject
         {
             var width = 110.0;
             var height = end.StateHeight > 0 ? end.StateHeight : width;
-            _endStatePosition = new Avalonia.Point(end.CanvasPositionX + width / 2, end.CanvasPositionY + height / 2);
+            _endStatePosition = (end.CanvasPositionX + width / 2, end.CanvasPositionY + height / 2);
         }
         else
         {
@@ -192,7 +192,7 @@ public partial class BlueprintTransitionViewModel : ObservableObject
         }
     }
 
-    private void UnsubscribeFromState(BlueprintStateViewModel? state)
+    public void UnsubscribeFromState(BlueprintStateViewModel? state)
     {
         if (state != null)
         {

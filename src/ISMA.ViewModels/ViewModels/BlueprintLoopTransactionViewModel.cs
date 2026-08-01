@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ISMA.ViewModels.ViewModels;
@@ -21,6 +22,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     {
         Id = Guid.NewGuid();
         _states = states;
+        InitializeSubscriptions();
     }
 
     /// <summary>
@@ -32,6 +34,7 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     {
         Id = id;
         _states = states;
+        InitializeSubscriptions();
     }
 
     /// <summary>
@@ -63,6 +66,23 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// </summary>
     private readonly IEnumerable<BlueprintStateViewModel> _states;
 
+    private void InitializeSubscriptions()
+    {
+        var state = State;
+        if (state != null)
+        {
+            SubscribeToState(state);
+        }
+    }
+
+    private void SubscribeToState(BlueprintStateViewModel? state)
+    {
+        if (state != null)
+        {
+            state.PropertyChanged += OnStatePropertyChanged;
+        }
+    }
+
     /// <summary>
     /// Resolves the <see cref="BlueprintStateViewModel"/> by <see cref="StateId"/>.
     /// </summary>
@@ -86,19 +106,19 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     /// <summary>
     /// Gets the canvas Y position of the center of the associated state.
     /// </summary>
-    public double? StatePositionY => State?.CanvasPositionY + (State?.StateHeight > 0 ? State.StateHeight / 2 : 32.5);
+    public double? StatePositionY => State?.CanvasPositionY + (State?.StateHeight > 0 ? State.StateHeight / 2 : 55.0);
 
     /// <summary>
     /// Gets the canvas center position of the associated state as a single Point.
     /// </summary>
-    public Avalonia.Point? StatePosition => State != null
-        ? new Avalonia.Point(StatePositionX ?? 0, StatePositionY ?? 0)
+    public (double X, double Y)? StatePosition => State != null
+        ? (StatePositionX ?? 0, StatePositionY ?? 0)
         : null;
 
     /// <summary>
     /// Resolves a state center point by its Guid. Used by <c>LoopArrow</c> as a fallback when <c>StatePosition</c> is not bound.
     /// </summary>
-    public Func<Guid, Avalonia.Point?>? PositionResolver => _ => ResolveStatePosition(StateId);
+    public Func<Guid, (double X, double Y)?>? PositionResolver => _ => ResolveStatePosition(StateId);
 
     /// <summary>
     /// Gets the associated state view model for XAML bindings.
@@ -106,18 +126,43 @@ public partial class BlueprintLoopTransactionViewModel : ObservableObject
     public BlueprintStateViewModel? State => GetState(_states);
 
     /// <summary>
+    /// Unsubscribes from the specified state's PropertyChanged event to prevent memory leaks.
+    /// </summary>
+    /// <param name="state">The state to unsubscribe from.</param>
+    public void UnsubscribeFromState(BlueprintStateViewModel? state)
+    {
+        if (state != null)
+        {
+            state.PropertyChanged -= OnStatePropertyChanged;
+        }
+    }
+
+    private void OnStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BlueprintStateViewModel.CanvasPositionX) ||
+            e.PropertyName == nameof(BlueprintStateViewModel.CanvasPositionY) ||
+            e.PropertyName == nameof(BlueprintStateViewModel.StateHeight))
+        {
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(StatePosition));
+            OnPropertyChanged(nameof(StatePositionX));
+            OnPropertyChanged(nameof(StatePositionY));
+        }
+    }
+
+    /// <summary>
     /// Resolves the canvas center position of a state by its GUID.
     /// Used by <see cref="Controls.LoopArrow"/> to position loop arrows on the canvas.
     /// </summary>
     /// <param name="stateId">The GUID of the state to resolve.</param>
     /// <returns>The center point of the state, or null if not found.</returns>
-    public Avalonia.Point? ResolveStatePosition(Guid stateId)
+    public (double X, double Y)? ResolveStatePosition(Guid stateId)
     {
         var state = _states?.FirstOrDefault(s => s.Id == stateId);
         if (state == null) return null;
 
         var width = 110.0;
         var height = state.StateHeight > 0 ? state.StateHeight : width;
-        return new Avalonia.Point(state.CanvasPositionX + width / 2, state.CanvasPositionY + height / 2);
+        return (state.CanvasPositionX + width / 2, state.CanvasPositionY + height / 2);
     }
 }

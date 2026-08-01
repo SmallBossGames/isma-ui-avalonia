@@ -134,6 +134,7 @@ public class BlueprintEditorIntegrationTests
         var mainState = editorVm!.MainState;
 
         mainState.FillColor.Should().NotBeNull();
+        mainState.FillColor.Should().Be("#90EE90");
     }
 
     [AvaloniaFact]
@@ -146,6 +147,7 @@ public class BlueprintEditorIntegrationTests
         var initState = editorVm!.InitState;
 
         initState.FillColor.Should().NotBeNull();
+        initState.FillColor.Should().Be("#ADD8E6");
     }
 
     [AvaloniaFact]
@@ -157,7 +159,7 @@ public class BlueprintEditorIntegrationTests
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.MainState;
 
-        mainState.StateHeight.Should().Be(60);
+        mainState.StateHeight.Should().Be(65);
     }
 
     [AvaloniaFact]
@@ -169,7 +171,7 @@ public class BlueprintEditorIntegrationTests
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.InitState;
 
-        initState.StateHeight.Should().Be(60);
+        initState.StateHeight.Should().Be(65);
     }
 
     [AvaloniaFact]
@@ -247,7 +249,7 @@ public class BlueprintEditorIntegrationTests
         editorVm!.AddStateCommand.Execute(null);
 
         var userState = editorVm.States.First();
-        userState.FillColor.Should().NotBeNull();
+        userState.FillColor.Should().Be("#F08080");
     }
 
     [AvaloniaFact]
