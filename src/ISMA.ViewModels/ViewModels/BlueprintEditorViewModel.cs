@@ -1092,6 +1092,28 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         SelectedState = null;
         Mode = new EditorMode.Default();
+
+        PushUndo($"Remove loop",
+            () =>
+            {
+                if (LoopTransactions.All(l => l.StateId != stateId))
+                {
+                    LoopTransactions.Add(new BlueprintLoopTransactionViewModel
+                    {
+                        StateId = stateId,
+                        Predicate = "",
+                        Alias = ""
+                    });
+                }
+            },
+            () =>
+            {
+                var loop = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
+                if (loop != null)
+                {
+                    LoopTransactions.Remove(loop);
+                }
+            });
     }
 
     public void SetBlueprintModel(BlueprintModel model)
