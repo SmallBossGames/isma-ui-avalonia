@@ -15,7 +15,8 @@ ISMA UI Avalonia is the desktop client for the ISMA mathematical modeling enviro
 | [External Services](03-external-services.md) | gRPC client, HTTP client, server lifecycle, facade |
 | [UI Components](04-ui-components.md) | App entry point, views, editors, toolbars, models |
 | [UX Reference](05-ux-reference.md) | Complete user experience specification: windows, menus, dialogs, transitions, features |
-| [Blueprint Editor UX](06-blueprint-editor-ux.md) | Detailed specification of the visual statechart editor: canvas, states, arrows, popover, toolbar, modes, LISMA conversion |
+| [Blueprint Editor Architecture](06-blueprint-editor-architecture.md) | Technical architecture: module structure, MVVM pattern, data flow, controls, utilities, serialization |
+| [Blueprint Editor UX](08-blueprint-editor-ux.md) | Detailed specification of the visual statechart editor: canvas, states, arrows, popover, toolbar, modes, LISMA conversion |
 | [Build & Deployment](07-build-and-deployment.md) | .NET project structure, dependencies, startup |
 
 ## Key Files
@@ -74,5 +75,6 @@ When running via the provided `run.sh` script, these paths are auto-configured.
 | [03-external-services](03-external-services.md) | Developers modifying server communication |
 | [04-ui-components](04-ui-components.md) | Developers modifying existing Avalonia UI |
 | [05-ux-reference](05-ux-reference.md) | Anyone implementing a replacement UI with feature parity |
-| [06-blueprint-editor-ux](06-blueprint-editor-ux.md) | Migrator implementing the Avalonia statechart editor, or anyone needing deep canvas/interaction details |
+| [06-blueprint-editor-architecture](06-blueprint-editor-architecture.md) | Developers implementing or modifying the blueprint editor module |
+| [08-blueprint-editor-ux](08-blueprint-editor-ux.md) | Migrator implementing the Avalonia statechart editor, or anyone needing deep canvas/interaction details |
 | [07-build-and-deployment](07-build-and-deployment.md) | DevOps, contributors setting up the build |

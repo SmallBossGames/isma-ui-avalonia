@@ -1,51 +1,101 @@
-using System.Collections.Immutable;
+using System.Text;
+using ISMA.BlueprintEditor.Constants;
 
 namespace ISMA.BlueprintEditor.Models;
 
-/// <summary>
-/// The aggregate root for the entire blueprint (finite state machine).
-/// Contains the main state, init state, user states, transitions, and loop transitions.
-/// Immutable data model suitable for serialization.
-/// </summary>
-public record BlueprintModel
+public class BlueprintModel
 {
-    /// <summary>
-    /// Format version number.
-    /// </summary>
-    public int Version { get; init; } = 1;
+    public BlueprintStateModel Main { get; }
+    public BlueprintStateModel Init { get; }
+    public IReadOnlyCollection<BlueprintStateModel> States { get; }
+    public IReadOnlyCollection<BlueprintTransactionModel> Transactions { get; }
+    public IReadOnlyCollection<BlueprintLoopTransactionModel> LoopTransactions { get; }
 
-    /// <summary>
-    /// Unique blueprint identifier.
-    /// </summary>
-    public Guid Id { get; init; } = Guid.NewGuid();
+    public BlueprintModel(BlueprintStateModel main, BlueprintStateModel init, IEnumerable<BlueprintStateModel> states, IEnumerable<BlueprintTransactionModel> transactions, IEnumerable<BlueprintLoopTransactionModel>? loopTransactions = null)
+    {
+        Main = main;
+        Init = init;
+        States = states.ToList().AsReadOnly();
+        Transactions = transactions.ToList().AsReadOnly();
+        LoopTransactions = (loopTransactions ?? Array.Empty<BlueprintLoopTransactionModel>()).ToList().AsReadOnly();
+    }
 
-    /// <summary>
-    /// The main state node (permanent, non-deletable).
-    /// </summary>
-    public BlueprintStateModel Main { get; init; } = new();
+    public static BlueprintModel Empty => new(
+        new BlueprintStateModel(0, 0, StateNames.Main, string.Empty),
+        new BlueprintStateModel(0, 0, StateNames.Init, string.Empty),
+        Array.Empty<BlueprintStateModel>(),
+        Array.Empty<BlueprintTransactionModel>()
+    );
 
-    /// <summary>
-    /// The initialization state node (permanent, non-deletable).
-    /// </summary>
-    public BlueprintStateModel Init { get; init; } = new();
+    public LismaTextModel ToLismaText()
+    {
+        var sb = new StringBuilder();
+        var regions = new List<CodeRegion>();
 
-    /// <summary>
-    /// Additional user-defined states.
-    /// </summary>
-    public ImmutableArray<BlueprintStateModel> States { get; init; } = ImmutableArray<BlueprintStateModel>.Empty;
+        // Append main state text as first fragment
+        sb.Append(Main.Text);
+        regions.Add(new CodeRegion(Main.Name, 0, sb.ToString().Split('\n').Length - 1));
 
-    /// <summary>
-    /// Transitions between states.
-    /// </summary>
-    public ImmutableArray<BlueprintTransactionModel> Transactions { get; init; } = ImmutableArray<BlueprintTransactionModel>.Empty;
+        // Group transactions by target state + predicate
+        var stateGroups = new Dictionary<(string endStateName, string predicate), (string text, List<string> sources)>();
 
-    /// <summary>
-    /// Loopback transitions on single states.
-    /// </summary>
-    public ImmutableArray<BlueprintLoopTransactionModel> LoopTransactions { get; init; } = ImmutableArray<BlueprintLoopTransactionModel>.Empty;
+        foreach (var tx in Transactions)
+        {
+            var key = (tx.EndStateName, tx.Predicate);
+            if (!stateGroups.TryGetValue(key, out var value))
+            {
+                value = ("", new List<string>());
+            }
 
-    /// <summary>
-    /// Creates an empty blueprint with default Main and Init states.
-    /// </summary>
-    public static BlueprintModel Empty => new();
+            // Find the state to get its text
+            var state = States.FirstOrDefault(s => s.Name == tx.EndStateName);
+            if (state != null && !string.IsNullOrEmpty(state.Text))
+            {
+                value.text = state.Text;
+            }
+
+            if (!value.sources.Contains(tx.StartStateName))
+            {
+                value.sources.Add(tx.StartStateName);
+            }
+
+            stateGroups[key] = value;
+        }
+
+        foreach (var (key, value) in stateGroups)
+        {
+            var lineStart = sb.ToString().Split('\n').Length;
+
+            if (string.IsNullOrEmpty(value.text))
+            {
+                sb.Append($"state {key.endStateName};");
+            }
+            else
+            {
+                sb.Append($"state {key.endStateName} {{ {value.text} }} from {string.Join(",", value.sources)};");
+            }
+
+            var lineEnd = sb.ToString().Split('\n').Length - 1;
+            regions.Add(new CodeRegion(key.endStateName, lineStart, lineEnd));
+        }
+
+        // Handle loop transactions
+        foreach (var loop in LoopTransactions)
+        {
+            var lineStart = sb.ToString().Split('\n').Length;
+
+            // Create pseudo-state for predicate ordering
+            var pseudoStateName = $"{loop.StateName}_pseudo_1";
+            sb.Append($"state {pseudoStateName} ({loop.Predicate}) {{ {loop.Text} }} from {loop.StateName};");
+
+            // Create original state referencing pseudo-state
+            var originalLineStart = sb.ToString().Split('\n').Length;
+            sb.Append($"state {loop.StateName} (1 > 0) {{ {loop.Text} }} from {pseudoStateName};");
+
+            var lineEnd = sb.ToString().Split('\n').Length - 1;
+            regions.Add(new CodeRegion(loop.StateName, originalLineStart, lineEnd));
+        }
+
+        return new LismaTextModel(sb.ToString(), regions);
+    }
 }

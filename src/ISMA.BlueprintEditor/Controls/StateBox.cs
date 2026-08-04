@@ -1,264 +1,184 @@
-using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
+using ISMA.BlueprintEditor.Constants;
+using ISMA.BlueprintEditor.Utilities;
 using ISMA.BlueprintEditor.ViewModels;
 
 namespace ISMA.BlueprintEditor.Controls;
 
-/// <summary>
-/// Event arguments for the StateBox.NameCommitted event.
-/// </summary>
-public sealed class StateNameCommittedEventArgs(string? newName, bool handled) : EventArgs
-{
-    /// <summary>
-    /// The proposed new name for the state.
-    /// </summary>
-    public string? NewName { get; } = newName;
-
-    /// <summary>
-    /// Gets or sets whether the name change was handled (rejected).
-    /// </summary>
-    public bool Handled { get; set; } = handled;
-}
-
-/// <summary>
-/// A canvas state box control with drag detection and click/disambiguation.
-/// Renders a rounded rectangle with a name label. Supports inline name editing.
-/// </summary>
 public class StateBox : Control
 {
-    private const double DragThreshold = 3.0;
-    private const double SingleClickDelay = 200.0;
-    private const double StateWidth = 110.0;
-    private const double BoxCornerRadius = 10.0;
-
-    private Point _pointerDownPosition;
-    private bool _wasDragging;
-    private DispatcherTimer? _singleClickTimer;
-    private string? _previousName;
+    private readonly ClickDisambiguator _clickDisambiguator;
+    private StateViewModel? _viewModel;
+    private Action<StateViewModel>? _onClick;
+    private bool _isDragging;
+    private Point _dragStart;
+    private Point _clickOffset;
     private Canvas? _inlineEditCanvas;
     private Canvas? _inlineEditOverlay;
     private TextBox? _inlineEditTextBox;
-
-    public new static readonly StyledProperty<string?> NameProperty =
-        AvaloniaProperty.Register<StateBox, string?>(nameof(Name));
-
-    public string? Name
-    {
-        get => GetValue(NameProperty);
-        set => SetValue(NameProperty, value);
-    }
-
-    public static readonly StyledProperty<string?> TextProperty =
-        AvaloniaProperty.Register<StateBox, string?>(nameof(Text));
-
-    public string? Text
-    {
-        get => GetValue(TextProperty);
-        set => SetValue(TextProperty, value);
-    }
-
-    public static readonly StyledProperty<string?> FillColorProperty =
-        AvaloniaProperty.Register<StateBox, string?>(nameof(FillColor));
-
-    public string? FillColor
-    {
-        get => GetValue(FillColorProperty);
-        set => SetValue(FillColorProperty, value);
-    }
-
-    public static readonly StyledProperty<bool> IsEditableProperty =
-        AvaloniaProperty.Register<StateBox, bool>(nameof(IsEditable), defaultValue: false);
-
-    public bool IsEditable
-    {
-        get => GetValue(IsEditableProperty);
-        set => SetValue(IsEditableProperty, value);
-    }
-
-    public static readonly StyledProperty<double> StateHeightProperty =
-        AvaloniaProperty.Register<StateBox, double>(nameof(StateHeight), defaultValue: 65.0);
-
-    public double StateHeight
-    {
-        get => GetValue(StateHeightProperty);
-        set => SetValue(StateHeightProperty, value);
-    }
-
-    public static readonly StyledProperty<double> CanvasPositionXProperty =
-        AvaloniaProperty.Register<StateBox, double>(nameof(CanvasPositionX));
-
-    public double CanvasPositionX
-    {
-        get => GetValue(CanvasPositionXProperty);
-        set => SetValue(CanvasPositionXProperty, value);
-    }
-
-    public static readonly StyledProperty<double> CanvasPositionYProperty =
-        AvaloniaProperty.Register<StateBox, double>(nameof(CanvasPositionY));
-
-    public double CanvasPositionY
-    {
-        get => GetValue(CanvasPositionYProperty);
-        set => SetValue(CanvasPositionYProperty, value);
-    }
-
-    public static readonly StyledProperty<Guid?> IdProperty =
-        AvaloniaProperty.Register<StateBox, Guid?>(nameof(Id));
-
-    public Guid? Id
-    {
-        get => GetValue(IdProperty);
-        set => SetValue(IdProperty, value);
-    }
-
-    public double CenterX => CanvasPositionX + (base.Width > 0 ? base.Width : StateWidth) / 2;
-
-    public double CenterY => CanvasPositionY + (StateHeight > 0 ? StateHeight : base.Width > 0 ? base.Width : StateWidth) / 2;
-
-    /// <summary>
-    /// Raised when the state box is pressed.
-    /// </summary>
-    public event EventHandler<PointerEventArgs>? StatePressed;
-
-    /// <summary>
-    /// Raised when the state box is clicked (not dragged).
-    /// </summary>
-    public event EventHandler<RoutedEventArgs>? StateClicked;
-
-    /// <summary>
-    /// Raised when the state box is double-clicked.
-    /// </summary>
-    public event EventHandler<RoutedEventArgs>? StateDoubleClicked;
-
-    /// <summary>
-    /// Raised when the inline name editor commits a new name.
-    /// </summary>
-    public event EventHandler<StateNameCommittedEventArgs>? NameCommitted;
-
-    static StateBox()
-    {
-        AffectsRender<StateBox>(FillColorProperty, NameProperty, StateHeightProperty, CanvasPositionXProperty, CanvasPositionYProperty);
-    }
+    private SolidColorBrush? _colorBrush;
 
     public StateBox()
     {
-        _singleClickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SingleClickDelay) };
-        _singleClickTimer.Tick += OnSingleClickTimerTick;
-        Unloaded += OnUnloaded;
+        _clickDisambiguator = new ClickDisambiguator(
+            BlueprintEditorConstants.ClickDelayMs,
+            () => OnSingleClick(),
+            () => OnDoubleClick());
+
+        AddHandler(PointerPressedEvent, PointerPressedHandler);
+        AddHandler(PointerReleasedEvent, PointerReleasedHandler);
+        AddHandler(PointerMovedEvent, PointerMovedHandler);
     }
 
-    private void OnUnloaded(object? sender, RoutedEventArgs e)
+    public StateViewModel? ViewModel
     {
-        _singleClickTimer?.Stop();
+        get => _viewModel;
+        set
+        {
+            _viewModel = value;
+            InvalidateVisual();
+        }
+    }
+
+    public Action<StateViewModel>? OnClick
+    {
+        get => _onClick;
+        set => _onClick = value;
     }
 
     public override void Render(DrawingContext context)
     {
-        var width = base.Width > 0 ? base.Width : StateWidth;
-        var height = StateHeight > 0 ? StateHeight : width;
-        var rect = new Rect(0, 0, width, height);
-        var radius = (float)BoxCornerRadius;
-
-        if (!string.IsNullOrEmpty(FillColor) && Color.TryParse(FillColor, out var fillColor))
+        if (_viewModel == null || _colorBrush == null)
         {
-            context.FillRectangle(new SolidColorBrush(fillColor), rect, radius);
+            return;
         }
 
-        context.DrawRectangle(Brushes.Black, new Pen(Brushes.Black, 1), rect, radius);
+        var width = _viewModel.SquareWidth;
+        var height = _viewModel.SquareHeight;
+        var rect = new Rect(0, 0, width, height);
 
-        var text = Name ?? "";
+        var cornerRadius = (float)BlueprintEditorConstants.CornerRadius;
+        context.FillRectangle(_colorBrush, rect, cornerRadius);
+        context.DrawRectangle(Brushes.Black, new Pen(Brushes.Black, 1), rect, cornerRadius);
+
+        // Draw state name
+        var text = _viewModel.Name;
         if (!string.IsNullOrEmpty(text))
         {
-            var formattedText = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), 16, Brushes.Black);
+            var formattedText = new FormattedText(
+                text,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Arial"),
+                BlueprintEditorConstants.StateNameFontSize,
+                Brushes.Black);
+
             var textRect = new Rect(0, 0, width, height);
             var textPosition = new Point(
                 textRect.X + (textRect.Width - formattedText.Width) / 2,
                 textRect.Y + (textRect.Height - formattedText.Height) / 2);
+
             context.DrawText(formattedText, textPosition);
         }
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    private void UpdateColorBrush()
     {
-        base.OnPointerPressed(e);
-        if (e.ClickCount > 1)
+        if (_viewModel == null)
         {
-            _singleClickTimer?.Stop();
-            StateDoubleClicked?.Invoke(this, new RoutedEventArgs());
+            _colorBrush = null;
+            return;
+        }
+
+        _colorBrush = GetBrushFromColor(_viewModel.Color);
+    }
+
+    private static SolidColorBrush GetBrushFromColor(string colorName)
+    {
+        return colorName.ToLowerInvariant() switch
+        {
+            "lightgreen" => new SolidColorBrush(Color.FromRgb(144, 238, 144)),
+            "lightblue" => new SolidColorBrush(Color.FromRgb(173, 216, 230)),
+            _ => new SolidColorBrush(Color.FromRgb(255, 127, 80))
+        };
+    }
+
+    private void PointerPressedHandler(object? sender, PointerPressedEventArgs e)
+    {
+        _clickDisambiguator.OnPointerPressed();
+        _dragStart = e.GetPosition(this);
+
+        // If already in edit mode, focus the textbox
+        if (_inlineEditTextBox != null)
+        {
+            _inlineEditTextBox.Focus();
+            _inlineEditTextBox.SelectAll();
             e.Handled = true;
             return;
         }
-        if (!IsEnabled)
+
+        if (_viewModel != null && _viewModel.Editable)
         {
-            e.Handled = true;
-            return;
+            _isDragging = true;
+            var position = e.GetPosition(this);
+            _clickOffset = new Point(position.X, position.Y);
         }
-        _pointerDownPosition = e.GetPosition(this);
-        _singleClickTimer?.Stop();
-        _singleClickTimer?.Start();
-        StatePressed?.Invoke(this, e);
+
         e.Handled = true;
     }
 
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    private void PointerReleasedHandler(object? sender, PointerReleasedEventArgs e)
     {
-        base.OnPointerReleased(e);
-        _singleClickTimer?.Stop();
-        if (!_wasDragging)
-        {
-            StateClicked?.Invoke(this, new RoutedEventArgs());
-            SelectState();
-        }
-        _wasDragging = false;
-        _pointerDownPosition = default;
+        _clickDisambiguator.OnPointerReleased();
+        _isDragging = false;
         e.Handled = true;
     }
 
-    protected override void OnPointerMoved(PointerEventArgs e)
+    private void PointerMovedHandler(object? sender, PointerEventArgs e)
     {
-        base.OnPointerMoved(e);
-        var currentPos = e.GetPosition(this);
-        var dx = Math.Abs(currentPos.X - _pointerDownPosition.X);
-        var dy = Math.Abs(currentPos.Y - _pointerDownPosition.Y);
-        if (dx > DragThreshold || dy > DragThreshold)
+        if (_isDragging && _viewModel != null && Parent is Panel parent)
         {
-            _wasDragging = true;
-            _singleClickTimer?.Stop();
+            _clickDisambiguator.OnPointerMoved();
+            var position = e.GetPosition(parent);
+            var newX = Math.Max(0, position.X - _clickOffset.X);
+            var newY = Math.Max(0, position.Y - _clickOffset.Y);
+            _viewModel.X = newX;
+            _viewModel.Y = newY;
         }
     }
 
-    private void SelectState()
+    private void OnSingleClick()
     {
-        // Selection is handled by the ViewModel via data binding
-        if (DataContext is BlueprintStateViewModel stateVm)
+        if (_viewModel == null)
         {
-            stateVm.IsSelected = true;
+            return;
         }
+
+        if (_viewModel.Editable)
+        {
+            EnterInlineEditMode();
+        }
+
+        _onClick?.Invoke(_viewModel);
     }
 
-    private void OnSingleClickTimerTick(object? sender, EventArgs e)
+    private void OnDoubleClick()
     {
-        _singleClickTimer?.Stop();
-
-        if (!IsEditable)
+        if (_viewModel == null)
+        {
             return;
+        }
 
-        var dataContext = DataContext as BlueprintStateViewModel;
-        if (dataContext?.IsMain == true || dataContext?.IsInit == true)
-            return;
-
-        EnterInlineEditMode();
+        _onClick?.Invoke(_viewModel);
     }
 
     private void EnterInlineEditMode()
     {
-        _previousName = Name;
-
         var canvas = Parent;
         while (canvas is not null && canvas is not Canvas)
         {
@@ -270,13 +190,13 @@ public class StateBox : Control
 
         var textBox = new TextBox
         {
-            Text = Name,
-            FontSize = 16,
+            Text = _viewModel?.Name,
+            FontSize = BlueprintEditorConstants.StateNameFontSize,
             FontWeight = FontWeight.Bold,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Width = 90,
-            MaxWidth = 90
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = _viewModel?.SquareWidth ?? BlueprintEditorConstants.DefaultStateWidth,
+            MaxWidth = _viewModel?.SquareWidth ?? BlueprintEditorConstants.DefaultStateWidth
         };
 
         textBox.KeyDown += OnTextBoxKeyDown;
@@ -286,15 +206,19 @@ public class StateBox : Control
         {
             Background = null
         };
-        Canvas.SetLeft(overlay, CanvasPositionX);
-        Canvas.SetTop(overlay, CanvasPositionY);
+
+        if (_viewModel != null)
+        {
+            Canvas.SetLeft(overlay, _viewModel.X);
+            Canvas.SetTop(overlay, _viewModel.Y);
+        }
+
         overlay.ZIndex = 10;
         overlay.Children.Add(textBox);
 
         _inlineEditCanvas = parentCanvas;
         _inlineEditOverlay = overlay;
         _inlineEditTextBox = textBox;
-        _singleClickTimer?.Stop();
         parentCanvas.Children.Add(overlay);
         textBox.Focus();
         textBox.SelectAll();
@@ -319,47 +243,27 @@ public class StateBox : Control
 
     private void CommitName()
     {
-        var textBox = FindTextBox();
-        if (textBox == null)
+        var textBox = _inlineEditTextBox;
+        if (textBox == null || _viewModel == null)
             return;
 
         var newName = textBox.Text?.Trim();
         if (string.IsNullOrEmpty(newName))
         {
-            newName = _previousName;
+            newName = _viewModel.Name;
         }
 
-        var args = new StateNameCommittedEventArgs(newName, false);
-        NameCommitted?.Invoke(this, args);
-
-        var dataContext = DataContext as BlueprintStateViewModel;
-        if (dataContext != null)
-        {
-            if (args.Handled)
-            {
-                dataContext.Name = _previousName ?? "";
-            }
-            else
-            {
-                dataContext.Name = newName ?? _previousName ?? "";
-            }
-        }
-
+        _viewModel.CommitEdit(newName);
         ExitInlineEditMode(textBox);
     }
 
     private void CancelName()
     {
-        var textBox = FindTextBox();
-        if (textBox == null)
+        var textBox = _inlineEditTextBox;
+        if (textBox == null || _viewModel == null)
             return;
 
-        var dataContext = DataContext as BlueprintStateViewModel;
-        if (dataContext != null && !string.IsNullOrEmpty(_previousName))
-        {
-            dataContext.Name = _previousName;
-        }
-
+        _viewModel.CancelEdit();
         ExitInlineEditMode(textBox);
     }
 
@@ -376,17 +280,17 @@ public class StateBox : Control
         _inlineEditCanvas = null;
         _inlineEditOverlay = null;
         _inlineEditTextBox = null;
-        _previousName = null;
     }
 
-    private TextBox? FindTextBox()
+    public void Cleanup()
     {
-        if (_inlineEditTextBox != null && _inlineEditOverlay != null && _inlineEditCanvas != null)
+        if (_inlineEditTextBox != null)
         {
-            if (_inlineEditCanvas.Children.Contains(_inlineEditOverlay) &&
-                _inlineEditOverlay.Children.Contains(_inlineEditTextBox))
-                return _inlineEditTextBox;
+            ExitInlineEditMode(_inlineEditTextBox);
         }
-        return null;
+
+        RemoveHandler(PointerPressedEvent, PointerPressedHandler);
+        RemoveHandler(PointerReleasedEvent, PointerReleasedHandler);
+        RemoveHandler(PointerMovedEvent, PointerMovedHandler);
     }
 }

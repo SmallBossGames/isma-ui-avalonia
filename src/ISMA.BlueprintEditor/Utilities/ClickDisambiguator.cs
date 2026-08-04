@@ -1,115 +1,66 @@
-using System;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Interactivity;
-using Avalonia.Threading;
-
 namespace ISMA.BlueprintEditor.Utilities;
 
-/// <summary>
-/// Manages a pending timer to defer single-click handling.
-/// If a double-click occurs within the delay window, the single-click is cancelled.
-/// Also tracks drag state to ignore clicks that were actually drags.
-/// </summary>
-public sealed class ClickDisambiguator : IDisposable
+public class ClickDisambiguator
 {
-    private const double SingleClickDelayMs = 200.0;
+    private readonly long _clickDelayMs;
+    private DateTimeOffset? _lastClickTime;
+    private bool _isDragged;
+    private readonly Action? _singleClickHandler;
+    private readonly Action? _doubleClickHandler;
 
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(SingleClickDelayMs) };
-    private bool _isSingleClickPending;
-    private bool _isDragging;
-    private Point? _pointerDownPosition;
-    private readonly Action _onDoubleClick;
-    private readonly Action _onSingleClick;
-    private readonly Control _owner;
-
-    public ClickDisambiguator(Control owner, Action onSingleClick, Action onDoubleClick)
+    public ClickDisambiguator(
+        long clickDelayMs,
+        Action? singleClickHandler,
+        Action? doubleClickHandler)
     {
-        _owner = owner;
-        _onSingleClick = onSingleClick;
-        _onDoubleClick = onDoubleClick;
-
-        _timer.Tick += OnTimerTick;
-
-        _owner.PointerPressed += OnPointerPressed;
-        _owner.PointerReleased += OnPointerReleased;
-        _owner.PointerMoved += OnPointerMoved;
-        _owner.PointerCaptureLost += OnPointerCaptureLost;
+        _clickDelayMs = clickDelayMs;
+        _singleClickHandler = singleClickHandler;
+        _doubleClickHandler = doubleClickHandler;
     }
 
-    public void Dispose()
+    public void OnPointerPressed()
     {
-        _owner.PointerPressed -= OnPointerPressed;
-        _owner.PointerReleased -= OnPointerReleased;
-        _owner.PointerMoved -= OnPointerMoved;
-        _owner.PointerCaptureLost -= OnPointerCaptureLost;
-        _timer.Stop();
-    }
+        _isDragged = false;
+        var now = DateTimeOffset.UtcNow;
 
-    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        _pointerDownPosition = e.GetPosition(_owner);
-        _timer.Stop();
-        _isSingleClickPending = true;
-        _timer.Start();
-    }
-
-    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        _timer.Stop();
-        if (_isDragging)
+        if (_lastClickTime.HasValue && (now - _lastClickTime.Value).TotalMilliseconds <= _clickDelayMs)
         {
-            _isDragging = false;
-            _isSingleClickPending = false;
+            // Double click
+            _doubleClickHandler?.Invoke();
+            _lastClickTime = null;
+        }
+        else
+        {
+            // First click - schedule single click
+            _lastClickTime = now;
         }
     }
 
-    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    public void OnPointerReleased()
     {
-        if (!_pointerDownPosition.HasValue || _isDragging)
+        if (_lastClickTime == null)
+        {
             return;
-
-        var currentPos = e.GetPosition(_owner);
-        var dx = Math.Abs(currentPos.X - _pointerDownPosition.Value.X);
-        var dy = Math.Abs(currentPos.Y - _pointerDownPosition.Value.Y);
-
-        // Drag threshold: 3px
-        if (dx > 3.0 || dy > 3.0)
-        {
-            _isDragging = true;
-            _timer.Stop();
-            _isSingleClickPending = false;
         }
-    }
 
-    private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
-    {
-        _timer.Stop();
-        _isSingleClickPending = false;
-    }
+        var elapsed = (DateTimeOffset.UtcNow - _lastClickTime.Value).TotalMilliseconds;
 
-    private void OnTimerTick(object? sender, EventArgs e)
-    {
-        _timer.Stop();
-        if (_isSingleClickPending && !_isDragging)
+        if (elapsed <= _clickDelayMs && !_isDragged)
         {
-            _onSingleClick();
+            _singleClickHandler?.Invoke();
         }
-        _isSingleClickPending = false;
+
+        _lastClickTime = null;
     }
 
-    public void CancelSingleClick()
+    public void OnPointerMoved()
     {
-        _timer.Stop();
-        _isSingleClickPending = false;
+        _isDragged = true;
+        _lastClickTime = null;
     }
 
-    public void Reset()
+    public void OnKeyPressed()
     {
-        _timer.Stop();
-        _isSingleClickPending = false;
-        _isDragging = false;
-        _pointerDownPosition = null;
+        _isDragged = false;
     }
 }
