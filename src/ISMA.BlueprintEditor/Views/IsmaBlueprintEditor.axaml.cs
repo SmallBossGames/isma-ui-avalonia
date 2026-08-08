@@ -1,34 +1,32 @@
 using Avalonia.Controls;
-using Avalonia.Layout;
 using ISMA.BlueprintEditor.Models;
 using ISMA.BlueprintEditor.Services;
 using ISMA.BlueprintEditor.ViewModels;
-using Panel = Avalonia.Controls.Panel;
 
 namespace ISMA.BlueprintEditor.Views;
 
-public partial class IsmaBlueprintEditor : Panel
+public partial class IsmaBlueprintEditor : Controls.Panel
 {
     private readonly IsmaBlueprintViewModel _viewModel;
-    private readonly CanvasView _canvasView;
 
     public IsmaBlueprintEditor()
     {
+        InitializeComponent();
         _viewModel = new IsmaBlueprintViewModel();
-        _canvasView = new CanvasView { CanvasViewModel = _viewModel.CanvasViewModel };
-        Initialize();
+        DataContext = _viewModel;
     }
 
     public IsmaBlueprintEditor(ITextEditorFactory? textEditorFactory)
     {
+        InitializeComponent();
         _viewModel = new IsmaBlueprintViewModel(textEditorFactory);
-        _canvasView = new CanvasView { CanvasViewModel = _viewModel.CanvasViewModel };
-        Initialize();
+        DataContext = _viewModel;
     }
 
-    private void Initialize()
+    private void OnTabsSelectionChanged(object? sender, Controls.SelectionChangedEventArgs e)
     {
-        Children.Add(_canvasView);
+        var diagramTabSelected = ReferenceEquals(DiagramTab.Content, Tabs.SelectedItem);
+        _viewModel.DiagramTabSelected = diagramTabSelected;
     }
 
     public IsmaBlueprintViewModel ViewModel => _viewModel;

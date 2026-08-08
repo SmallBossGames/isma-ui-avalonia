@@ -1,0 +1,33 @@
+<Panel xmlns="https://github.com/avaloniaui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:local="clr-namespace:ISMA.BlueprintEditor.Views"
+       x:Class="ISMA.BlueprintEditor.Views.IsmaBlueprintEditor">
+
+    <BorderPane>
+        <BorderPane.Center>
+            <TabPane x:Name="Tabs" SelectionChanged="OnTabsSelectionChanged">
+                <Tab x:Name="DiagramTab" Header="Diagram" IsClosable="False">
+                    <Border Background="#F5F5F5">
+                        <local:CanvasView x:Name="CanvasView"
+                                          CanvasViewModel="{Binding CanvasViewModel}"
+                                          OnStateDoubleClick="{Binding OpenStateTextEditor}"
+                                          OnLoopStateDoubleClick="{Binding OpenLoopTextEditor}"/>
+                    </Border>
+                </Tab>
+            </TabPane>
+        </BorderPane.Center>
+        <BorderPane.Bottom>
+            <ToolBar x:Name="Toolbar" IsVisible="{Binding DiagramTabSelected}">
+                <Button Command="{Binding NewStateCommand}" Content="New state"/>
+                <Button Command="{Binding ToggleModeCommand}" CommandParameter="AddTransition"
+                        Content="{Binding AddTransitionButtonText}"/>
+                <Separator/>
+                <Button Command="{Binding ToggleModeCommand}" CommandParameter="RemoveState"
+                        Content="{Binding RemoveStateButtonText}"/>
+                <Button Command="{Binding ToggleModeCommand}" CommandParameter="RemoveTransition"
+                        Content="{Binding RemoveTransitionButtonText}"/>
+            </ToolBar>
+        </BorderPane.Bottom>
+    </BorderPane>
+
+</Panel>

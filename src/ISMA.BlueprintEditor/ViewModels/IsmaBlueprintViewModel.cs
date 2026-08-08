@@ -35,6 +35,8 @@ public partial class IsmaBlueprintViewModel : ObservableObject
             BlueprintEditorConstants.DefaultStateWidth,
             BlueprintEditorConstants.FixedStateHeight,
             editable: false);
+
+        UpdateButtonTexts();
     }
 
     public CanvasViewModel CanvasViewModel => _canvasViewModel;
@@ -46,6 +48,11 @@ public partial class IsmaBlueprintViewModel : ObservableObject
     [ObservableProperty]
     private EditorMode _editorMode = new IdleMode();
 
+    partial void OnEditorModeChanged(EditorMode oldValue, EditorMode newValue)
+    {
+        UpdateButtonTexts();
+    }
+
     [ObservableProperty]
     private string _addTransitionButtonText = "New transition";
 
@@ -54,6 +61,32 @@ public partial class IsmaBlueprintViewModel : ObservableObject
 
     [ObservableProperty]
     private string _removeTransitionButtonText = "Remove transition";
+
+    [ObservableProperty]
+    private bool _diagramTabSelected;
+
+    [RelayCommand]
+    private void NewState() => AddState();
+
+    [RelayCommand]
+    private void ToggleMode(string? mode)
+    {
+        switch (mode)
+        {
+            case "AddTransition":
+                ToggleAddTransition();
+                break;
+            case "RemoveState":
+                ToggleRemoveState();
+                break;
+            case "RemoveTransition":
+                ToggleRemoveTransition();
+                break;
+            default:
+                ResetMode();
+                break;
+        }
+    }
 
     public void UpdateButtonTexts()
     {
