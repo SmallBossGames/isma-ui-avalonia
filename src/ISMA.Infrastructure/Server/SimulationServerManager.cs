@@ -8,6 +8,8 @@ public sealed class SimulationServerManager : IDisposable
 {
     private Process? _process;
     private readonly ILogger<SimulationServerManager>? _logger;
+    private readonly object _exitLock = new();
+    private bool _exitHookRegistered;
 
     public SimulationServerManager(ILogger<SimulationServerManager>? logger = null)
     {
@@ -62,6 +64,8 @@ public sealed class SimulationServerManager : IDisposable
         {
             using var reader = _process!.StandardOutput;
             string? line;
+            string? grpc = null;
+            string? http = null;
             while ((line = await reader.ReadLineAsync()) != null)
             {
                 if (IsSkipLine(line))
@@ -69,25 +73,40 @@ public sealed class SimulationServerManager : IDisposable
                     continue;
                 }
 
-                var grpc = ExtractGrpcSocket(line);
-                var http = ExtractHttpSocket(line);
-
-                if (!string.IsNullOrEmpty(grpc))
+                var (g, h) = ExtractSockets(line);
+                if (g is not null)
                 {
-                    SocketPaths = new SocketPaths(grpc, http ?? "");
+                    grpc = g;
+                }
+                if (h is not null)
+                {
+                    http = h;
+                }
+
+                if (grpc is not null && http is not null)
+                {
+                    SocketPaths = new SocketPaths(grpc, http);
                     tcs.TrySetResult(SocketPaths);
+                    return;
                 }
             }
 
             if (!tcs.Task.IsCompleted)
             {
-                tcs.TrySetException(new TimeoutException("Server did not produce a valid socket path in stdout."));
+                tcs.TrySetException(new TimeoutException("Server did not produce valid socket paths in stdout."));
             }
         });
 
-        var result = tcs.Task.Wait(TimeSpan.FromMinutes(2)) ? SocketPaths! : throw new TimeoutException("Timed out waiting for server to start.");
+        var result = tcs.Task.Wait(TimeSpan.FromSeconds(30)) ? SocketPaths! : throw new TimeoutException("Timed out waiting for server to start.");
 
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
+        lock (_exitLock)
+        {
+            if (!_exitHookRegistered)
+            {
+                _exitHookRegistered = true;
+                AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
+            }
+        }
         _process.Exited += (s, e) =>
         {
             _logger?.LogInformation("ISMA server process exited with code {Code}", _process?.ExitCode);
@@ -137,19 +156,38 @@ public sealed class SimulationServerManager : IDisposable
         return false;
     }
 
-    private static string? ExtractGrpcSocket(string line)
+    /// <summary>
+    /// Extracts gRPC/HTTP unix socket paths from a server stdout line.
+    /// Supports both the modern <c>GRPC_SOCKET=</c> line and the legacy
+    /// <c>Starting gRPC server on Unix socket: &lt;path&gt;</c> line.
+    /// </summary>
+    private static (string? Grpc, string? Http) ExtractSockets(string line)
     {
-        const string prefix = "GRPC_SOCKET=";
-        var idx = line.IndexOf(prefix, StringComparison.Ordinal);
-        if (idx < 0) return null;
-        return line[(idx + prefix.Length)..];
-    }
+        string? grpc = null;
+        string? http = null;
 
-    private static string? ExtractHttpSocket(string line)
-    {
-        const string prefix = "HTTP_SOCKET=";
-        var idx = line.IndexOf(prefix, StringComparison.Ordinal);
-        if (idx < 0) return null;
-        return line[(idx + prefix.Length)..];
+        const string grpcPrefix = "GRPC_SOCKET=";
+        var grpcIdx = line.IndexOf(grpcPrefix, StringComparison.Ordinal);
+        if (grpcIdx >= 0)
+        {
+            grpc = line[(grpcIdx + grpcPrefix.Length)..];
+        }
+        else
+        {
+            const string legacyPrefix = "Starting gRPC server on Unix socket:";
+            if (line.StartsWith(legacyPrefix, StringComparison.Ordinal))
+            {
+                grpc = line[legacyPrefix.Length..].Trim();
+            }
+        }
+
+        const string httpPrefix = "HTTP_SOCKET=";
+        var httpIdx = line.IndexOf(httpPrefix, StringComparison.Ordinal);
+        if (httpIdx >= 0)
+        {
+            http = line[(httpIdx + httpPrefix.Length)..];
+        }
+
+        return (grpc, http);
     }
 }

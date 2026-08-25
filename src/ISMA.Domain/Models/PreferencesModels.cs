@@ -20,5 +20,4 @@ public sealed class Preferences
 {
     public WindowPreferences WindowPreferences { get; set; } = new();
     public DefaultFilesPreferences DefaultFilesPreferences { get; set; } = new();
-    public SimulationParameters? SavedParameters { get; set; }
 }

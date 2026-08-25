@@ -24,14 +24,13 @@ public class MainWindowViewModelTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        new SimulationParametersService(),
         CreateSyntaxHighlighterMock().Object);
 
     private static SimulationServiceViewModel CreateSimulationService() => new(
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<IModelErrorService>(),
         Mock.Of<ISimulationResultService>(),
-        new SimulationParametersService());
+        new SimulationParametersViewModel());
 
     private MainWindowViewModel CreateViewModel()
     {
@@ -147,7 +146,7 @@ public class MainWindowViewModelTests
         var mockFacade = new Mock<ISimulationServerFacade>();
         var mockErrorService = new Mock<IModelErrorService>();
         var mockResultService = new Mock<ISimulationResultService>();
-        var paramsService = new SimulationParametersService();
+        var paramsService = new SimulationParametersViewModel();
 
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
@@ -221,7 +220,7 @@ public class MainWindowViewModelTests
             Mock.Of<ISimulationServerFacade>(),
             mockErrorService.Object,
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService(),
+            new SimulationParametersViewModel(),
             null!);
 
         var errorList = new ErrorListViewModel();

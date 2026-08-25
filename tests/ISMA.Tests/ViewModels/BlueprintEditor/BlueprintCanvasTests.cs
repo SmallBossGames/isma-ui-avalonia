@@ -100,10 +100,10 @@ public class BlueprintCanvasTests
         var viewModel = CreateViewModel();
 
         var mainState = viewModel.MainState;
-        mainState.StateHeight.Should().Be(65);
+        mainState.StateHeight.Should().Be(60);
 
         var initState = viewModel.InitState;
-        initState.StateHeight.Should().Be(65);
+        initState.StateHeight.Should().Be(60);
 
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
@@ -146,16 +146,16 @@ public class BlueprintCanvasTests
     {
         var viewModel = CreateViewModel();
 
-        viewModel.AddTransitionButtonContent.Should().Be("Add Transition");
-        viewModel.RemoveStateButtonContent.Should().Be("Remove State");
-        viewModel.RemoveTransitionButtonContent.Should().Be("Remove Transition");
+        viewModel.AddTransitionButtonContent.Should().Be("New transition");
+        viewModel.RemoveStateButtonContent.Should().Be("Remove state");
+        viewModel.RemoveTransitionButtonContent.Should().Be("Remove transition");
 
         viewModel.Mode = new EditorMode.AddTransition();
         viewModel.AddTransitionButtonContent.Should().Be("Stop adding transaction");
-        viewModel.RemoveStateButtonContent.Should().Be("Remove State");
-        viewModel.RemoveTransitionButtonContent.Should().Be("Remove Transition");
+        viewModel.RemoveStateButtonContent.Should().Be("Remove state");
+        viewModel.RemoveTransitionButtonContent.Should().Be("Remove transition");
 
         viewModel.ResetEditorModeCommand.Execute(null);
-        viewModel.AddTransitionButtonContent.Should().Be("Add Transition");
+        viewModel.AddTransitionButtonContent.Should().Be("New transition");
     }
 }

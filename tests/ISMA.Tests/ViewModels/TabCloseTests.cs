@@ -22,7 +22,6 @@ public class TabCloseTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        new SimulationParametersService(),
         CreateSyntaxHighlighterMock().Object);
 
     private static MainWindowViewModel CreateViewModel()
@@ -32,7 +31,7 @@ public class TabCloseTests
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<IModelErrorService>(),
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService());
+            new SimulationParametersViewModel());
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();

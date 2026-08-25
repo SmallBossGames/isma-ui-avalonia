@@ -22,14 +22,13 @@ public class MainWindowTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        new SimulationParametersService(),
         CreateSyntaxHighlighterMock().Object);
 
     private static SimulationServiceViewModel CreateSimulationService() => new(
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<IModelErrorService>(),
         Mock.Of<ISimulationResultService>(),
-        new SimulationParametersService());
+        new SimulationParametersViewModel());
 
     private static MainWindowViewModel CreateViewModel()
     {

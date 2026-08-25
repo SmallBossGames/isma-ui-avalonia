@@ -7,7 +7,7 @@ public class NameChangingMonitor
 {
     private readonly HashSet<string> _existedNames = new(StringComparer.OrdinalIgnoreCase);
     private int _nextNameCounter = 1;
-    private static readonly Regex DefaultNameRegex = new(@"^New state (\d+)$", RegexOptions.Compiled);
+    private static readonly Regex DefaultNameRegex = new(@"^State (\d+)$", RegexOptions.Compiled);
 
     public bool TryRegister(string name)
     {
@@ -34,7 +34,7 @@ public class NameChangingMonitor
 
     public string CreateNextDefaultName()
     {
-        return $"New state {_nextNameCounter++}";
+        return $"State {_nextNameCounter++}";
     }
 
     public void Clear()

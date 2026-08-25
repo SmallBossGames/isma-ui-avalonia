@@ -21,7 +21,19 @@ public partial class MethodSettingsViewModel : ObservableObject
     private bool _isAccuracyInUse;
 
     [ObservableProperty]
+    private bool _isStableAllowedInUse;
+
+    [ObservableProperty]
     private bool _isStableInUse;
+
+    [ObservableProperty]
+    private bool _isParallelInUse;
+
+    [ObservableProperty]
+    private string _server = "localhost";
+
+    [ObservableProperty]
+    private int _port = 7890;
 
     partial void OnSelectedMethodIndexChanged(int value)
     {

@@ -18,7 +18,18 @@ public partial class TestApp : Application
     public TestApp()
     {
         _services = ConfigureServiceCollection().BuildServiceProvider();
+        AppServiceLocator.Services = _services;
+    }
 
+    public MainWindow Window => _window;
+
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
         var viewModel = _services.GetRequiredService<MainWindowViewModel>();
         var preferencesProvider = _services.GetService<IPreferencesProvider>();
         var editorPlatformService = _services.GetRequiredService<EditorPlatformService>();
@@ -33,13 +44,8 @@ public partial class TestApp : Application
         mainWindow.Show();
 
         _window = mainWindow;
-    }
 
-    public MainWindow Window => _window;
-
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
+        base.OnFrameworkInitializationCompleted();
     }
 
     public IServiceProvider Services => _services;

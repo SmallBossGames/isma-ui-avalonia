@@ -11,6 +11,9 @@ public partial class InProgressSimulationViewModel : ObservableObject, IDisposab
     private readonly TasksPopOverViewModel? _tasksPopOver;
 
     [ObservableProperty]
+    private int _taskId;
+
+    [ObservableProperty]
     private int _id;
 
     [ObservableProperty]
@@ -29,8 +32,9 @@ public partial class InProgressSimulationViewModel : ObservableObject, IDisposab
     {
     }
 
-    public InProgressSimulationViewModel(int id, string modelName, SimulationParameters parameters, ISimulationServerFacade? serverFacade = null, TasksPopOverViewModel? tasksPopOver = null)
+    public InProgressSimulationViewModel(int taskId, int id, string modelName, SimulationParameters parameters, ISimulationServerFacade? serverFacade = null, TasksPopOverViewModel? tasksPopOver = null)
     {
+        TaskId = taskId;
         Id = id;
         ModelName = modelName;
         Parameters = parameters;

@@ -14,8 +14,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 {
     private readonly NameChangingMonitor _nameMonitor;
     private readonly IBlueprintValidationService? _validationService;
-    private readonly IUndoRedoService? _undoRedoService;
-    private readonly IBlueprintClipboardService? _clipboardService;
     private Guid _blueprintId;
 
     public ObservableCollection<BlueprintStateViewModel> States { get; } = new();
@@ -47,37 +45,30 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     public string AddTransitionButtonContent => Mode switch
     {
         EditorMode.AddTransition => "Stop adding transaction",
-        _ => "Add Transition"
+        _ => "New transition"
     };
 
     public string RemoveStateButtonContent => Mode switch
     {
-        EditorMode.RemoveState => "Stop removing state",
-        _ => "Remove State"
+        EditorMode.RemoveState => "Stop remove state",
+        _ => "Remove state"
     };
 
     public string RemoveTransitionButtonContent => Mode switch
     {
-        EditorMode.RemoveTransition => "Stop removing transition",
-        _ => "Remove Transition"
+        EditorMode.RemoveTransition => "Stop remove transition",
+        _ => "Remove transition"
     };
 
     public event Action<BlueprintStateViewModel>? StateTextEditorRequested;
     public event Action<BlueprintLoopTransactionViewModel>? LoopTextEditorRequested;
     public event Action<BlueprintTransitionViewModel, double, double>? EditArrowRequested;
-    public event Action? SaveProjectRequested;
 
     [ObservableProperty]
     private EditArrowPopOverViewModel? _popOverViewModel;
 
     [ObservableProperty]
     private bool _isPopOverOpen;
-
-    [ObservableProperty]
-    private bool _canUndo;
-
-    [ObservableProperty]
-    private bool _canRedo;
 
     /// <summary>
     /// Resolves a state's center position by its Guid. Used by <c>LoopArrow</c> for rendering.
@@ -97,249 +88,35 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             : null;
     }
 
-    [RelayCommand]
-    private void Undo()
-    {
-        if (_undoRedoService?.CanUndo == true)
-        {
-            _undoRedoService.Undo();
-            CanUndo = _undoRedoService.CanUndo;
-            CanRedo = _undoRedoService.CanRedo;
-        }
-    }
-
-    [RelayCommand]
-    private void Redo()
-    {
-        if (_undoRedoService?.CanRedo == true)
-        {
-            _undoRedoService.Redo();
-            CanUndo = _undoRedoService.CanUndo;
-            CanRedo = _undoRedoService.CanRedo;
-        }
-    }
-
-    [RelayCommand]
-    private void SaveProject()
-    {
-        SaveProjectRequested?.Invoke();
-    }
-
-    [RelayCommand]
-    private void DeleteSelected()
-    {
-        if (SelectedStates.Count > 0)
-        {
-            var statesToDelete = SelectedStates.Where(s => !s.IsMain && !s.IsInit).ToList();
-            foreach (var state in statesToDelete)
-            {
-                DeleteState(state, withUndo: true);
-            }
-            SelectedStates.Clear();
-            SelectedState = null;
-            UpdateStateEditability();
-            UpdateCanvasSize();
-        }
-        else if (SelectedState != null && !SelectedState.IsMain && !SelectedState.IsInit)
-        {
-            DeleteState(SelectedState, withUndo: true);
-            SelectedState = null;
-            UpdateStateEditability();
-            UpdateCanvasSize();
-        }
-        else if (SelectedTransition != null)
-        {
-            var tx = SelectedTransition;
-            Transitions.Remove(tx);
-            SelectedTransition = null;
-            PushUndo($"Delete transition",
-                () => Transitions.Add(tx),
-                () => Transitions.Remove(tx));
-        }
-    }
-
-    private void DeleteState(BlueprintStateViewModel state, bool withUndo)
-    {
-        var stateId = state.Id;
-        var stateName = state.Name;
-
-        var transitionsToRemove = Transitions.Where(tx => tx.StartStateId == stateId || tx.EndStateId == stateId).ToList();
-        var loopsToRemove = LoopTransactions.Where(l => l.StateId == stateId).ToList();
-
-        foreach (var tx in transitionsToRemove)
-        {
-            tx.UnsubscribeFromState(state);
-        }
-        foreach (var loop in loopsToRemove)
-        {
-            loop.UnsubscribeFromState(state);
-        }
-
-        States.Remove(state);
-        foreach (var tx in transitionsToRemove)
-        {
-            Transitions.Remove(tx);
-        }
-        foreach (var loop in loopsToRemove)
-        {
-            LoopTransactions.Remove(loop);
-        }
-
-        _nameMonitor.TryUnregister(stateName);
-
-        if (withUndo && _undoRedoService != null)
-        {
-            var stateCopy = new BlueprintStateViewModel
-            {
-                Id = stateId,
-                Name = stateName,
-                CanvasPositionX = state.CanvasPositionX,
-                CanvasPositionY = state.CanvasPositionY
-            };
-            PushUndo($"Delete state '{stateName}'",
-                () =>
-                {
-                    _nameMonitor.TryRegister(stateName);
-                    States.Add(stateCopy);
-                    foreach (var tx in transitionsToRemove)
-                    {
-                        Transitions.Add(tx);
-                    }
-                    foreach (var loop in loopsToRemove)
-                    {
-                        LoopTransactions.Add(loop);
-                    }
-                    UpdateStateEditability();
-                    UpdateCanvasSize();
-                },
-                () =>
-                {
-                    DeleteState(stateCopy, withUndo: false);
-                });
-        }
-    }
-
-    [RelayCommand]
-    private void CopySelected()
-    {
-        if (SelectedStates.Count > 0)
-        {
-            _clipboardService?.CopyStates(SelectedStates);
-        }
-        else if (SelectedState != null && !SelectedState.IsMain && !SelectedState.IsInit)
-        {
-            _clipboardService?.CopyStates(new[] { SelectedState });
-        }
-    }
-
-    private double _pasteOffsetX;
-    private double _pasteOffsetY;
-
-    public void SetPasteOffset(double offsetX, double offsetY)
-    {
-        _pasteOffsetX = offsetX;
-        _pasteOffsetY = offsetY;
-    }
-
-    [RelayCommand]
-    private void PasteStates()
-    {
-        if (_clipboardService == null) return;
-
-        var newStates = _clipboardService.PasteStates(this, _pasteOffsetX, _pasteOffsetY).ToList();
-        foreach (var newState in newStates)
-        {
-            if (!_nameMonitor.TryRegister(newState.Name))
-                continue;
-
-            States.Add(newState);
-        }
-
-        UpdateStateEditability();
-        UpdateCanvasSize();
-    }
-
     private BlueprintTransitionViewModel? _currentEditingTransition;
-
-    private BlueprintLoopTransactionViewModel? _currentEditingLoop;
 
     public void OpenPopOver(BlueprintTransitionViewModel tx, double x, double y)
     {
         _currentEditingTransition = tx;
-        _currentEditingLoop = null;
         PopOverViewModel = new EditArrowPopOverViewModel
         {
             Alias = tx.Alias ?? "",
             Predicate = tx.Predicate ?? ""
         };
         IsPopOverOpen = true;
-        _popOverPositionX = x;
-        _popOverPositionY = y;
     }
-
-    public void OpenPopOverForLoop(BlueprintLoopTransactionViewModel loop)
-    {
-        _currentEditingLoop = loop;
-        _currentEditingTransition = null;
-        PopOverViewModel = new EditArrowPopOverViewModel
-        {
-            Alias = loop.Alias ?? "",
-            Predicate = loop.Predicate ?? ""
-        };
-        IsPopOverOpen = true;
-        _popOverPositionX = 0;
-        _popOverPositionY = 0;
-    }
-
-    private double _popOverPositionX;
-    private double _popOverPositionY;
-
-    public double PopOverPositionX => _popOverPositionX;
-    public double PopOverPositionY => _popOverPositionY;
 
     public void ClosePopOver()
     {
-        if (_currentEditingTransition != null && PopOverViewModel != null)
-        {
-            _currentEditingTransition.Alias = PopOverViewModel.Alias ?? "";
-            _currentEditingTransition.Predicate = PopOverViewModel.Predicate ?? "";
-        }
-        else if (_currentEditingLoop != null && PopOverViewModel != null)
-        {
-            _currentEditingLoop.Alias = PopOverViewModel.Alias ?? "";
-            _currentEditingLoop.Predicate = PopOverViewModel.Predicate ?? "";
-        }
         IsPopOverOpen = false;
         _currentEditingTransition = null;
-        _currentEditingLoop = null;
     }
 
     public void OnPopOverAliasChanged()
     {
-        if (PopOverViewModel == null) return;
-
-        if (_currentEditingTransition != null)
-        {
-            _currentEditingTransition.Alias = PopOverViewModel.Alias ?? "";
-        }
-        else if (_currentEditingLoop != null)
-        {
-            _currentEditingLoop.Alias = PopOverViewModel.Alias ?? "";
-        }
+        if (PopOverViewModel == null || _currentEditingTransition == null) return;
+        _currentEditingTransition.Alias = PopOverViewModel.Alias ?? "";
     }
 
     public void OnPopOverPredicateChanged()
     {
-        if (PopOverViewModel == null) return;
-
-        if (_currentEditingTransition != null)
-        {
-            _currentEditingTransition.Predicate = PopOverViewModel.Predicate ?? "";
-        }
-        else if (_currentEditingLoop != null)
-        {
-            _currentEditingLoop.Predicate = PopOverViewModel.Predicate ?? "";
-        }
+        if (PopOverViewModel == null || _currentEditingTransition == null) return;
+        _currentEditingTransition.Predicate = PopOverViewModel.Predicate ?? "";
     }
 
     public record CanvasSizeDto(double Width, double Height);
@@ -414,46 +191,34 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     {
         foreach (var state in States)
         {
-            state.IsEnabled = Mode is not EditorMode.AddTransition and not EditorMode.RemoveState;
             state.IsEditable = Mode is not EditorMode.AddTransition and not EditorMode.RemoveState;
         }
     }
 
     public BlueprintEditorViewModel()
-        : this(new NameChangingMonitor(), null, null, null)
+        : this(new NameChangingMonitor(), null)
     {
     }
 
     public BlueprintEditorViewModel(BlueprintModel model)
-        : this(new NameChangingMonitor(), null, null, null)
+        : this(new NameChangingMonitor(), null)
     {
         LoadFromModel(model);
     }
 
     public BlueprintEditorViewModel(NameChangingMonitor nameMonitor)
-        : this(nameMonitor, null, null, null)
+        : this(nameMonitor, null)
     {
     }
 
     public BlueprintEditorViewModel(
         NameChangingMonitor nameMonitor,
-        IBlueprintValidationService? validationService = null,
-        IUndoRedoService? undoRedoService = null,
-        IBlueprintClipboardService? clipboardService = null)
+        IBlueprintValidationService? validationService = null)
     {
         _nameMonitor = nameMonitor;
         _validationService = validationService;
-        _undoRedoService = undoRedoService;
-        _clipboardService = clipboardService;
         _blueprintId = Guid.NewGuid();
         LoadFromModel(BlueprintModel.Empty);
-    }
-
-    private void PushUndo(string description, System.Action execute, System.Action undo)
-    {
-        _undoRedoService?.Push(description, execute, undo);
-        CanUndo = _undoRedoService?.CanUndo ?? false;
-        CanRedo = _undoRedoService?.CanRedo ?? false;
     }
 
     public void LoadFromModel(BlueprintModel model)
@@ -659,21 +424,17 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         };
     }
 
-    public void OnStatePressed(BlueprintStateViewModel state, double positionX, double positionY, bool isMultiSelect = false)
+    public void OnStatePressed(BlueprintStateViewModel state)
     {
         if (Mode is EditorMode.AddTransition)
         {
+            if (state.IsMain || state.IsInit)
+                return;
+
             if (SelectedStates.Count > 0)
             {
-                if (state.Name != SelectedStates[0].Name)
-                {
-                    SelectedState = state;
-                    AddTransitionCommand.Execute(null);
-                }
-                else
-                {
-                    CreateLoop(state);
-                }
+                SelectedState = state;
+                AddTransitionCommand.Execute(null);
             }
             else
             {
@@ -684,57 +445,15 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         if (Mode is EditorMode.RemoveState)
         {
+            if (state.IsMain || state.IsInit)
+                return;
+
             SelectedState = state;
             RemoveStateCommand.Execute(null);
             return;
         }
 
-        if (isMultiSelect)
-        {
-            ToggleStateSelection(state);
-        }
-        else
-        {
-            SelectedStates.Clear();
-            SelectedState = state;
-        }
-    }
-
-    public void ToggleStateSelection(BlueprintStateViewModel state)
-    {
-        if (state.IsMain || state.IsInit) return;
-
-        if (SelectedStates.Contains(state))
-        {
-            SelectedStates.Remove(state);
-        }
-        else
-        {
-            SelectedStates.Add(state);
-        }
-
-        if (SelectedStates.Count == 1)
-        {
-            SelectedState = SelectedStates[0];
-        }
-        else if (SelectedStates.Count > 1)
-        {
-            SelectedState = null;
-        }
-        else
-        {
-            SelectedState = null;
-        }
-    }
-
-    public int SelectedStateCount => SelectedStates.Count;
-
-    public void OnStateReleased()
-    {
-    }
-
-    public void OnStateClicked(BlueprintStateViewModel state)
-    {
+        SelectedStates.Clear();
         SelectedState = state;
     }
 
@@ -751,6 +470,13 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     public void OnArrowHeadClicked(BlueprintTransitionViewModel transition, double clickX, double clickY)
     {
+        if (Mode is EditorMode.RemoveTransition)
+        {
+            SelectedTransition = transition;
+            RemoveTransitionCommand.Execute(null);
+            return;
+        }
+
         EditArrowRequested?.Invoke(transition, clickX, clickY);
     }
 
@@ -763,16 +489,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
     }
 
-    public void OnLoopArrowHeadClicked(BlueprintLoopTransactionViewModel loop)
-    {
-        // Single-click on loop arrowhead: open PopOver for editing alias/predicate
-        // Double-click on loop arrowbody: open text editor for loop content
-        // For now, invoke a PopOver-like event for loop arrows
-        OnLoopArrowEditRequested?.Invoke(loop);
-    }
-
-    public event Action<BlueprintLoopTransactionViewModel>? OnLoopArrowEditRequested;
-
     public void OnLoopBodyClicked(BlueprintLoopTransactionViewModel loop)
     {
         if (Mode is EditorMode.RemoveTransition)
@@ -782,26 +498,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void CreateLoop(BlueprintStateViewModel state)
-    {
-        var existingLoop = LoopTransactions.FirstOrDefault(l => l.StateId == state.Id);
-        if (existingLoop != null) return;
-        var newLoop = new BlueprintLoopTransactionModel
-        {
-            StateId = state.Id,
-            Predicate = "1 > 0",
-            Alias = "",
-            Text = ""
-        };
-        AddLoop(newLoop);
-        ResetEditorModeCommand.Execute(null);
-    }
-
     [RelayCommand]
     private void AddState()
     {
-        if (Mode is not EditorMode.Default)
-            return;
+        Mode = new EditorMode.Default();
 
         var newStateName = _nameMonitor.CreateNextDefaultName();
         var newState = new BlueprintStateViewModel
@@ -821,29 +521,11 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         States.Add(newState);
         UpdateStateEditability();
         UpdateCanvasSize();
-        PushUndo($"Add state '{newStateName}'",
-            () =>
-            {
-                // Redo: re-remove the state
-                _nameMonitor.TryUnregister(newStateName);
-                States.Remove(newState);
-                UpdateStateEditability();
-                UpdateCanvasSize();
-            },
-            () =>
-            {
-                // Undo: re-add the state
-                _nameMonitor.TryRegister(newStateName);
-                States.Add(newState);
-                UpdateStateEditability();
-                UpdateCanvasSize();
-            });
     }
 
     public void AddStateWithName(string name, double x, double y)
     {
-        if (Mode is not EditorMode.Default)
-            return;
+        Mode = new EditorMode.Default();
 
         if (!_nameMonitor.TryRegister(name))
             return;
@@ -883,22 +565,9 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         return true;
     }
 
-    private bool HasDuplicateTransition(Guid startStateId, Guid endStateId, string? predicate = null)
+    private bool HasDuplicateTransition(Guid startStateId, Guid endStateId)
     {
-        foreach (var tx in Transitions)
-        {
-            if (tx.StartStateId == Guid.Empty || tx.EndStateId == Guid.Empty) continue;
-            if (tx.StartStateId == startStateId && tx.EndStateId == endStateId)
-            {
-                // Allow multiple transitions between same state pair if predicate differs
-                var existingPredicate = tx.Predicate ?? "";
-                var newPredicate = predicate ?? "";
-                if (!string.Equals(newPredicate, existingPredicate, StringComparison.Ordinal))
-                    continue;
-                return true;
-            }
-        }
-        return false;
+        return Transitions.Any(tx => tx.StartStateId == startStateId && tx.EndStateId == endStateId);
     }
 
     [RelayCommand]
@@ -947,7 +616,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
                     Alias = ""
                 };
 
-            if (!HasDuplicateTransition(newTx.StartStateId, newTx.EndStateId, newTx.Predicate))
+            if (!HasDuplicateTransition(newTx.StartStateId, newTx.EndStateId))
             {
                 Transitions.Add(newTx);
             }
@@ -971,13 +640,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         var stateId = SelectedState.Id;
         var stateName = SelectedState.Name;
-        var stateCopy = new BlueprintStateViewModel
-        {
-            Id = stateId,
-            Name = stateName,
-            CanvasPositionX = SelectedState.CanvasPositionX,
-            CanvasPositionY = SelectedState.CanvasPositionY
-        };
 
         var transitionsToRemove = Transitions.Where(tx => tx.StartStateId == stateId || tx.EndStateId == stateId).ToList();
         var loopsToRemove = LoopTransactions.Where(l => l.StateId == stateId).ToList();
@@ -991,7 +653,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             loop.UnsubscribeFromState(SelectedState);
         }
 
-        // Perform the removal immediately
         States.Remove(SelectedState!);
         foreach (var tx in transitionsToRemove)
         {
@@ -1003,48 +664,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
         _nameMonitor.TryUnregister(stateName);
         SelectedState = null;
-        Mode = new EditorMode.Default();
         UpdateCanvasSize();
-
-        // Register undo/redo if service is available
-        PushUndo($"Remove state '{stateName}'",
-            () =>
-            {
-                // Redo: re-remove the state (after undo re-added it)
-                if (States.Any(s => s.Id == stateId))
-                {
-                    States.Remove(States.First(s => s.Id == stateId));
-                    foreach (var tx in transitionsToRemove)
-                    {
-                        if (Transitions.All(t => t.StartStateId != tx.StartStateId || t.EndStateId != tx.EndStateId))
-                        {
-                            Transitions.Remove(tx);
-                        }
-                    }
-                    foreach (var loop in loopsToRemove)
-                    {
-                        LoopTransactions.Remove(loop);
-                    }
-                    _nameMonitor.TryUnregister(stateName);
-                    UpdateCanvasSize();
-                }
-            },
-            () =>
-            {
-                // Undo: re-add
-                _nameMonitor.TryRegister(stateName);
-                States.Add(stateCopy);
-                foreach (var tx in transitionsToRemove)
-                {
-                    Transitions.Add(tx);
-                }
-                foreach (var loop in loopsToRemove)
-                {
-                    LoopTransactions.Add(loop);
-                }
-                UpdateStateEditability();
-                UpdateCanvasSize();
-            });
     }
 
     [RelayCommand]
@@ -1059,7 +679,6 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var startStateId = SelectedTransition.StartStateId;
         var endStateId = SelectedTransition.EndStateId;
         var predicate = SelectedTransition.Predicate ?? "";
-        var alias = SelectedTransition.Alias ?? "";
 
         var transitionToRemove = Transitions.FirstOrDefault(tx =>
             tx.StartStateId == startStateId &&
@@ -1072,53 +691,17 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         }
 
         SelectedTransition = null;
-        Mode = new EditorMode.Default();
-
-        PushUndo($"Remove transition",
-            () =>
-            {
-                if (Transitions.All(t => t.StartStateId != startStateId || t.EndStateId != endStateId || t.Predicate != predicate))
-                {
-                        var allStatesForUndoTx = new List<BlueprintStateViewModel>(States);
-                if (MainState != null) allStatesForUndoTx.Add(MainState);
-                if (InitState != null) allStatesForUndoTx.Add(InitState);
-                Transitions.Add(new BlueprintTransitionViewModel(allStatesForUndoTx)
-                    {
-                        StartStateId = startStateId,
-                        EndStateId = endStateId,
-                        Predicate = predicate,
-                        Alias = alias
-                    });
-                }
-            },
-            () =>
-            {
-                var transitionToRemove = Transitions.FirstOrDefault(t =>
-                    t.StartStateId == startStateId &&
-                    t.EndStateId == endStateId &&
-                    t.Predicate == predicate);
-                if (transitionToRemove != null)
-                {
-                    Transitions.Remove(transitionToRemove);
-                }
-            });
     }
 
     public void SetTransitionSource(BlueprintStateViewModel state)
     {
-        if (Mode is EditorMode.AddTransition)
-        {
-            SelectedStates.Add(state);
-        }
-    }
+        if (Mode is not EditorMode.AddTransition)
+            return;
 
-    public BlueprintStateViewModel? GetTransitionSource()
-    {
-        if (Mode is EditorMode.AddTransition && SelectedStates.Count > 0)
-        {
-            return SelectedStates[0];
-        }
-        return null;
+        if (state.IsMain || state.IsInit)
+            return;
+
+        SelectedStates.Add(state);
     }
 
     public void AddLoop(BlueprintLoopTransactionModel loopModel)
@@ -1154,36 +737,10 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         var loopToRemove = LoopTransactions.FirstOrDefault(l => l.StateId == stateId);
         if (loopToRemove != null)
         {
-            var alias = loopToRemove.Alias ?? "";
-            var predicate = loopToRemove.Predicate ?? "";
-
             LoopTransactions.Remove(loopToRemove);
-
-            PushUndo($"Remove loop",
-                () =>
-                {
-                    // Redo: remove again (no-op since already removed synchronously)
-                },
-                () =>
-                {
-                    // Undo: re-add the loop
-                    if (LoopTransactions.All(l => l.StateId != stateId))
-                    {
-                    var allStatesForLoopUndo = new List<BlueprintStateViewModel>(States);
-                    if (MainState != null) allStatesForLoopUndo.Add(MainState);
-                    if (InitState != null) allStatesForLoopUndo.Add(InitState);
-                    LoopTransactions.Add(new BlueprintLoopTransactionViewModel(allStatesForLoopUndo)
-                            {
-                                StateId = stateId,
-                                Predicate = predicate,
-                                Alias = alias
-                            });
-                    }
-                });
         }
 
         SelectedState = null;
-        Mode = new EditorMode.Default();
     }
 
     public void SetBlueprintModel(BlueprintModel model)
@@ -1274,8 +831,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsMain = isMain,
             IsInit = isInit,
             FillColor = fillColor,
-            StateHeight = 65.0,
-            IsEnabled = !(isMain || isInit)
+            StateHeight = isMain || isInit ? 60.0 : 65.0
         };
     }
 

@@ -19,6 +19,7 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.Accuracy = 0.001;
         viewModel.IntegrationMethod.IsAccuracyInUse = true;
         viewModel.IntegrationMethod.IsStableInUse = true;
+        viewModel.EventDetection.IsEventDetectionInUse = true;
         viewModel.EventDetection.IsStepLimitInUse = true;
         viewModel.EventDetection.Gamma = 0.9;
         viewModel.EventDetection.LowBorder = 0.05;
@@ -37,6 +38,7 @@ public class SimulationParametersViewModelTests
         snapshot.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         snapshot.IntegrationMethod.IsStableInUse.Should().BeTrue();
         snapshot.EventDetection.IsEventDetectionInUse.Should().BeTrue();
+        snapshot.EventDetection.IsStepLimitInUse.Should().BeTrue();
         snapshot.EventDetection.Gamma.Should().Be(0.9);
         snapshot.EventDetection.LowBorder.Should().Be(0.05);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
@@ -91,6 +93,7 @@ public class SimulationParametersViewModelTests
             EventDetection = new EventDetectionParameters
             {
                 IsEventDetectionInUse = true,
+                IsStepLimitInUse = true,
                 Gamma = 0.7,
                 LowBorder = 0.02
             },
@@ -115,6 +118,7 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.Accuracy.Should().Be(0.05);
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
+        viewModel.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         viewModel.EventDetection.IsStepLimitInUse.Should().BeTrue();
         viewModel.EventDetection.Gamma.Should().Be(0.7);
         viewModel.EventDetection.LowBorder.Should().Be(0.02);
@@ -145,6 +149,7 @@ public class SimulationParametersViewModelTests
             EventDetection = new EventDetectionParameters
             {
                 IsEventDetectionInUse = true,
+                IsStepLimitInUse = true,
                 Gamma = 0.6,
                 LowBorder = 0.03
             },
@@ -169,6 +174,7 @@ public class SimulationParametersViewModelTests
         viewModel.IntegrationMethod.Accuracy.Should().Be(0.01);
         viewModel.IntegrationMethod.IsAccuracyInUse.Should().BeTrue();
         viewModel.IntegrationMethod.IsStableInUse.Should().BeTrue();
+        viewModel.EventDetection.IsEventDetectionInUse.Should().BeTrue();
         viewModel.EventDetection.IsStepLimitInUse.Should().BeTrue();
         viewModel.EventDetection.Gamma.Should().Be(0.6);
         viewModel.EventDetection.LowBorder.Should().Be(0.03);

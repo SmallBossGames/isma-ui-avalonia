@@ -8,8 +8,8 @@ using ISMA.Infrastructure.ChartViewer;
 using ISMA.Infrastructure.Server;
 using ISMA.ViewModels.ViewModels;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
-using System.Text.Json;
 
 namespace ISMA.App.Services;
 
@@ -17,14 +17,18 @@ public class SimulationResultService : ISimulationResultService
 {
     private readonly GrinProcessLauncher _grinLauncher;
     private readonly Window? _owner;
+    private readonly WindowProvider? _windowProvider;
     private readonly ObservableCollection<CompletedSimulation> _trackingTasksResults = new();
     private readonly object _lock = new();
 
-    public SimulationResultService(GrinProcessLauncher grinLauncher, Window? owner = null)
+    public SimulationResultService(GrinProcessLauncher grinLauncher, Window? owner = null, WindowProvider? windowProvider = null)
     {
         _grinLauncher = grinLauncher;
         _owner = owner;
+        _windowProvider = windowProvider;
     }
+
+    private Window? Owner => _owner ?? _windowProvider?.Current;
 
     public IEnumerable<CompletedSimulation> TrackingTasksResults => _trackingTasksResults;
 
@@ -46,8 +50,8 @@ public class SimulationResultService : ISimulationResultService
 
     public async Task ShowChart(CompletedSimulation simulation)
     {
-        var topLevel = TopLevel.GetTopLevel(_owner);
-        if (topLevel is null) return;
+        var owner = Owner;
+        if (owner is null) return;
 
         var columns = simulation.CachedColumnNames.ToArray();
         if (columns.Length == 0) return;
@@ -56,11 +60,7 @@ public class SimulationResultService : ISimulationResultService
         dialog.InitializeColumns(columns);
         var window = new SelectVariablesDialogWindow(dialog);
 
-        bool? result;
-        if (_owner is not null)
-            result = await window.ShowDialog<bool?>(_owner);
-        else
-            result = null;
+        var result = await window.ShowDialog<bool?>(owner);
 
         if (result == true && !string.IsNullOrEmpty(dialog.SelectedXAxis))
         {
@@ -74,51 +74,79 @@ public class SimulationResultService : ISimulationResultService
         await Task.Run(() =>
         {
             using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-            var provider = simulation.EquationIndexProvider;
-            var header = new StringBuilder();
-            header.Append("x");
-            if (provider is not null)
-            {
-                for (int i = 0; i < provider.GetDifferentialEquationCount(); i++)
-                    header.Append(",").Append(provider.GetDifferentialEquationCode(i));
-                for (int i = 0; i < provider.GetAlgebraicEquationCount(); i++)
-                    header.Append(",").Append(provider.GetAlgebraicEquationCode(i));
-            }
-            else
-            {
-                foreach (var col in simulation.CachedColumnNames)
-                    header.Append(",").Append(col);
-            }
-            writer.WriteLine(header.ToString());
+            writer.WriteLine(BuildHeader(simulation));
 
             var pointProvider = BinaryFilePointProvider.Read(simulation.CachedFile);
             foreach (var point in pointProvider.Results)
             {
-                var line = new StringBuilder();
-                line.Append(point.X);
-                foreach (var y in point.YForDe) line.Append(",").Append(y);
-                foreach (var rhs in point.Rhs)
-                    foreach (var v in rhs) line.Append(",").Append(v);
-                writer.WriteLine(line.ToString());
+                writer.WriteLine(ToCsvLine(point));
             }
         });
     }
 
     public async Task ShowExportDialog(CompletedSimulation simulation)
     {
-        var topLevel = TopLevel.GetTopLevel(_owner);
+        var topLevel = TopLevel.GetTopLevel(Owner);
         if (topLevel is null || string.IsNullOrEmpty(simulation.CachedFile))
             return;
 
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Export CSV",
-            FileTypeFilter = new[] { new FilePickerFileType("CSV") { Patterns = new[] { "*.csv" } } }
+            Title = "Export Results",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Comma separate file") { Patterns = new[] { "*.csv" } }
+            },
+            DefaultExtension = "csv"
         });
 
-        if (files.Count > 0)
+        if (file is not null)
         {
-            await ExportToFile(simulation, files[0].Path.LocalPath);
+            await ExportToFile(simulation, file.Path.LocalPath);
         }
     }
+
+    private static string BuildHeader(CompletedSimulation simulation)
+    {
+        var parts = new List<string> { "x" };
+        var provider = simulation.EquationIndexProvider;
+
+        if (provider is not null)
+        {
+            for (var i = 0; i < provider.GetDifferentialEquationCount(); i++)
+                parts.Add(provider.GetDifferentialEquationCode(i));
+
+            for (var i = 0; i < provider.GetAlgebraicEquationCount(); i++)
+                parts.Add(provider.GetAlgebraicEquationCode(i));
+
+            for (var i = 0; i < provider.GetDifferentialEquationCount(); i++)
+                parts.Add($"f{i}");
+        }
+        else
+        {
+            parts.AddRange(simulation.CachedColumnNames);
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    private static string ToCsvLine(SimulationPoint point)
+    {
+        var parts = new List<string> { FormatDouble(point.X) };
+        parts.AddRange(point.YForDe.Select(FormatDouble));
+
+        if (point.Rhs.Length > RhsAePartIdx)
+            parts.AddRange(point.Rhs[RhsAePartIdx].Select(FormatDouble));
+
+        if (point.Rhs.Length > RhsDePartIdx)
+            parts.AddRange(point.Rhs[RhsDePartIdx].Select(FormatDouble));
+
+        return string.Join(", ", parts);
+    }
+
+    private static string FormatDouble(double value) =>
+        KotlinDoubleJsonConverter.Format(value);
+
+    private const int RhsDePartIdx = 0;
+    private const int RhsAePartIdx = 1;
 }

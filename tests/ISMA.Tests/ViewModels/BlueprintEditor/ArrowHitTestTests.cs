@@ -146,9 +146,9 @@ public class ArrowHitTestTests
         var mainState = viewModel.MainState;
         var userState = viewModel.States.First();
 
-        mainState.StateHeight.Should().Be(65);
+        mainState.StateHeight.Should().Be(60);
         userState.StateHeight.Should().Be(65);
 
-        mainState.CanvasPositionY.Should().Be(0);
+        mainState.CanvasPositionY.Should().Be(10);
     }
 }

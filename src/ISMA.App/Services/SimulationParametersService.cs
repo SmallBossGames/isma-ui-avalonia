@@ -1,53 +1,53 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using System.Text.Json;
 using ISMA.Domain.Models;
 using ISMA.ViewModels.Services;
 using ISMA.ViewModels.ViewModels;
-using System.Text.Json;
 
 namespace ISMA.App.Services;
 
 public class SimulationParametersService : ISimulationParametersStoreService
 {
     private readonly Window? _owner;
+    private readonly WindowProvider? _windowProvider;
     private readonly SimulationParametersViewModel? _parametersVm;
 
-    public SimulationParametersService(Window? owner = null, SimulationParametersViewModel? parametersVm = null)
+    public SimulationParametersService(Window? owner = null, SimulationParametersViewModel? parametersVm = null, WindowProvider? windowProvider = null)
     {
         _owner = owner;
         _parametersVm = parametersVm;
+        _windowProvider = windowProvider;
     }
 
-    public static string[] SimplifyMethods => ["Radial-Distance", "Douglas-Peucker"];
+    private Window? Owner => _owner ?? _windowProvider?.Current;
 
     public string[] IntegrationMethods { get; set; } = Array.Empty<string>();
 
     public async Task<bool> StoreAsync()
     {
-        var control = _owner as Avalonia.Visual;
-        var topLevel = TopLevel.GetTopLevel(control);
+        var topLevel = TopLevel.GetTopLevel(Owner);
         if (topLevel is null) return false;
 
         var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Store Simulation Parameters",
+            Title = "Save Simulation Parameters",
             SuggestedFileName = "params.json",
-            DefaultExtension = ".json",
+            DefaultExtension = "params.json",
             ShowOverwritePrompt = true
         });
 
         if (file is null) return false;
 
-        var json = JsonSerializer.Serialize(Snapshot(), new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(SimulationParametersFileModel.From(Snapshot()), SimulationParametersFileModel.JsonOptions);
         await File.WriteAllTextAsync(file.Path.LocalPath, json);
         return true;
     }
 
     public async Task<bool> LoadAsync()
     {
-        var control = _owner as Avalonia.Visual;
-        var topLevel = TopLevel.GetTopLevel(control);
+        var topLevel = TopLevel.GetTopLevel(Owner);
         if (topLevel is null) return false;
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -55,33 +55,18 @@ public class SimulationParametersService : ISimulationParametersStoreService
             Title = "Load Simulation Parameters",
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } }
+                new FilePickerFileType("Simulation Parameters File") { Patterns = new[] { "*.params.json" } }
             }
         });
 
         if (files.Count == 0) return false;
 
         var json = await File.ReadAllTextAsync(files[0].Path.LocalPath);
-        var paramsModel = JsonSerializer.Deserialize<SimulationParameters>(json);
-        if (paramsModel is null) return false;
+        var fileModel = JsonSerializer.Deserialize<SimulationParametersFileModel>(json, SimulationParametersFileModel.JsonOptions);
+        if (fileModel is null) return false;
 
-        Commit(paramsModel);
+        Commit(fileModel.ToModel());
         return true;
-    }
-
-    public async Task<bool> Store(object? ownerWindow)
-    {
-        return await StoreAsync();
-    }
-
-    public async Task<bool> Load(object? ownerWindow, Action<SimulationParameters> applyCallback)
-    {
-        var result = await LoadAsync();
-        if (result && _parametersVm != null)
-        {
-            applyCallback(_parametersVm.Snapshot());
-        }
-        return result;
     }
 
     public SimulationParameters Snapshot()
@@ -93,8 +78,7 @@ public class SimulationParametersService : ISimulationParametersStoreService
                 CauchyInitials = new CauchyInitials { StartTime = 0.0, EndTime = 10.0, InitialStep = 0.1 },
                 IntegrationMethod = new IntegrationMethodParameters { Accuracy = 0.1 },
                 EventDetection = new EventDetectionParameters { Gamma = 0.8, LowBorder = 0.001 },
-                ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.Memory },
-                ResultProcessing = new ResultProcessingParameters { SelectedSimplifyMethod = "Radial-Distance" }
+                ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.Memory }
             };
         }
 
@@ -111,31 +95,28 @@ public class SimulationParametersService : ISimulationParametersStoreService
                 SelectedMethod = _parametersVm.IntegrationMethod.SelectedMethod,
                 Accuracy = _parametersVm.IntegrationMethod.Accuracy,
                 IsAccuracyInUse = _parametersVm.IntegrationMethod.IsAccuracyInUse,
-                IsStableInUse = _parametersVm.IntegrationMethod.IsStableInUse
+                IsStableAllowedInUse = _parametersVm.IntegrationMethod.IsStableAllowedInUse,
+                IsStableInUse = _parametersVm.IntegrationMethod.IsStableInUse,
+                IsParallelInUse = _parametersVm.IntegrationMethod.IsParallelInUse,
+                Server = _parametersVm.IntegrationMethod.Server,
+                Port = _parametersVm.IntegrationMethod.Port
             },
             EventDetection = new EventDetectionParameters
             {
-                IsEventDetectionInUse = _parametersVm.EventDetection.IsStepLimitInUse,
+                IsEventDetectionInUse = _parametersVm.EventDetection.IsEventDetectionInUse,
+                IsStepLimitInUse = _parametersVm.EventDetection.IsStepLimitInUse,
                 Gamma = _parametersVm.EventDetection.Gamma,
                 LowBorder = _parametersVm.EventDetection.LowBorder
             },
             ResultSaving = new ResultSavingParameters
             {
                 SavingTarget = _parametersVm.ResultSaving.SavingTarget
-            },
-            ResultProcessing = new ResultProcessingParameters
-            {
-                IsSimplifyInUse = _parametersVm.ResultProcessing.IsSimplifyInUse,
-                SelectedSimplifyMethod = _parametersVm.ResultProcessing.SelectedSimplifyMethod,
-                Tolerance = _parametersVm.ResultProcessing.Tolerance
             }
         };
     }
 
     public void Commit(SimulationParameters model)
     {
-        if (_parametersVm == null) return;
-
-        _parametersVm.Commit(model);
+        _parametersVm?.Commit(model);
     }
 }

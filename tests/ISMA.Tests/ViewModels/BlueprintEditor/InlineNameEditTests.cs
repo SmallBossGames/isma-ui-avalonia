@@ -16,7 +16,7 @@ public class InlineNameEditTests
         viewModel.Mode = new EditorMode.Default();
         viewModel.AddStateCommand.Execute(null);
         var userState = viewModel.States.First();
-        userState.Name.Should().Be("New state 1");
+        userState.Name.Should().Be("State 1");
 
         var uniqueName = $"CustomState_{Guid.NewGuid():N}";
         userState.Name = uniqueName;
@@ -100,7 +100,7 @@ public class InlineNameEditTests
         var names = viewModel.States.Select(s => s.Name).ToList();
         names.Distinct().Count().Should().Be(names.Count);
 
-        var userStateNames = names.Where(n => n.StartsWith("New state ")).ToList();
+        var userStateNames = names.Where(n => n.StartsWith("State ")).ToList();
         userStateNames.Should().HaveCount(3);
     }
 }

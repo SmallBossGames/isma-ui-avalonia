@@ -100,7 +100,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
             {
                 Row = e.Row,
                 Position = e.Column,
-                FragmentName = "Main",
+                FragmentName = _model.FragmentNameByLine(e.Row),
                 Message = e.Message
             }).ToList();
 
@@ -126,7 +126,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     public void LoadFromFile(string path)
     {
         FilePath = path;
-        Name = Path.GetFileNameWithoutExtension(path);
+        Name = Path.GetFileName(path);
         FullText = File.ReadAllText(path);
         _model = new LismaTextModel(FullText, Array.Empty<CodeRegion>());
         IsDirty = false;

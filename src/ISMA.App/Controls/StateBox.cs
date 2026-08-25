@@ -37,7 +37,7 @@ public class StateBox : Control
     private const double DragThreshold = 3.0;
     private const double SingleClickDelay = 200.0;
     private const double StateWidth = 110.0;
-    private const double BoxCornerRadius = 10.0;
+    private const double BoxCornerRadius = 20.0;
 
     private Point _pointerDownPosition;
     private bool _wasDragging;
@@ -122,12 +122,7 @@ public class StateBox : Control
     public double CenterY => CanvasPositionY + (StateHeight > 0 ? StateHeight : base.Width > 0 ? base.Width : StateWidth) / 2;
 
     /// <summary>
-    /// Raised when the state box is pressed.
-    /// </summary>
-    public event EventHandler<PointerEventArgs>? StatePressed;
-
-    /// <summary>
-    /// Raised when the state box is clicked (not dragged).
+    /// Raised when the state box is clicked (single click, not dragged, after click disambiguation).
     /// </summary>
     public event EventHandler<RoutedEventArgs>? StateClicked;
 
@@ -162,24 +157,6 @@ public class StateBox : Control
     /// Simulates a state press by invoking the ViewModel's OnStatePressed method.
     /// For testing purposes — bypasses the need to construct internal PointerEventArgs types.
     /// </summary>
-    public void SimulateStatePressed(double positionX, double positionY)
-    {
-        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
-        {
-            var parent = Parent;
-            while (parent is not null)
-            {
-                if (parent is Avalonia.Controls.UserControl uc &&
-                    uc.DataContext is ISMA.ViewModels.ViewModels.BlueprintEditorViewModel editorVm)
-                {
-                    editorVm.OnStatePressed(stateVm, positionX, positionY);
-                    return;
-                }
-                parent = parent.Parent;
-            }
-        }
-    }
-
     /// <summary>
     /// Raises the NameCommitted event with the given new name. For testing purposes.
     /// </summary>
@@ -252,38 +229,70 @@ public class StateBox : Control
         }
         _pointerDownPosition = e.GetPosition(this);
         _pointerDownPointer = e.Pointer;
+        _wasDragging = false;
         _singleClickTimer?.Stop();
-        _singleClickTimer?.Start();
-        StatePressed?.Invoke(this, e);
+        e.Pointer.Capture(this);
         e.Handled = true;
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (_pointerDownPointer != e.Pointer || _pointerDownPointer is null)
+            return;
+
+        var localPos = e.GetPosition(this);
+        if (!_wasDragging)
+        {
+            var dx = localPos.X - _pointerDownPosition.X;
+            var dy = localPos.Y - _pointerDownPosition.Y;
+            if (Math.Abs(dx) < DragThreshold && Math.Abs(dy) < DragThreshold)
+                return;
+            _wasDragging = true;
+        }
+
+        if (!_wasDragging)
+            return;
+
+        var canvas = GetParentCanvas();
+        if (canvas is null || DataContext is not ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+            return;
+
+        var canvasPos = e.GetPosition(canvas);
+        stateVm.CanvasPositionX = Math.Max(0.0, canvasPos.X - _pointerDownPosition.X);
+        stateVm.CanvasPositionY = Math.Max(0.0, canvasPos.Y - _pointerDownPosition.Y);
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
         _pointerDownPointer?.Capture(null);
-        _singleClickTimer?.Stop();
         if (!_wasDragging)
         {
-            StateClicked?.Invoke(this, new RoutedEventArgs());
-            SelectState();
+            _singleClickTimer?.Stop();
+            _singleClickTimer?.Start();
         }
         _wasDragging = false;
         _pointerDownPosition = default;
+        _pointerDownPointer = null;
         e.Handled = true;
     }
 
-    private void SelectState()
+    private Canvas? GetParentCanvas()
     {
-        if (DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
+        var parent = Parent;
+        while (parent is not null && parent is not Canvas)
         {
-            stateVm.IsSelected = true;
+            parent = parent.Parent;
         }
+        return parent as Canvas;
     }
 
     private void OnSingleClickTimerTick(object? sender, EventArgs e)
     {
         _singleClickTimer?.Stop();
+
+        StateClicked?.Invoke(this, new RoutedEventArgs());
 
         if (!IsEditable)
             return;

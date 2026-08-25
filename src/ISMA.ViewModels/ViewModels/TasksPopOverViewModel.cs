@@ -8,6 +8,7 @@ public partial class TasksPopOverViewModel : ObservableObject
 {
     private ObservableCollection<InProgressSimulationViewModel> _inProgress = new();
     private ObservableCollection<CompletedSimulationViewModel> _completed = new();
+    private ObservableCollection<FailedSimulationViewModel> _failed = new();
 
     public ObservableCollection<InProgressSimulationViewModel> InProgress
     {
@@ -21,8 +22,15 @@ public partial class TasksPopOverViewModel : ObservableObject
         set => SetProperty(ref _completed, value);
     }
 
+    public ObservableCollection<FailedSimulationViewModel> Failed
+    {
+        get => _failed;
+        set => SetProperty(ref _failed, value);
+    }
+
     public int InProgressCount => InProgress.Count;
     public int CompletedCount => Completed.Count;
+    public int FailedCount => Failed.Count;
 
     public void AddInProgress(InProgressSimulationViewModel simulation)
     {
@@ -36,8 +44,12 @@ public partial class TasksPopOverViewModel : ObservableObject
 
     public void AddCompleted(CompletedSimulation completed)
     {
-        var vm = new CompletedSimulationViewModel(completed);
-        Completed.Add(vm);
+        Completed.Add(new CompletedSimulationViewModel(completed));
+    }
+
+    public void AddCompleted(CompletedSimulationViewModel simulation)
+    {
+        Completed.Add(simulation);
     }
 
     public void RemoveCompleted(CompletedSimulationViewModel simulation)
@@ -53,5 +65,10 @@ public partial class TasksPopOverViewModel : ObservableObject
     public void ClearInProgress()
     {
         InProgress.Clear();
+    }
+
+    public void ClearFailed()
+    {
+        Failed.Clear();
     }
 }

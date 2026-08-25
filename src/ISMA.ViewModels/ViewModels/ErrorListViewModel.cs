@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ISMA.Domain.Models;
+using ISMA.ViewModels.Services;
 
 namespace ISMA.ViewModels.ViewModels;
 
-public partial class ErrorListViewModel : ObservableObject
+public partial class ErrorListViewModel : ObservableObject, IModelErrorService
 {
     private ObservableCollection<ErrorInfo> _errors = new();
 
@@ -30,4 +31,6 @@ public partial class ErrorListViewModel : ObservableObject
     {
         Errors.Clear();
     }
+
+    public IReadOnlyList<ErrorInfo> GetErrors() => Errors;
 }

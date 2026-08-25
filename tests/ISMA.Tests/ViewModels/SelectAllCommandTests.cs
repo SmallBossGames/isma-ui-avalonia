@@ -25,7 +25,6 @@ public class SelectAllCommandTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        new SimulationParametersService(),
         CreateSyntaxHighlighterMock().Object);
 
     [Fact]
@@ -36,7 +35,7 @@ public class SelectAllCommandTests
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<IModelErrorService>(),
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService());
+            new SimulationParametersViewModel());
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
@@ -69,7 +68,7 @@ public class SelectAllCommandTests
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<IModelErrorService>(),
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService());
+            new SimulationParametersViewModel());
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();
@@ -103,7 +102,7 @@ public class SelectAllCommandTests
             Mock.Of<ISimulationServerFacade>(),
             Mock.Of<IModelErrorService>(),
             Mock.Of<ISimulationResultService>(),
-            new SimulationParametersService());
+            new SimulationParametersViewModel());
         var errorList = new ErrorListViewModel();
         var simParams = new SimulationParametersViewModel();
         var tasksPopOver = new TasksPopOverViewModel();

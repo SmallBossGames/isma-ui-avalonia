@@ -35,12 +35,16 @@ public partial class App : Application
                 _services = ConfigureServiceCollection().BuildServiceProvider();
             }
 
+            AppServiceLocator.Services = _services;
+
             var viewModel = _services.GetRequiredService<MainWindowViewModel>();
             var preferencesProvider = _services.GetService<IPreferencesProvider>();
             var editorPlatformService = _services.GetService<EditorPlatformService>();
             var mainWindow = preferencesProvider != null
                 ? new MainWindow(viewModel, preferencesProvider)
                 : new MainWindow(viewModel);
+
+            _services.GetRequiredService<WindowProvider>().Current = mainWindow;
 
             if (editorPlatformService != null)
             {
@@ -87,9 +91,6 @@ public partial class App : Application
             .AddConsole()
             .SetMinimumLevel(LogLevel.Debug));
 
-        services.AddSingleton<GrinProcessLauncher>();
-        services.AddSingleton<PreferencesProvider>();
-        services.AddSingleton<SimulationServerManager>();
         services.AddSingleton<ISimulationServerFacade>(sp =>
         {
             var manager = sp.GetRequiredService<SimulationServerManager>();

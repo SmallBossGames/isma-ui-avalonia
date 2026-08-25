@@ -1,271 +1,212 @@
 global using global::Xunit;
+using System.Collections.Immutable;
 using FluentAssertions;
 using ISMA.Domain.Conversion;
 using ISMA.Domain.Models;
 
 namespace ISMA.Tests.Domain;
 
+/// <summary>
+/// Golden tests ported 1:1 from the original Kotlin LismaCodegenTest.
+/// </summary>
 public class BlueprintToLismaConversionTests
 {
-    [Fact]
-    public void Convert_EmptyBlueprint_GeneratesMainAndInitStates()
+    private static BlueprintStateModel State(string name, string text = "") =>
+        new(0, 0, name, text);
+
+    private static BlueprintModel Build(
+        string mainText,
+        BlueprintStateModel[] states,
+        (string Start, string End, string Predicate)[] txs,
+        (string State, string Predicate, string Text)[]? loops = null)
     {
-        var model = BlueprintModel.Empty;
+        var main = State("Main", mainText);
+        var init = State("init");
+        var byName = new Dictionary<string, BlueprintStateModel> { [main.Name] = main, [init.Name] = init };
+        foreach (var s in states) byName[s.Name] = s;
+
+        var transactions = txs
+            .Select(t => new BlueprintTransactionModel
+            {
+                StartStateId = byName[t.Start].Id,
+                EndStateId = byName[t.End].Id,
+                Predicate = t.Predicate
+            })
+            .ToImmutableArray();
+
+        var loopTransactions = (loops ?? Array.Empty<(string, string, string)>())
+            .Select(l => new BlueprintLoopTransactionModel
+            {
+                StateId = byName[l.State].Id,
+                Predicate = l.Predicate,
+                Text = l.Text
+            })
+            .ToImmutableArray();
+
+        return new BlueprintModel
+        {
+            Main = main,
+            Init = init,
+            States = states.ToImmutableArray(),
+            Transactions = transactions,
+            LoopTransactions = loopTransactions
+        };
+    }
+
+    [Fact]
+    public void StateBlocks_AreGeneratedWithCorrectLineRegions()
+    {
+        var model = Build("main body",
+            new[] { State("A", "a body"), State("B", "b body") },
+            new[] { ("Main", "A", ""), ("Main", "B", "x > 1") });
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state Main {");
-        result.FullText.Should().Contain("state init {");
-        result.FullText.Should().Contain("}");
+        result.FullText.Should().Be(
+            "main body\n" +
+            "state A (1 > 0) {\n" +
+            "a body\n" +
+            "} from Main;\n" +
+            "\n" +
+            "state B (x > 1) {\n" +
+            "b body\n" +
+            "} from Main;\n" +
+            "\n");
 
         result.Regions.Should().HaveCount(2);
-        result.Regions[0].Name.Should().Be("Main");
-        result.Regions[1].Name.Should().Be("init");
+        result.Regions[0].Name.Should().Be("A");
+        result.Regions[0].StartLine.Should().Be(2);
+        result.Regions[0].EndLine.Should().Be(4);
+        result.Regions[1].Name.Should().Be("B");
+        result.Regions[1].StartLine.Should().Be(6);
+        result.Regions[1].EndLine.Should().Be(8);
     }
 
     [Fact]
-    public void Convert_SingleUserState_GeneratesMainInitAndUserState()
+    public void TransactionsToSameStateWithSamePredicate_AreMerged()
     {
-        var model = BlueprintModel.Empty;
-        var userState = new BlueprintStateModel(100, 200, "userState", "user code");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(userState),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
+        var model = Build("",
+            new[] { State("A", "a body") },
+            new[] { ("Main", "A", ""), ("init", "A", "") });
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state Main {");
-        result.FullText.Should().Contain("state init {");
-        result.FullText.Should().Contain("state userState {");
-        result.FullText.Should().Contain("user code");
-        result.FullText.Should().Contain("}");
-
-        result.Regions.Should().HaveCount(3);
-        result.Regions[0].Name.Should().Be("Main");
-        result.Regions[1].Name.Should().Be("init");
-        result.Regions[2].Name.Should().Be("userState");
+        result.FullText.Should().Contain("} from Main,init;");
+        result.Regions.Should().HaveCount(1);
     }
 
     [Fact]
-    public void Convert_MultipleStatesWithTransitions_GeneratesCorrectOutput()
+    public void StateBlocks_AppearInFirstTransactionOrder()
     {
-        var model = BlueprintModel.Empty;
-        var state1 = new BlueprintStateModel(100, 200, "state1", "code1");
-        var state2 = new BlueprintStateModel(150, 250, "state2", "code2");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(state1).Add(state2),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
-
-        var tx1 = new BlueprintTransactionModel
-        {
-            StartStateId = state1.Id,
-            EndStateId = state2.Id,
-            Predicate = "cond1"
-        };
-        var tx2 = new BlueprintTransactionModel
-        {
-            StartStateId = state2.Id,
-            EndStateId = state1.Id,
-            Predicate = "cond2"
-        };
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States,
-            Transactions = model.Transactions.Add(tx1).Add(tx2),
-            LoopTransactions = model.LoopTransactions
-        };
+        var model = Build("",
+            new[] { State("A"), State("B") },
+            new[] { ("Main", "B", ""), ("Main", "A", "") });
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state Main {");
-        result.FullText.Should().Contain("state init {");
-        result.FullText.Should().Contain("state state1 {");
-        result.FullText.Should().Contain("state state2 {");
+        var bIndex = result.FullText.IndexOf("state B (", StringComparison.Ordinal);
+        var aIndex = result.FullText.IndexOf("state A (", StringComparison.Ordinal);
 
-        result.FullText.Should().Contain("from state1");
-        result.FullText.Should().Contain("from state2");
-
-        result.Regions.Should().HaveCount(6);
+        bIndex.Should().BeGreaterThanOrEqualTo(0);
+        aIndex.Should().BeGreaterThanOrEqualTo(0);
+        bIndex.Should().BeLessThan(aIndex);
     }
 
     [Fact]
-    public void Convert_LoopTransitions_GeneratesPseudoStatePattern()
+    public void LoopTransaction_GeneratesPseudoStateAndRegion()
     {
-        var model = BlueprintModel.Empty;
-        var state1 = new BlueprintStateModel(100, 200, "state1", "");
-        var loopState = new BlueprintLoopTransactionModel
-        {
-            StateId = state1.Id,
-            Predicate = "loopPred",
-            Alias = "",
-            Text = ""
-        };
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(state1),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions.Add(loopState)
-        };
+        var model = Build("main body",
+            new[] { State("A", "a body") },
+            new[] { ("Main", "A", "") },
+            new[] { ("A", "p > 0", "loop body") });
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state state1_pseudo_1 (loopPred) {");
-        result.FullText.Should().Contain("  from state1;");
-        result.FullText.Should().Contain("state state1 (1 > 0) {");
-        result.FullText.Should().Contain("  from state1_pseudo_1;");
+        result.FullText.Should().Be(
+            "main body\n" +
+            "state A (1 > 0) {\n" +
+            "a body\n" +
+            "} from Main;\n" +
+            "\n" +
+            "state A_pseudo_1 (p > 0) {\n" +
+            "loop body\n" +
+            "} from A;\n" +
+            "\n" +
+            "state A (1 > 0) {\n" +
+            "a body\n" +
+            "} from A_pseudo_1;\n" +
+            "\n" +
+            "\n" +
+            "\n" +
+            "\n");
+
+        result.Regions.Should().HaveCount(2);
+        result.Regions[0].Name.Should().Be("A");
+        result.Regions[0].StartLine.Should().Be(2);
+        result.Regions[0].EndLine.Should().Be(4);
+        result.Regions[1].Name.Should().Be("A");
+        result.Regions[1].StartLine.Should().Be(6);
+        result.Regions[1].EndLine.Should().Be(13);
     }
 
     [Fact]
-    public void Convert_MultipleTransitionsToSameTargetWithSamePredicate_MergesIntoSingleRegion()
+    public void FragmentNameByLine_MapsLinesToOwningFragment()
     {
-        var model = BlueprintModel.Empty;
-        var state1 = new BlueprintStateModel(100, 200, "state1", "");
-        var state2 = new BlueprintStateModel(150, 250, "state2", "");
-        var targetState = new BlueprintStateModel(200, 300, "target", "");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(state1).Add(state2).Add(targetState),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
-
-        var tx1 = new BlueprintTransactionModel
-        {
-            StartStateId = state1.Id,
-            EndStateId = targetState.Id,
-            Predicate = "cond"
-        };
-        var tx2 = new BlueprintTransactionModel
-        {
-            StartStateId = state2.Id,
-            EndStateId = targetState.Id,
-            Predicate = "cond"
-        };
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States,
-            Transactions = model.Transactions.Add(tx1).Add(tx2),
-            LoopTransactions = model.LoopTransactions
-        };
+        var model = Build("main body",
+            new[] { State("A", "a body"), State("B", "b body") },
+            new[] { ("Main", "A", ""), ("Main", "B", "x > 1") });
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.Regions.Count(r => r.Name.Contains("target (cond)")).Should().Be(1);
-        result.FullText.Should().Contain("from state1");
+        result.FragmentNameByLine(2).Should().Be("A");
+        result.FragmentNameByLine(4).Should().Be("A");
+        result.FragmentNameByLine(6).Should().Be("B");
+        result.FragmentNameByLine(8).Should().Be("B");
+        result.FragmentNameByLine(1).Should().Be(LismaTextModel.DefaultFragment.Name);
+        result.FragmentNameByLine(5).Should().Be(LismaTextModel.DefaultFragment.Name);
+        result.FragmentNameByLine(99).Should().Be(LismaTextModel.DefaultFragment.Name);
     }
 
     [Fact]
-    public void Convert_TransitionsWithDifferentPredicates_CreatesSeparateRegions()
+    public void EmptyModel_ProducesOnlyMainText()
     {
-        var model = BlueprintModel.Empty;
-        var state1 = new BlueprintStateModel(100, 200, "state1", "");
-        var targetState = new BlueprintStateModel(200, 300, "target", "");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(state1).Add(targetState),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
+        var result = BlueprintToLismaConverter.ConvertToLisma(BlueprintModel.Empty);
 
-        var tx1 = new BlueprintTransactionModel
-        {
-            StartStateId = state1.Id,
-            EndStateId = targetState.Id,
-            Predicate = "cond1"
-        };
-        var tx2 = new BlueprintTransactionModel
-        {
-            StartStateId = state1.Id,
-            EndStateId = targetState.Id,
-            Predicate = "cond2"
-        };
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States,
-            Transactions = model.Transactions.Add(tx1).Add(tx2),
-            LoopTransactions = model.LoopTransactions
-        };
-
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
-
-        result.Regions.Count(r => r.Name.Contains("target (cond1)")).Should().Be(1);
-        result.Regions.Count(r => r.Name.Contains("target (cond2)")).Should().Be(1);
+        result.FullText.Should().Be("\n");
+        result.Regions.Should().BeEmpty();
     }
 
     [Fact]
-    public void Convert_StateWithText_IncludesTextInOutput()
+    public void BouncingBallSample_ProducesExpectedLisma()
     {
-        var model = BlueprintModel.Empty;
-        var userState = new BlueprintStateModel(100, 200, "myState", "line1\nline2\nline3");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(userState),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
+        var model = BlueprintFileSerializer.FromJson("""
+            {"main":{"canvasPositionX":10,"canvasPositionY":10,"name":"Main","text":"v' = -g;\ny' = v;"},
+             "init":{"canvasPositionX":10,"canvasPositionY":100,"name":"init","text":""},
+             "states":[
+               {"canvasPositionX":534.8,"canvasPositionY":4.8,"name":"Up","text":"set v = -v;"},
+               {"canvasPositionX":535.6,"canvasPositionY":300.8,"name":"Down","text":""}
+             ],
+             "transactions":[
+               {"startStateName":"init","endStateName":"Up","predicate":"y < 0"},
+               {"startStateName":"init","endStateName":"Down","predicate":"v < 0"},
+               {"startStateName":"Down","endStateName":"Up","predicate":"y < 0"},
+               {"startStateName":"Up","endStateName":"Down","predicate":"v < 0"}
+             ],
+             "loopTransactions":[]}
+            """);
 
         var result = BlueprintToLismaConverter.ConvertToLisma(model);
 
-        result.FullText.Should().Contain("state myState {");
-        result.FullText.Should().Contain("line1");
-        result.FullText.Should().Contain("line2");
-        result.FullText.Should().Contain("line3");
-    }
-
-    [Fact]
-    public void Convert_ReturnsNonEmptyFullText()
-    {
-        var model = BlueprintModel.Empty;
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
-
-        result.FullText.Should().NotBeNullOrEmpty();
-        result.Regions.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public void Convert_AllRegionsHaveValidLineNumbers()
-    {
-        var model = BlueprintModel.Empty;
-        var state1 = new BlueprintStateModel(100, 200, "state1", "");
-        model = new BlueprintModel
-        {
-            Main = model.Main,
-            Init = model.Init,
-            States = model.States.Add(state1),
-            Transactions = model.Transactions,
-            LoopTransactions = model.LoopTransactions
-        };
-
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
-
-        foreach (var region in result.Regions)
-        {
-            region.StartLine.Should().BeGreaterThanOrEqualTo(0);
-            region.EndLine.Should().BeGreaterThanOrEqualTo(region.StartLine);
-        }
+        result.FullText.Should().Be(
+            "v' = -g;\n" +
+            "y' = v;\n" +
+            "state Up (y < 0) {\n" +
+            "set v = -v;\n" +
+            "} from init,Down;\n" +
+            "\n" +
+            "state Down (v < 0) {\n" +
+            "\n" +
+            "} from init,Up;\n" +
+            "\n");
     }
 }

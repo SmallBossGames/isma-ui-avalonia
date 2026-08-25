@@ -24,14 +24,12 @@ public class ProjectViewModelTests
         var mockFileService = new Mock<IProjectFileService>();
         var mockFacade = new Mock<ISimulationServerFacade>();
         var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockParamsService = new Mock<SimulationParametersService>();
         var mockSyntax = CreateSyntaxHighlighterMock();
 
         return new ProjectService(
             mockFileService.Object,
             mockFacade.Object,
             mockEditorFactory.Object,
-            mockParamsService.Object,
             mockSyntax.Object);
     }
 
@@ -149,7 +147,8 @@ public class ProjectViewModelTests
         File.Delete(tempFile);
 
         nameChangedFired.Should().BeTrue();
-        var expectedName = Path.GetFileNameWithoutExtension(tempFile);
+        // Tab name matches the original app: file name including extension.
+        var expectedName = Path.GetFileName(tempFile);
         project.Name.Should().Be(expectedName);
     }
 
@@ -201,7 +200,7 @@ public class ProjectViewModelTests
 
         project.LoadFromFile("/home/user/project.isma");
 
-        project.Name.Should().Be("project");
+        project.Name.Should().Be("project.isma");
         project.FilePath.Should().Be("/home/user/project.isma");
     }
 
@@ -215,7 +214,7 @@ public class ProjectViewModelTests
         project.LoadFromFile("/tmp/myfile.isma");
 
         eventFired.Should().BeTrue();
-        project.Name.Should().Be("myfile");
+        project.Name.Should().Be("myfile.isma");
     }
 
     [Fact]

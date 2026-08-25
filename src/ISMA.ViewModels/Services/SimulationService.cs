@@ -14,8 +14,10 @@ public partial class SimulationServiceViewModel : ObservableObject
     private readonly ISimulationServerFacade _serverFacade;
     private readonly IModelErrorService _errorService;
     private readonly ISimulationResultService _resultService;
-    private readonly SimulationParametersService _parametersService;
+    private readonly SimulationParametersViewModel _parametersViewModel;
     private readonly TasksPopOverViewModel? _tasksPopOver;
+
+    private long _nextTaskId = 1;
 
     public ISimulationServerFacade SimulationServerFacade => _serverFacade;
 
@@ -37,13 +39,13 @@ public partial class SimulationServiceViewModel : ObservableObject
         ISimulationServerFacade serverFacade,
         IModelErrorService errorService,
         ISimulationResultService resultService,
-        SimulationParametersService parametersService,
+        SimulationParametersViewModel parametersViewModel,
         TasksPopOverViewModel? tasksPopOver = null)
     {
         _serverFacade = serverFacade;
         _errorService = errorService;
         _resultService = resultService;
-        _parametersService = parametersService;
+        _parametersViewModel = parametersViewModel;
         _tasksPopOver = tasksPopOver;
     }
 
@@ -57,22 +59,31 @@ public partial class SimulationServiceViewModel : ObservableObject
 
         try
         {
-            var snapshot = _parametersService.GetParameters();
-            var source = project.FullText;
+            var snapshot = _parametersViewModel.Snapshot();
+            var lismaText = project.GetModel();
 
-            var compileResult = await _serverFacade.CompileModel(source);
+            CompileResult compileResult;
+            try
+            {
+                compileResult = await _serverFacade.CompileModel(lismaText.FullText);
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Error: {ex.Message}";
+                return;
+            }
+
             if (compileResult.Errors.Length > 0)
             {
                 var errors = compileResult.Errors.Select(e => new ErrorInfo
                 {
                     Row = e.Row,
                     Position = e.Column,
-                    FragmentName = "Main",
+                    FragmentName = lismaText.FragmentNameByLine(e.Row),
                     Message = e.Message
                 });
                 _errorService.PutErrorList(errors);
                 StatusText = "Compilation failed";
-                IsRunning = false;
                 return;
             }
 
@@ -93,9 +104,19 @@ public partial class SimulationServiceViewModel : ObservableObject
                 EventDetectionLowBorder = snapshot.EventDetection.LowBorder
             };
 
-            long simulationId = await _serverFacade.RunSimulation(runParams);
+            long simulationId;
+            try
+            {
+                simulationId = await _serverFacade.RunSimulation(runParams);
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Error: {ex.Message}";
+                return;
+            }
 
             var inProgress = new InProgressSimulationViewModel(
+                NextTaskId(),
                 (int)simulationId,
                 project.Name,
                 snapshot,
@@ -106,21 +127,38 @@ public partial class SimulationServiceViewModel : ObservableObject
 
             StatusText = "Monitoring simulation...";
 
-            await foreach (var progress in _serverFacade.MonitorSimulation(simulationId))
+            try
             {
-                inProgress.Progress = progress.EndTime > progress.StartTime
-                    ? (progress.CurrentTime - progress.StartTime) / (progress.EndTime - progress.StartTime)
-                    : 0.0;
+                await foreach (var progress in _serverFacade.MonitorSimulation(simulationId))
+                {
+                    inProgress.Progress = NormalizeProgress(progress);
+                }
+            }
+            catch (Exception ex)
+            {
+                FailTask(inProgress, $"Monitor error: {ex.Message}");
+                return;
             }
 
             StatusText = "Downloading results...";
 
-            var cachedResult = await _serverFacade.DownloadResult(simulationId);
+            CachedSimulationResult cachedResult;
+            try
+            {
+                cachedResult = await _serverFacade.DownloadResult(simulationId);
+            }
+            catch (Exception ex)
+            {
+                FailTask(inProgress, $"Download error: {ex.Message}");
+                return;
+            }
 
             var completed = new CompletedSimulation
             {
                 Id = (int)simulationId,
                 ModelName = project.Name,
+                Parameters = snapshot,
+                MetricData = new MetricData(),
                 CachedFile = cachedResult.File,
                 CachedColumnNames = cachedResult.ColumnNames
             };
@@ -129,8 +167,11 @@ public partial class SimulationServiceViewModel : ObservableObject
             TrackingTasks.Remove(inProgress);
             _tasksPopOver?.RemoveInProgress(inProgress);
 
-            var completedVm = new CompletedSimulationViewModel(completed, _resultService, _tasksPopOver);
-            _tasksPopOver?.Completed.Add(completedVm);
+            var completedVm = new CompletedSimulationViewModel(completed, _resultService, _tasksPopOver)
+            {
+                TaskId = inProgress.TaskId
+            };
+            _tasksPopOver?.AddCompleted(completedVm);
 
             StatusText = "Simulation complete";
         }
@@ -166,5 +207,24 @@ public partial class SimulationServiceViewModel : ObservableObject
     public void ClearTrackingTasks()
     {
         _trackingTasks.Clear();
+    }
+
+    private int NextTaskId() => (int)_nextTaskId++;
+
+    private void FailTask(InProgressSimulationViewModel inProgress, string message)
+    {
+        TrackingTasks.Remove(inProgress);
+        _tasksPopOver?.RemoveInProgress(inProgress);
+        _tasksPopOver?.Failed.Add(new FailedSimulationViewModel(inProgress.TaskId, message, _tasksPopOver));
+        StatusText = message;
+    }
+
+    private static double NormalizeProgress(SimulationProgress progress)
+    {
+        if (progress.EndTime <= progress.StartTime)
+            return 0.0;
+
+        var value = (progress.CurrentTime - progress.StartTime) / (progress.EndTime - progress.StartTime);
+        return Math.Clamp(value, 0.0, 1.0);
     }
 }

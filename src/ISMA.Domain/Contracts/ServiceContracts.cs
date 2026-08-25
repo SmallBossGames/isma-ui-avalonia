@@ -59,7 +59,6 @@ public interface ISimulationResultService
 public interface IProjectFileService
 {
     Task<IList<string>> Open(object? ownerWindow);
-    Task<IList<ProjectType>> Open(IList<string> paths);
     Task<bool> Save(object project);
     Task<bool> SaveAs(object project);
     Task<bool> SaveAll(IList<object> projects);

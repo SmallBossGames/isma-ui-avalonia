@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ISMA.ViewModels.ViewModels;
 
-public partial class BlueprintStateViewModel : ObservableObject, ISnapPosition
+public partial class BlueprintStateViewModel : ObservableObject
 {
     [ObservableProperty]
     private Guid _id = Guid.NewGuid();
@@ -41,21 +41,5 @@ public partial class BlueprintStateViewModel : ObservableObject, ISnapPosition
     private string? _fillColor = "#F08080";
 
     [ObservableProperty]
-    private bool _isSelected;
-
-    [ObservableProperty]
     private double _stateHeight;
-
-    [ObservableProperty]
-    private bool _isEnabled;
-
-    public void SnapPositionX(double gridSize)
-    {
-        CanvasPositionX = Math.Round(CanvasPositionX / gridSize) * gridSize;
-    }
-
-    public void SnapPositionY(double gridSize)
-    {
-        CanvasPositionY = Math.Round(CanvasPositionY / gridSize) * gridSize;
-    }
 }

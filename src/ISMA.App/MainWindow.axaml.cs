@@ -71,6 +71,11 @@ public partial class MainWindow : Window
             _preferencesProvider.CommitWindow(wp);
         }
 
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.ProjectService.CaptureOpenFiles();
+        }
+
         base.OnClosing(e);
     }
 }

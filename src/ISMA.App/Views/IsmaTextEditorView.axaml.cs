@@ -11,6 +11,7 @@ public partial class IsmaTextEditorView : UserControl
     private TextEditor? _textEditor;
     private LismaProjectViewModel? _currentVm;
     private LismaProjectViewModel? _lastDataContextVm;
+    private bool _suppressEditorSync;
 
     public TextEditor? TextEditor => _textEditor;
 
@@ -53,6 +54,7 @@ public partial class IsmaTextEditorView : UserControl
             _currentVm.CutRequested -= OnCutRequested;
             _currentVm.CopyRequested -= OnCopyRequested;
             _currentVm.PasteRequested -= OnPasteRequested;
+            _currentVm.PropertyChanged -= OnVmPropertyChanged;
 
             _textEditor.TextChanged -= OnEditorTextChanged;
         }
@@ -64,6 +66,7 @@ public partial class IsmaTextEditorView : UserControl
             _currentVm.CutRequested += OnCutRequested;
             _currentVm.CopyRequested += OnCopyRequested;
             _currentVm.PasteRequested += OnPasteRequested;
+            _currentVm.PropertyChanged += OnVmPropertyChanged;
 
             _textEditor.TextChanged -= OnEditorTextChanged;
             if (vm != _lastDataContextVm)
@@ -78,6 +81,22 @@ public partial class IsmaTextEditorView : UserControl
         {
             _currentVm = null;
             _lastDataContextVm = null;
+        }
+    }
+
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(LismaProjectViewModel.FullText))
+            return;
+
+        if (_textEditor is null || _currentVm is null)
+            return;
+
+        if (_textEditor.Text != _currentVm.FullText)
+        {
+            _suppressEditorSync = true;
+            _textEditor.Text = _currentVm.FullText;
+            _suppressEditorSync = false;
         }
     }
 
@@ -108,6 +127,9 @@ public partial class IsmaTextEditorView : UserControl
     private void OnEditorTextChanged(object? sender, System.EventArgs e)
     {
         if (_textEditor is null || _currentVm is null)
+            return;
+
+        if (_suppressEditorSync)
             return;
 
         _currentVm.FullText = _textEditor.Text;

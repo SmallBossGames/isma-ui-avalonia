@@ -71,13 +71,4 @@ public partial class EditArrowPopOverView : UserControl
         }
     }
 
-    private void OnOkClick(object? sender, RoutedEventArgs e)
-    {
-        DismissRequested?.Invoke();
-    }
-
-    private void OnCancelClick(object? sender, RoutedEventArgs e)
-    {
-        DismissRequested?.Invoke();
-    }
 }

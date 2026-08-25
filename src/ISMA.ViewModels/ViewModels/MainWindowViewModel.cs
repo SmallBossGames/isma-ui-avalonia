@@ -22,7 +22,6 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ISimulationParametersStoreService _parametersStore;
     private readonly IModelErrorService _modelErrorService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
-    private readonly Action<SimulationParameters>? _loadSettingsCallback;
 
     private ObservableCollection<IProjectViewModel> _projects = new();
     private IProjectViewModel? _activeProject;
@@ -59,8 +58,7 @@ public partial class MainWindowViewModel : ObservableObject
         TasksPopOverViewModel tasksPopOver,
         ISimulationParametersStoreService parametersStore,
         IModelErrorService modelErrorService,
-        ISyntaxHighlighter syntaxHighlighter,
-        Action<SimulationParameters>? loadSettingsCallback = null)
+        ISyntaxHighlighter syntaxHighlighter)
     {
         _projectService = projectService;
         _simulationService = simulationService;
@@ -70,78 +68,9 @@ public partial class MainWindowViewModel : ObservableObject
         _parametersStore = parametersStore;
         _modelErrorService = modelErrorService;
         _syntaxHighlighter = syntaxHighlighter;
-        _loadSettingsCallback = loadSettingsCallback;
 
         LoadProjects();
         RestoreLastOpenedFiles();
-    }
-
-    private readonly List<(LismaProjectViewModel project, BlueprintStateViewModel state)> _stateTextEditorTabs = new();
-    private readonly List<(LismaProjectViewModel project, BlueprintLoopTransactionViewModel loop)> _loopTextEditorTabs = new();
-
-    public void OpenStateTextEditorTab(BlueprintStateViewModel state, string title)
-    {
-        var project = new LismaProjectViewModel(
-            _simulationService.SimulationServerFacade,
-            _projectService.TextEditorFactory,
-            _projectService.ProjectFileService,
-            _syntaxHighlighter,
-            _modelErrorService);
-
-        project.Name = title;
-        project.FullText = state.Text;
-        var editorVm = FindEditorViewModelForState(state);
-        project.OnBeforeDispose = () =>
-        {
-            state.Text = project.FullText;
-            editorVm?.UpdateStateText(state, project.FullText);
-            _stateTextEditorTabs.RemoveAll(t => t.project == project);
-        };
-
-        _stateTextEditorTabs.Add((project, state));
-        _projectService.AddProject(project);
-        _projectService.SetActiveProject(project);
-        SyncProjects();
-    }
-
-    private BlueprintEditorViewModel? FindEditorViewModelForState(BlueprintStateViewModel state)
-    {
-        foreach (var project in Projects)
-        {
-            if (project is BlueprintProjectViewModel bpProject)
-            {
-                var editorVm = bpProject.EditorContent as BlueprintEditorViewModel;
-                if (editorVm?.States.Contains(state) == true)
-                {
-                    return editorVm;
-                }
-            }
-        }
-        return null;
-    }
-
-    public void OpenLoopTextEditorTab(BlueprintLoopTransactionViewModel loop, string title)
-    {
-        var project = new LismaProjectViewModel(
-            _simulationService.SimulationServerFacade,
-            _projectService.TextEditorFactory,
-            _projectService.ProjectFileService,
-            _syntaxHighlighter,
-            _modelErrorService);
-
-        project.Name = title;
-        project.FullText = loop.Text;
-        var capturedLoop = loop;
-        project.OnBeforeDispose = () =>
-        {
-            capturedLoop.Text = project.FullText;
-            _loopTextEditorTabs.RemoveAll(t => t.project == project);
-        };
-
-        _loopTextEditorTabs.Add((project, loop));
-        _projectService.AddProject(project);
-        ActiveProject = project;
-        SyncProjects();
     }
 
     public void SyncProjects()
@@ -260,9 +189,10 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Exit()
+    private async Task Exit()
     {
-        _projectService.CloseAllAsync().Wait();
+        _projectService.CaptureOpenFiles();
+        await _projectService.CloseAllAsync();
     }
 
     [RelayCommand]
@@ -298,15 +228,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         else if (ActiveProject is BlueprintProjectViewModel blueprintProject)
         {
-            var lismaText = blueprintProject.ConvertToLisma();
-            var tempProject = new LismaProjectViewModel(
-                _simulationService.SimulationServerFacade,
-                _projectService.TextEditorFactory,
-                _projectService.ProjectFileService,
-                _syntaxHighlighter,
-                _modelErrorService);
-            tempProject.SetContent(lismaText.FullText);
-            await tempProject.ValidateAsync();
+            await CreateLismaProjectForBlueprint(blueprintProject).ValidateAsync();
         }
     }
 
@@ -319,16 +241,21 @@ public partial class MainWindowViewModel : ObservableObject
         }
         else if (ActiveProject is BlueprintProjectViewModel blueprintProject)
         {
-            var lismaText = blueprintProject.ConvertToLisma();
-            var tempProject = new LismaProjectViewModel(
-                _simulationService.SimulationServerFacade,
-                _projectService.TextEditorFactory,
-                _projectService.ProjectFileService,
-                _syntaxHighlighter,
-                _modelErrorService);
-            tempProject.SetContent(lismaText.FullText);
-            await _simulationService.SimulateAsync(tempProject);
+            await _simulationService.SimulateAsync(CreateLismaProjectForBlueprint(blueprintProject));
         }
+    }
+
+    private LismaProjectViewModel CreateLismaProjectForBlueprint(BlueprintProjectViewModel blueprintProject)
+    {
+        var lismaText = blueprintProject.ConvertToLisma();
+        return new LismaProjectViewModel(
+            _simulationService.SimulationServerFacade,
+            _projectService.TextEditorFactory,
+            _projectService.ProjectFileService,
+            _syntaxHighlighter,
+            lismaText,
+            null,
+            _modelErrorService);
     }
 
     [RelayCommand]
@@ -340,9 +267,6 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadSettings()
     {
-        if (_loadSettingsCallback != null)
-        {
-            await _parametersStore.LoadAsync();
-        }
+        await _parametersStore.LoadAsync();
     }
 }

@@ -297,6 +297,62 @@ public static class UiHelpers
         return null;
     }
 
+    private static Avalonia.Controls.TabControl GetInnerEditorTabs(this MainWindow window)
+    {
+        // Realize the visual tree in headless mode so templated views exist
+        window.UpdateLayout();
+        var editor = window.GetActiveBlueprintEditor();
+        if (editor is null)
+            throw new InvalidOperationException("Blueprint editor view not found.");
+        var tabs = editor.FindControl<Avalonia.Controls.TabControl>("EditorTabs");
+        if (tabs is null)
+            throw new InvalidOperationException("Inner editor TabControl not found.");
+        return tabs;
+    }
+
+    /// <summary>
+    /// Get the number of inner tabs (Diagram + state/loop text editors) in the blueprint editor.
+    /// </summary>
+    public static int GetInnerEditorTabCount(this MainWindow window)
+    {
+        return window.GetInnerEditorTabs().Items.Count;
+    }
+
+    /// <summary>
+    /// Set the text of the active inner editor tab.
+    /// </summary>
+    public static void SetActiveInnerTabText(this MainWindow window, string text)
+    {
+        var tabs = window.GetInnerEditorTabs();
+        if (tabs.SelectedItem is not Avalonia.Controls.TabItem tab || tab.Content is not AvaloniaEdit.TextEditor editor)
+            throw new InvalidOperationException("Active inner tab has no text editor.");
+        editor.Text = text;
+    }
+
+    /// <summary>
+    /// Close the inner editor tab at the given index via its close button.
+    /// </summary>
+    public static void ClickInnerTabCloseButton(this MainWindow window, int index)
+    {
+        var tabs = window.GetInnerEditorTabs();
+        if (index < 0 || index >= tabs.Items.Count)
+            throw new InvalidOperationException($"Inner tab index {index} out of range (only {tabs.Items.Count} tabs).");
+
+        var item = tabs.Items[index];
+        if (item is null)
+            throw new InvalidOperationException($"Inner tab at index {index} is null.");
+        var tabItem = tabs.ContainerFromItem(item) as Avalonia.Controls.TabItem;
+        if (tabItem is null)
+            throw new InvalidOperationException($"Inner tab at index {index} is not realized.");
+
+        var closeButton = FindDescendants<Avalonia.Controls.Button>(tabItem)
+            .FirstOrDefault(b => b.Content as string == "×");
+        if (closeButton is null)
+            throw new InvalidOperationException($"Close button not found on inner tab {index}.");
+
+        closeButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
+    }
+
     /// <summary>
     /// Click the "Add State" button in the blueprint editor toolbar.
     /// </summary>
@@ -402,8 +458,18 @@ public static class UiHelpers
     /// </summary>
     public static int GetStateBoxCount(this MainWindow window)
     {
-        // Try UI first
-        var stateBoxes = FindDescendants<StateBox>(window).ToList();
+        // Try UI first (user states only — Main/Init have fixed automation ids)
+        var editorScope = window.GetActiveBlueprintEditor();
+        Avalonia.Controls.Control scope = editorScope!;
+        if (editorScope is null)
+            scope = window;
+        var stateBoxes = FindDescendants<StateBox>(scope)
+            .Where(sb =>
+            {
+                var id = sb.GetValue(Avalonia.Automation.AutomationProperties.AutomationIdProperty) as string;
+                return id != "MainState" && id != "InitState";
+            })
+            .ToList();
         if (stateBoxes.Count > 0)
             return stateBoxes.Count;
 
@@ -745,10 +811,7 @@ public static class UiHelpers
         if (stateBox is null)
             throw new InvalidOperationException($"StateBox with name '{name}' not found in blueprint editor.");
 
-        if (stateBox.DataContext is ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
-        {
-            stateVm.IsSelected = true;
-        }
+        stateBox.RaiseStateClicked();
     }
 
     /// <summary>
@@ -787,9 +850,8 @@ public static class UiHelpers
         if (targetState is null)
             throw new InvalidOperationException($"State '{name}' not found in blueprint editor.");
 
-        // Open the state text editor tab via MainWindowViewModel
-        var title = $"State: {name}";
-        mainVm.OpenStateTextEditorTab(targetState, title);
+        // Open the state text editor inner tab via the blueprint editor
+        editorVm.OnStateDoubleClicked(targetState);
     }
 
     /// <summary>
@@ -897,20 +959,15 @@ public static class UiHelpers
             return;
         }
 
-        // In headless mode, open via MainWindowViewModel through UI's public API
+        // In headless mode, open via the blueprint editor's public API
         var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
         if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
         {
             var targetState = editorVm.States.FirstOrDefault(s => s.Name == name);
             if (targetState is not null)
             {
-                var mainVm = window.DataContext as ISMA.ViewModels.ViewModels.MainWindowViewModel;
-                if (mainVm is not null)
-                {
-                    var title = $"State: {name}";
-                    mainVm.OpenStateTextEditorTab(targetState, title);
-                    return;
-                }
+                editorVm.OnStateDoubleClicked(targetState);
+                return;
             }
         }
 
@@ -922,14 +979,22 @@ public static class UiHelpers
     /// </summary>
     public static void ClickStateBoxOnCanvas(this MainWindow window, string name)
     {
-        // Click via ViewModel through UI's public API (works in headless mode)
+        // Try UI first: raise the single-click on the realized StateBox
+        var stateBox = window.GetStateBoxByName(name);
+        if (stateBox is not null && stateBox.DataContext is BlueprintStateViewModel)
+        {
+            stateBox.RaiseStateClicked();
+            return;
+        }
+
+        // Fallback: click via ViewModel through UI's public API
         var bpProject = window.GetActiveProject() as BlueprintProjectViewModel;
         if (bpProject is not null && bpProject.EditorContent is BlueprintEditorViewModel editorVm)
         {
             var targetState = editorVm.States.FirstOrDefault(s => s.Name == name);
             if (targetState is not null)
             {
-                editorVm.OnStatePressed(targetState, 0, 0);
+                editorVm.OnStatePressed(targetState);
                 return;
             }
         }

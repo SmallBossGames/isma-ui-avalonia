@@ -16,18 +16,15 @@ public class BlueprintEditorViewModelTests
 
         viewModel.States.Should().HaveCount(0);
 
+        // Original addState resets the editor mode before adding
         viewModel.Mode = new EditorMode.AddTransition();
         viewModel.AddStateCommand.Execute(null);
 
-        viewModel.States.Should().HaveCount(0);
-
-        viewModel.Mode = new EditorMode.Default();
-        viewModel.AddStateCommand.Execute(null);
-
+        viewModel.Mode.Should().BeOfType<EditorMode.Default>();
         viewModel.States.Should().HaveCount(1);
 
         var newState = viewModel.States[0];
-        newState.Name.Should().StartWith("New state");
+        newState.Name.Should().StartWith("State");
     }
 
     [Fact]
@@ -83,16 +80,33 @@ public class BlueprintEditorViewModelTests
     public void AddTransition_AddsTransitionToCollection()
     {
         var viewModel = CreateViewModel();
+        viewModel.AddStateCommand.Execute(null);
+        viewModel.AddStateCommand.Execute(null);
 
         viewModel.Transitions.Should().BeEmpty();
 
         viewModel.Mode = new EditorMode.AddTransition();
-        viewModel.SetTransitionSource(viewModel.MainState);
-        viewModel.SelectedState = viewModel.InitState;
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.Transitions.Should().HaveCount(1);
         viewModel.Mode.Should().BeOfType<EditorMode.Default>();
+    }
+
+    [Fact]
+    public void AddTransition_MainAndInitCannotBeSource()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.Mode = new EditorMode.AddTransition();
+        viewModel.SetTransitionSource(viewModel.MainState);
+        viewModel.SetTransitionSource(viewModel.InitState);
+        viewModel.SelectedState = viewModel.MainState;
+        viewModel.AddTransitionCommand.Execute(null);
+
+        viewModel.Transitions.Should().BeEmpty();
+        viewModel.LoopTransactions.Should().BeEmpty();
     }
 
     [Fact]
@@ -123,10 +137,12 @@ public class BlueprintEditorViewModelTests
     public void RemoveTransition_RemovesSelectedTransition()
     {
         var viewModel = CreateViewModel();
+        viewModel.AddStateCommand.Execute(null);
+        viewModel.AddStateCommand.Execute(null);
 
         viewModel.Mode = new EditorMode.AddTransition();
-        viewModel.SetTransitionSource(viewModel.MainState);
-        viewModel.SelectedState = viewModel.InitState;
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.Transitions.Should().HaveCount(1);
@@ -143,10 +159,12 @@ public class BlueprintEditorViewModelTests
     public void RemoveTransition_NoSelection_DoesNotRemove()
     {
         var viewModel = CreateViewModel();
+        viewModel.AddStateCommand.Execute(null);
+        viewModel.AddStateCommand.Execute(null);
 
         viewModel.Mode = new EditorMode.AddTransition();
-        viewModel.SetTransitionSource(viewModel.MainState);
-        viewModel.SelectedState = viewModel.InitState;
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.Transitions.Should().HaveCount(1);
@@ -214,8 +232,8 @@ public class BlueprintEditorViewModelTests
         viewModel.AddStateCommand.Execute(null);
 
         viewModel.Mode = new EditorMode.AddTransition();
-        viewModel.SetTransitionSource(viewModel.MainState);
-        viewModel.SelectedState = viewModel.InitState;
+        viewModel.SetTransitionSource(viewModel.States[0]);
+        viewModel.SelectedState = viewModel.States[1];
         viewModel.AddTransitionCommand.Execute(null);
 
         viewModel.Dispose();
@@ -259,16 +277,17 @@ public class BlueprintEditorViewModelTests
 
         mainState.Name.Should().Be("Main");
         initState.Name.Should().Be("init");
-        userState.Name.Should().StartWith("New state");
+        userState.Name.Should().StartWith("State");
     }
 
     [Fact]
     public void AddTransition_SameStateTwice_CreatesLoop()
     {
         var viewModel = CreateViewModel();
+        viewModel.AddStateCommand.Execute(null);
 
         viewModel.Mode = new EditorMode.AddTransition();
-        var targetState = viewModel.InitState;
+        var targetState = viewModel.States[0];
         viewModel.SetTransitionSource(targetState);
         viewModel.SelectedState = targetState;
         viewModel.AddTransitionCommand.Execute(null);
@@ -282,8 +301,8 @@ public class BlueprintEditorViewModelTests
     public void AddTransition_DifferentStates_CreatesInterStateTransition()
     {
         var viewModel = CreateViewModel();
-        viewModel.AddStateCommand.Execute(null); // New state 1
-        viewModel.AddStateCommand.Execute(null); // New state 2
+        viewModel.AddStateCommand.Execute(null); // State 1
+        viewModel.AddStateCommand.Execute(null); // State 2
 
         viewModel.Mode = new EditorMode.AddTransition();
         var sourceState = viewModel.States[0];

@@ -23,8 +23,6 @@
                     <MenuItem Header="Paste" Click="OnPasteClicked" />
                     <Separator />
                     <MenuItem Header="Select All" Click="OnSelectAllClicked" />
-                    <MenuItem Header="Find and Replace"
-                              Command="{Binding FindReplaceCommand}" />
                 </ContextMenu>
             </editors:TextEditor.ContextMenu>
         </editors:TextEditor>

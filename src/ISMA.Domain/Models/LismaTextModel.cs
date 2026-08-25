@@ -2,25 +2,6 @@ using System.Collections.Immutable;
 
 namespace ISMA.Domain.Models;
 
-public sealed class CodeRegion
-{
-    public string Name { get; set; }
-    public int StartLine { get; set; }
-    public int EndLine { get; set; }
-
-    public CodeRegion(string name, int startLine, int endLine)
-    {
-        Name = name;
-        StartLine = startLine;
-        EndLine = endLine;
-    }
-
-    public string FragmentNameByIndex(int index)
-    {
-        return index >= 0 && index < 0 ? "Unknown" : $"Fragment_{index}";
-    }
-}
-
 public sealed class LismaTextModel
 {
     public string FullText { get; set; }
@@ -33,4 +14,12 @@ public sealed class LismaTextModel
         FullText = fullText;
         Regions = regions.ToImmutableArray();
     }
+
+    /// <summary>
+    /// Resolves the fragment (state) name for a 1-based line number, ported from
+    /// the original Kotlin <c>LismaTextModel.fragmentNameByLine</c>.
+    /// </summary>
+    public string FragmentNameByLine(int line) =>
+        Regions.FirstOrDefault(r => line >= r.StartLine && line <= r.EndLine)?.Name
+        ?? DefaultFragment.Name;
 }

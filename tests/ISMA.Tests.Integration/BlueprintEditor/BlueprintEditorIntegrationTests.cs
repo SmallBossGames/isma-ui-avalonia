@@ -72,7 +72,7 @@ public class BlueprintEditorIntegrationTests
 
         editorVm.SetAddTransitionModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
-        editorVm.AddTransitionButtonContent.Should().Be("Add Transition");
+        editorVm.AddTransitionButtonContent.Should().Be("New transition");
     }
 
     [AvaloniaFact]
@@ -87,11 +87,11 @@ public class BlueprintEditorIntegrationTests
 
         editorVm.SetRemoveStateModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.RemoveState>();
-        editorVm.RemoveStateButtonContent.Should().Be("Stop removing state");
+        editorVm.RemoveStateButtonContent.Should().Be("Stop remove state");
 
         editorVm.SetRemoveStateModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
-        editorVm.RemoveStateButtonContent.Should().Be("Remove State");
+        editorVm.RemoveStateButtonContent.Should().Be("Remove state");
     }
 
     [AvaloniaFact]
@@ -106,11 +106,11 @@ public class BlueprintEditorIntegrationTests
 
         editorVm.SetRemoveTransitionModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.RemoveTransition>();
-        editorVm.RemoveTransitionButtonContent.Should().Be("Stop removing transition");
+        editorVm.RemoveTransitionButtonContent.Should().Be("Stop remove transition");
 
         editorVm.SetRemoveTransitionModeCommand.Execute(null);
         editorVm.Mode.Should().BeOfType<EditorMode.Default>();
-        editorVm.RemoveTransitionButtonContent.Should().Be("Remove Transition");
+        editorVm.RemoveTransitionButtonContent.Should().Be("Remove transition");
     }
 
     [AvaloniaFact]
@@ -159,7 +159,7 @@ public class BlueprintEditorIntegrationTests
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var mainState = editorVm!.MainState;
 
-        mainState.StateHeight.Should().Be(65);
+        mainState.StateHeight.Should().Be(60);
     }
 
     [AvaloniaFact]
@@ -171,7 +171,7 @@ public class BlueprintEditorIntegrationTests
         var editorVm = (BlueprintEditorViewModel)blueprintProject!.EditorContent!;
         var initState = editorVm!.InitState;
 
-        initState.StateHeight.Should().Be(65);
+        initState.StateHeight.Should().Be(60);
     }
 
     [AvaloniaFact]

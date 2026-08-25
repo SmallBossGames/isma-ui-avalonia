@@ -1,12 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Threading;
+using ISMA.App.Services;
+using ISMA.Domain.Contracts;
 using ISMA.ViewModels.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ISMA.App.Views;
 
@@ -14,21 +19,28 @@ public partial class BlueprintEditorView : UserControl
 {
     private EditArrowPopOverView? _popOverView;
     private BlueprintEditorViewModel? _vm;
-    private BlueprintStateViewModel? _draggingState;
-    private Point _dragStartPointerPosition;
-    private Point _dragStartCanvasPosition;
-    private bool _wasDragging;
-    // PositionResolver is set via XAML bindings on ArrowLine/LoopArrow controls
+    private ITextEditorFactory? _textEditorFactory;
+    private readonly Dictionary<BlueprintStateViewModel, EditorTab> _stateEditorTabs = new();
+    private readonly Dictionary<BlueprintLoopTransactionViewModel, EditorTab> _loopEditorTabs = new();
+
+    private sealed class EditorTab
+    {
+        public required TabItem Tab { get; init; }
+        public required object Editor { get; init; }
+        public required TextBlock Title { get; init; }
+    }
 
     public BlueprintEditorView()
     {
         InitializeComponent();
+        _textEditorFactory = AppServiceLocator.Services?.GetService<ITextEditorFactory>();
         _popOverView = new EditArrowPopOverView();
         _popOverView.DismissRequested += OnPopOverDismissRequested;
         _popOverView.AliasChanged += OnPopOverAliasChanged;
         _popOverView.PredicateChanged += OnPopOverPredicateChanged;
+        _popOverView.PointerExited += OnPopOverPointerLeave;
         EditArrowPopup.Child = _popOverView;
-        Loaded += OnLoaded;
+        UpdateToolbarVisibility();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -52,7 +64,6 @@ public partial class BlueprintEditorView : UserControl
         vm.EditArrowRequested += OnEditArrowRequested;
         vm.StateTextEditorRequested += OnStateTextEditorRequested;
         vm.LoopTextEditorRequested += OnLoopTextEditorRequested;
-        vm.SaveProjectRequested += OnSaveProjectRequested;
         vm.PropertyChanged += OnVmPropertyChanged;
     }
 
@@ -61,8 +72,8 @@ public partial class BlueprintEditorView : UserControl
         vm.EditArrowRequested -= OnEditArrowRequested;
         vm.StateTextEditorRequested -= OnStateTextEditorRequested;
         vm.LoopTextEditorRequested -= OnLoopTextEditorRequested;
-        vm.SaveProjectRequested -= OnSaveProjectRequested;
         vm.PropertyChanged -= OnVmPropertyChanged;
+        CloseAllEditorTabs();
         _vm = null;
     }
 
@@ -74,9 +85,17 @@ public partial class BlueprintEditorView : UserControl
         }
     }
 
-    private void OnLoaded(object? sender, RoutedEventArgs e)
+    private void OnEditorTabsSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // ZIndex is declared in XAML via Panel.ZIndex
+        UpdateToolbarVisibility();
+    }
+
+    private void UpdateToolbarVisibility()
+    {
+        if (ToolbarBorder != null)
+        {
+            ToolbarBorder.IsVisible = EditorTabs.SelectedItem == DiagramTab;
+        }
     }
 
     private void OnEditArrowRequested(BlueprintTransitionViewModel tx, double x, double y)
@@ -127,109 +146,15 @@ public partial class BlueprintEditorView : UserControl
         _popOverView.DataContext = savedDataContext;
     }
 
-    private void OnCanvasKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
-    {
-        if (_vm == null) return;
-
-        var ctrl = e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
-
-        if (e.Key == Avalonia.Input.Key.S && ctrl)
-        {
-            e.Handled = true;
-            _vm.SaveProjectCommand.Execute(null);
-        }
-        else if (e.Key == Avalonia.Input.Key.Z && ctrl && !e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift))
-        {
-            e.Handled = true;
-            _vm.UndoCommand.Execute(null);
-        }
-        else if (e.Key == Avalonia.Input.Key.Y && ctrl)
-        {
-            e.Handled = true;
-            _vm.RedoCommand.Execute(null);
-        }
-        else if (e.Key == Avalonia.Input.Key.C && ctrl)
-        {
-            e.Handled = true;
-            _vm.CopySelectedCommand.Execute(null);
-        }
-        else if (e.Key == Avalonia.Input.Key.V && ctrl)
-        {
-            e.Handled = true;
-            _vm?.SetPasteOffset(50, 50);
-            _vm?.PasteStatesCommand.Execute(null);
-        }
-        else if (e.Key == Avalonia.Input.Key.Delete)
-        {
-            e.Handled = true;
-            _vm.DeleteSelectedCommand.Execute(null);
-        }
-    }
-
     private void OnPopOverDismissRequested() => _vm?.ClosePopOver();
     private void OnPopOverAliasChanged() => _vm?.OnPopOverAliasChanged();
     private void OnPopOverPredicateChanged() => _vm?.OnPopOverPredicateChanged();
-
-    private void OnStateBoxStatePressed(object? sender, PointerEventArgs e)
-    {
-        if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
-        var position = e.GetPosition(Canvas);
-        var isMultiSelect = e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control);
-        _vm?.OnStatePressed(stateVm, position.X, position.Y, isMultiSelect);
-        _draggingState = stateVm;
-        _dragStartPointerPosition = e.GetPosition(Canvas);
-        _dragStartCanvasPosition = new Point(stateVm.CanvasPositionX, stateVm.CanvasPositionY);
-        _wasDragging = false;
-        e.Pointer.Capture(Canvas);
-    }
-
-    private void OnStateBoxStateReleased(object? sender, PointerEventArgs e)
-    {
-        _vm?.OnStateReleased();
-        e.Pointer.Capture(null);
-        _draggingState = null;
-
-        if (sender is Controls.StateBox stateBox && stateBox.DataContext is ISnapPosition snapPosition)
-        {
-            var gridSize = GetGridSize();
-            snapPosition.SnapPositionX(gridSize);
-            snapPosition.SnapPositionY(gridSize);
-        }
-    }
-
-    private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
-    {
-        if (_draggingState == null) return;
-        var position = e.GetPosition(Canvas);
-        var dx = position.X - _dragStartPointerPosition.X;
-        var dy = position.Y - _dragStartPointerPosition.Y;
-        if (_wasDragging)
-        {
-            _draggingState.CanvasPositionX = Math.Max(0.0, _dragStartCanvasPosition.X + dx);
-            _draggingState.CanvasPositionY = Math.Max(0.0, _dragStartCanvasPosition.Y + dy);
-        }
-    }
-
-    private double GetGridSize()
-    {
-        // Try to get grid size from DI, fall back to hardcoded default
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.DataContext is MainWindowViewModel mainVm)
-        {
-            var projectService = mainVm.ProjectService;
-            if (projectService.ActiveProject is BlueprintProjectViewModel bpProject)
-            {
-                // Use the default grid size since IGridSnappingService is not injected into views
-                // This could be extended to read from preferences in the future
-            }
-        }
-        return 20.0;
-    }
+    private void OnPopOverPointerLeave(object? sender, PointerEventArgs e) => _vm?.ClosePopOver();
 
     private void OnStateBoxStateClicked(object? sender, RoutedEventArgs e)
     {
         if (sender is not Controls.StateBox stateBox || stateBox.DataContext is not BlueprintStateViewModel stateVm) return;
-        _vm?.OnStateClicked(stateVm);
+        _vm?.OnStatePressed(stateVm);
     }
 
     private void OnStateBoxStateDoubleClicked(object? sender, RoutedEventArgs e)
@@ -259,19 +184,6 @@ public partial class BlueprintEditorView : UserControl
         if (tx != null) _vm?.OnArrowBodyClicked(tx);
     }
 
-    private Point? _loopArrowClickPosition;
-
-    private void OnLoopArrowHeadClickedEvent(object? sender, Controls.ArrowHitTestEventArgs e)
-    {
-        if (sender is not Controls.LoopArrow arrow) return;
-        var loop = GetLoop(arrow);
-        if (loop != null)
-        {
-            _loopArrowClickPosition = e.ClickPosition;
-            _vm?.OnLoopArrowHeadClicked(loop);
-        }
-    }
-
     private void OnLoopArrowDoubleClick(object? sender, Controls.ArrowHitTestEventArgs e)
     {
         if (sender is not Controls.LoopArrow arrow) return;
@@ -279,53 +191,6 @@ public partial class BlueprintEditorView : UserControl
         if (loop != null)
         {
             _vm?.OpenLoopTextEditor(loop);
-        }
-    }
-
-    private void OnLoopArrowEditRequested(BlueprintLoopTransactionViewModel loop)
-    {
-        // Open PopOver for editing loop arrow alias/predicate
-        _vm?.OpenPopOverForLoop(loop);
-        Dispatcher.UIThread.InvokeAsync(() => PositionPopOverForLoop(), DispatcherPriority.Normal);
-    }
-
-    private void PositionPopOverForLoop()
-    {
-        if (_popOverView == null) return;
-
-        var scrollViewer = this.FindControl<ScrollViewer>("CanvasScrollViewer");
-        var offset = scrollViewer?.Offset ?? default;
-
-        _popOverView.DataContext = _vm?.PopOverViewModel;
-
-        var pos = _loopArrowClickPosition ?? new Point(100, 100);
-        var popOverWidth = _popOverView.DesiredSize.Width;
-        Canvas.SetLeft(_popOverView, pos.X - popOverWidth / 2 - offset.X);
-        Canvas.SetTop(_popOverView, pos.Y - offset.Y);
-
-        if (popOverWidth == 0)
-        {
-            EventHandler<SizeChangedEventArgs>? handler = null;
-            handler = (s, ev) =>
-            {
-                if (_popOverView != null)
-                {
-                    _popOverView.SizeChanged -= handler;
-                    var newWidth = _popOverView.DesiredSize.Width;
-                    if (newWidth > 0)
-                    {
-                        Canvas.SetLeft(_popOverView, pos.X - newWidth / 2 - offset.X);
-                    }
-                }
-            };
-            _popOverView.SizeChanged += handler;
-        }
-
-        if (EditArrowPopup.Child is not Avalonia.Controls.Canvas)
-        {
-            var canvas = new Canvas();
-            canvas.Children.Add(_popOverView);
-            EditArrowPopup.Child = canvas;
         }
     }
 
@@ -350,36 +215,141 @@ public partial class BlueprintEditorView : UserControl
 
     private void OnStateTextEditorRequested(BlueprintStateViewModel state)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        var window = topLevel as Avalonia.Controls.Window;
-        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+        if (_textEditorFactory == null) return;
 
-        var stateName = state.Name;
-        var title = $"State: {stateName}";
-        mainVm.OpenStateTextEditorTab(state, title);
+        if (_stateEditorTabs.TryGetValue(state, out var existing))
+        {
+            EditorTabs.SelectedItem = existing.Tab;
+            return;
+        }
+
+        var editor = _textEditorFactory.CreateTextEditor(state.Text, newText => state.Text = newText);
+        var title = new TextBlock
+        {
+            Text = state.Name,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var closeButton = new Button
+        {
+            Content = "×",
+            Width = 16,
+            Height = 16,
+            Padding = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4
+        };
+        header.Children.Add(title);
+        header.Children.Add(closeButton);
+
+        var tab = new TabItem { Header = header, Tag = state, Content = editor };
+        void CloseTab(object? s, RoutedEventArgs e) => CloseStateEditorTab(state);
+        closeButton.Click += CloseTab;
+
+        void OnStateChanged(object? s, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(BlueprintStateViewModel.Name))
+            {
+                title.Text = state.Name;
+            }
+        }
+        state.PropertyChanged += OnStateChanged;
+
+        _stateEditorTabs[state] = new EditorTab { Tab = tab, Editor = editor, Title = title };
+        EditorTabs.Items.Add(tab);
+        EditorTabs.SelectedItem = tab;
+    }
+
+    private void CloseStateEditorTab(BlueprintStateViewModel state)
+    {
+        if (!_stateEditorTabs.Remove(state, out var entry)) return;
+
+        EditorTabs.Items.Remove(entry.Tab);
+        _textEditorFactory?.DisposeInstance(entry.Editor);
+        if (EditorTabs.SelectedItem is TabItem selected)
+        {
+            EditorTabs.SelectedItem = selected;
+        }
     }
 
     private void OnLoopTextEditorRequested(BlueprintLoopTransactionViewModel loop)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        var window = topLevel as Avalonia.Controls.Window;
-        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+        if (_textEditorFactory == null) return;
 
-        var loopStateName = loop.GetState(_vm?.States ?? [])?.Name ?? "unknown";
-        var title = $"{loopStateName} (loop)";
-        mainVm.OpenLoopTextEditorTab(loop, title);
+        if (_loopEditorTabs.TryGetValue(loop, out var existing))
+        {
+            EditorTabs.SelectedItem = existing.Tab;
+            return;
+        }
+
+        var state = loop.GetState(_vm?.States ?? []) ?? _vm?.MainState ?? _vm?.InitState;
+        var editor = _textEditorFactory.CreateTextEditor(loop.Text, newText => loop.Text = newText);
+        var title = new TextBlock
+        {
+            Text = $"{state?.Name} (loop)",
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var closeButton = new Button
+        {
+            Content = "×",
+            Width = 16,
+            Height = 16,
+            Padding = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4
+        };
+        header.Children.Add(title);
+        header.Children.Add(closeButton);
+
+        var tab = new TabItem { Header = header, Tag = loop, Content = editor };
+        void CloseTab(object? s, RoutedEventArgs e) => CloseLoopEditorTab(loop);
+        closeButton.Click += CloseTab;
+
+        if (state != null)
+        {
+            void OnStateChanged(object? s, PropertyChangedEventArgs e)
+            {
+                if (e.PropertyName == nameof(BlueprintStateViewModel.Name))
+                {
+                    title.Text = $"{state.Name} (loop)";
+                }
+            }
+            state.PropertyChanged += OnStateChanged;
+        }
+
+        _loopEditorTabs[loop] = new EditorTab { Tab = tab, Editor = editor, Title = title };
+        EditorTabs.Items.Add(tab);
+        EditorTabs.SelectedItem = tab;
     }
 
-    private void OnSaveProjectRequested()
+    private void CloseLoopEditorTab(BlueprintLoopTransactionViewModel loop)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        var window = topLevel as Avalonia.Controls.Window;
-        if (window?.DataContext is not MainWindowViewModel mainVm) return;
+        if (!_loopEditorTabs.Remove(loop, out var entry)) return;
 
-        var activeProject = mainVm.ProjectService.ActiveProject;
-        if (activeProject is BlueprintProjectViewModel bpProject)
+        EditorTabs.Items.Remove(entry.Tab);
+        _textEditorFactory?.DisposeInstance(entry.Editor);
+        if (EditorTabs.SelectedItem is TabItem selected)
         {
-            bpProject.SaveAsync();
+            EditorTabs.SelectedItem = selected;
+        }
+    }
+
+    private void CloseAllEditorTabs()
+    {
+        foreach (var state in _stateEditorTabs.Keys.ToList())
+        {
+            CloseStateEditorTab(state);
+        }
+        foreach (var loop in _loopEditorTabs.Keys.ToList())
+        {
+            CloseLoopEditorTab(loop);
         }
     }
 }

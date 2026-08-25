@@ -12,7 +12,6 @@ public sealed class ProjectService
     private readonly IProjectFileService _projectFileService;
     private readonly ISimulationServerFacade _serverFacade;
     private readonly ITextEditorFactory _editorFactory;
-    private readonly SimulationParametersService _parametersService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
     private readonly IModelErrorService? _errorService;
     private readonly IPreferencesProvider? _preferencesProvider;
@@ -50,7 +49,6 @@ public sealed class ProjectService
         IProjectFileService projectFileService,
         ISimulationServerFacade serverFacade,
         ITextEditorFactory editorFactory,
-        SimulationParametersService parametersService,
         ISyntaxHighlighter syntaxHighlighter,
         IModelErrorService? errorService = null,
         IPreferencesProvider? preferencesProvider = null)
@@ -58,7 +56,6 @@ public sealed class ProjectService
         _projectFileService = projectFileService;
         _serverFacade = serverFacade;
         _editorFactory = editorFactory;
-        _parametersService = parametersService;
         _syntaxHighlighter = syntaxHighlighter;
         _errorService = errorService;
         _preferencesProvider = preferencesProvider;
@@ -88,34 +85,45 @@ public sealed class ProjectService
         if (paths == null || paths.Count == 0)
             return null;
 
-        IProjectViewModel? lastProject = null;
-        foreach (var filePath in paths)
-        {
-            var project = CreateProject(filePath, ProjectType.LismaText);
-            _projects.Add(project);
-            ActiveProject = project;
-            TrackOpenedFile(filePath);
-            lastProject = project;
-        }
-        return lastProject;
+        return await OpenAsync(paths[0]);
     }
 
     public async Task<IProjectViewModel?> OpenAsync(string filePath)
     {
-        var project = CreateProject(filePath, ProjectType.LismaText);
+        var type = ProjectTypeFromPath(filePath);
+        if (type == ProjectType.Legacy)
+        {
+            _errorService?.PutErrorList(new[]
+            {
+                new ErrorInfo
+                {
+                    Row = 0,
+                    Position = 0,
+                    FragmentName = "Open",
+                    Message = "Legacy .im files are no longer supported. Please convert to .isma format first."
+                }
+            });
+            return null;
+        }
+
+        IProjectViewModel project = type == ProjectType.Blueprint
+            ? CreateBlueprintProject(filePath)
+            : CreateLismaProject(filePath);
         _projects.Add(project);
         ActiveProject = project;
-        TrackOpenedFile(filePath);
         return project;
     }
 
-    public IProjectViewModel CreateNewTextProject(string name)
+    private static ProjectType ProjectTypeFromPath(string path)
     {
-        var project = new LismaProjectViewModel(_serverFacade, _editorFactory, _projectFileService, _syntaxHighlighter, _errorService);
-        project.Name = name;
-        _projects.Add(project);
-        ActiveProject = project;
-        return project;
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext switch
+        {
+            ".im2" => ProjectType.LismaText,
+            ".iscm2" => ProjectType.Blueprint,
+            ".im" => ProjectType.Legacy,
+            _ => ProjectType.LismaText
+        };
     }
 
     public async Task<bool> SaveAsync()
@@ -146,31 +154,35 @@ public sealed class ProjectService
 
     public async Task<bool> SaveAllAsync()
     {
-        var results = new List<bool>();
         foreach (var project in _projects)
         {
-            bool saved;
-            if (project.IsDirty && string.IsNullOrEmpty(project.FilePath))
+            if (string.IsNullOrEmpty(project.FilePath))
             {
-                saved = project switch
+                // Unsaved projects get a Save As dialog; cancelling just skips that project.
+                switch (project)
                 {
-                    LismaProjectViewModel lisma => await lisma.SaveAsAsync(),
-                    BlueprintProjectViewModel blueprint => await blueprint.SaveAsAsync(),
-                    _ => false
-                };
+                    case LismaProjectViewModel lisma:
+                        await lisma.SaveAsAsync();
+                        break;
+                    case BlueprintProjectViewModel blueprint:
+                        await blueprint.SaveAsAsync();
+                        break;
+                }
             }
             else
             {
-                saved = project switch
+                switch (project)
                 {
-                    LismaProjectViewModel lisma => await lisma.SaveAsync(),
-                    BlueprintProjectViewModel blueprint => await blueprint.SaveAsync(),
-                    _ => false
-                };
+                    case LismaProjectViewModel lisma:
+                        await lisma.SaveAsync();
+                        break;
+                    case BlueprintProjectViewModel blueprint:
+                        await blueprint.SaveAsync();
+                        break;
+                }
             }
-            results.Add(saved);
         }
-        return results.All(r => r);
+        return true;
     }
 
     public async Task<bool> CloseAsync()
@@ -216,9 +228,8 @@ public sealed class ProjectService
             _editorFactory,
             _projectFileService,
             _syntaxHighlighter,
-            new ISMA.Domain.Models.LismaTextModel("", Array.Empty<ISMA.Domain.Models.CodeRegion>()),
-            path,
             _errorService);
+        project.LoadFromFile(path);
         return project;
     }
 
@@ -226,40 +237,26 @@ public sealed class ProjectService
     {
         var project = new BlueprintProjectViewModel(_projectFileService, _editorFactory);
         project.LoadFromFile(path);
-        var editorVm = new BlueprintEditorViewModel();
-        project.SetEditorViewModel(editorVm);
         return project;
     }
 
-    private IProjectViewModel CreateProject(string path, ProjectType type)
+    private bool _sessionCaptured;
+
+    /// <summary>
+    /// Persists the file paths of all currently open projects (the session),
+    /// matching the original app's exit-time capture. Called once per app run.
+    /// </summary>
+    public void CaptureOpenFiles()
     {
-        return type switch
-        {
-            ProjectType.Blueprint => CreateBlueprintProject(path),
-            ProjectType.Legacy or _ => CreateLismaProject(path)
-        };
-    }
+        if (_sessionCaptured || _preferencesProvider == null) return;
+        _sessionCaptured = true;
 
-    private void SetProperty(ref IProjectViewModel? field, IProjectViewModel? value)
-    {
-        if (field == value)
-            return;
-
-        field = value;
-    }
-
-    private void TrackOpenedFile(string filePath)
-    {
-        if (_preferencesProvider == null) return;
-
-        var preferences = _preferencesProvider.Load();
-        var existing = preferences.DefaultFilesPreferences.LastOpenedProjectPath
-            .Where(p => p != filePath)
-            .Take(4)
-            .Prepend(filePath)
+        var paths = _projects
+            .Where(p => !string.IsNullOrEmpty(p.FilePath))
+            .Select(p => p.FilePath!)
             .ToArray();
 
-        _preferencesProvider.CommitFiles(new DefaultFilesPreferences { LastOpenedProjectPath = existing });
+        _preferencesProvider.CommitFiles(new DefaultFilesPreferences { LastOpenedProjectPath = paths });
     }
 
     public IReadOnlyList<string> GetLastOpenedFiles()

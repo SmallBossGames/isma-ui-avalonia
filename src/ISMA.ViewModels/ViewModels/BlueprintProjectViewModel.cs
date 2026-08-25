@@ -100,7 +100,7 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
 
         try
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(EditorContent.GetBlueprintModel(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            var json = BlueprintFileSerializer.ToJson(EditorContent.GetBlueprintModel());
             await File.WriteAllTextAsync(FilePath, json);
             IsDirty = false;
             return true;
@@ -138,18 +138,15 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     public void LoadFromFile(string path)
     {
         FilePath = path;
-        Name = Path.GetFileNameWithoutExtension(path);
+        Name = Path.GetFileName(path);
         IsDirty = false;
         NameChanged?.Invoke();
 
         try
         {
             var json = File.ReadAllText(path);
-            var loadedModel = System.Text.Json.JsonSerializer.Deserialize<BlueprintModel>(json);
-            if (loadedModel != null)
-            {
-                EditorContent.LoadFromModel(loadedModel);
-            }
+            var loadedModel = BlueprintFileSerializer.FromJson(json);
+            EditorContent.LoadFromModel(loadedModel);
         }
         catch (Exception ex)
         {

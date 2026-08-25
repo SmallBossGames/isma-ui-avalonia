@@ -1,186 +1,133 @@
+using System.Collections.Immutable;
 using System.Text;
 using ISMA.Domain.Models;
 
 namespace ISMA.Domain.Conversion;
 
+/// <summary>
+/// Converts a <see cref="BlueprintModel"/> to LISMA source, ported 1:1 from the
+/// original Kotlin <c>LismaCodegen.kt</c>: the main state text first, then one
+/// <c>state &lt;target&gt; (&lt;predicate&gt;) { text } from &lt;sources&gt;;</c> block per
+/// (target, predicate) group, then loop transactions as pseudo-state pairs.
+/// </summary>
 public static class BlueprintToLismaConverter
 {
+    private const string LismaTrue = "1 > 0";
+
     public static LismaTextModel ConvertToLisma(BlueprintModel model)
     {
-        var lines = new List<string>();
         var regions = new List<CodeRegion>();
-        var lineIndex = 0;
+        var sb = new StringBuilder();
 
-        // Build Guid -> Name map from all states
-        var stateMap = new Dictionary<Guid, string>
+        var stateNames = new Dictionary<Guid, string>
         {
             [model.Main.Id] = model.Main.Name,
             [model.Init.Id] = model.Init.Name
         };
         foreach (var state in model.States)
         {
-            stateMap[state.Id] = state.Name;
+            stateNames[state.Id] = state.Name;
         }
 
-        // Main state
-        var mainLines = new List<string>();
-        mainLines.Add($"state {model.Main.Name} {{");
-        if (!string.IsNullOrWhiteSpace(model.Main.Text))
-        {
-            foreach (var line in model.Main.Text.Split('\n'))
-                mainLines.Add(line.TrimEnd());
-        }
-        mainLines.Add("}");
-        var mainStart = lineIndex;
-        lines.AddRange(mainLines);
-        lineIndex += mainLines.Count;
-        regions.Add(new CodeRegion(model.Main.Name, mainStart, lineIndex - 1));
-
-        // Init state
-        var initLines = new List<string>();
-        initLines.Add($"state {model.Init.Name} {{");
-        if (!string.IsNullOrWhiteSpace(model.Init.Text))
-        {
-            foreach (var line in model.Init.Text.Split('\n'))
-                initLines.Add(line.TrimEnd());
-        }
-        initLines.Add("}");
-        var initStart = lineIndex;
-        lines.AddRange(initLines);
-        lineIndex += initLines.Count;
-        regions.Add(new CodeRegion(model.Init.Name, initStart, lineIndex - 1));
-
-        // User states
+        // User state name -> text (main/init are not part of this map, as in the original).
+        var statesMap = new Dictionary<string, string>();
         foreach (var state in model.States)
         {
-            var stateLines = new List<string>();
-            stateLines.Add($"state {state.Name} {{");
-            if (!string.IsNullOrWhiteSpace(state.Text))
-            {
-                foreach (var line in state.Text.Split('\n'))
-                    stateLines.Add(line.TrimEnd());
-            }
-            stateLines.Add("}");
-            var stateStart = lineIndex;
-            lines.AddRange(stateLines);
-            lineIndex += stateLines.Count;
-            regions.Add(new CodeRegion(state.Name, stateStart, lineIndex - 1));
+            statesMap[state.Name] = state.Text;
         }
 
-        // Transactions - group by target state and predicate, collecting all source states
-        var transactionGroups = new Dictionary<string, (List<string> startStates, List<(string predicate, string alias)>)>();
+        sb.AppendLine(model.Main.Text);
+
+        var stateBlockModels = new Dictionary<string, StateBlockModel>();
         foreach (var tx in model.Transactions)
         {
-            if (tx.StartStateId == Guid.Empty || tx.EndStateId == Guid.Empty)
+            if (!stateNames.TryGetValue(tx.EndStateId, out var endStateName))
+                continue;
+            if (!stateNames.TryGetValue(tx.StartStateId, out var startStateName))
                 continue;
 
-            if (!stateMap.TryGetValue(tx.StartStateId, out var startStateName) ||
-                !stateMap.TryGetValue(tx.EndStateId, out var endStateName))
-                continue;
-
-            var displayKey = !string.IsNullOrEmpty(tx.Alias) ? tx.Alias : CreateTransactionKey(endStateName, tx.Predicate);
-            var groupKey = CreateTransactionKey(endStateName, tx.Predicate);
-
-            if (!transactionGroups.TryGetValue(groupKey, out var group))
+            var predicate = string.IsNullOrWhiteSpace(tx.Predicate) ? LismaTrue : tx.Predicate;
+            var key = CreateTransactionKey(endStateName, predicate);
+            if (!stateBlockModels.TryGetValue(key, out var blockModel))
             {
-                group = (new List<string>(), new List<(string predicate, string alias)>());
-                transactionGroups[groupKey] = group;
+                blockModel = new StateBlockModel(endStateName, key,
+                    statesMap.TryGetValue(endStateName, out var text) ? text : "");
+                stateBlockModels[key] = blockModel;
             }
 
-            // Add start state if not already present
-            if (!group.Item1.Contains(startStateName))
-                group.Item1.Add(startStateName);
-
-            group.Item2.Add((tx.Predicate, tx.Alias ?? ""));
+            blockModel.InputStates.Add(startStateName);
         }
 
-        foreach (var (groupKey, (startStates, transactions)) in transactionGroups)
+        foreach (var block in stateBlockModels.Values)
         {
-            var txLines = new List<string>();
-            var displayKey = transactions.Count == 1 && !string.IsNullOrEmpty(transactions[0].alias)
-                ? transactions[0].alias
-                : groupKey;
-
-            // Extract target state name from key (format: "TargetState (predicate)")
-            var parenIndex = groupKey.LastIndexOf(" (");
-            var targetStateName = parenIndex > 0 ? groupKey.Substring(0, parenIndex) : groupKey;
-
-            // Find target state model for body text
-            BlueprintStateModel? targetStateModel = null;
-            foreach (var tx in model.Transactions)
-            {
-                if (tx.EndStateId != Guid.Empty && stateMap.ContainsKey(tx.EndStateId) && stateMap[tx.EndStateId] == targetStateName)
-                {
-                    targetStateModel = model.States.FirstOrDefault(s => s.Id == tx.EndStateId);
-                    if (targetStateModel != null) break;
-                }
-            }
-
-            txLines.Add($"state \"{displayKey}\" {{");
-
-            // Include target state body text
-            if (targetStateModel != null && !string.IsNullOrWhiteSpace(targetStateModel.Text))
-            {
-                foreach (var line in targetStateModel.Text.Split('\n'))
-                    txLines.Add(line.TrimEnd());
-            }
-
-            // Close state and add from clause with comma-separated sources on same line
-            var sourceStateList = string.Join(",", startStates);
-            txLines.Add($"}} from {sourceStateList};");
-
-            var txStart = lineIndex;
-            lines.AddRange(txLines);
-            lineIndex += txLines.Count;
-            regions.Add(new CodeRegion(displayKey, txStart, lineIndex - 1));
+            AppendFragment(sb, regions, block.StateName, block.ToString(), extraBlankLines: 1);
         }
 
-        // Loop transactions - track which user states already had loop regions to avoid duplicates
-        var statesWithLoopRegions = new HashSet<string>();
         foreach (var loop in model.LoopTransactions)
         {
-            if (loop.StateId == Guid.Empty)
+            if (!stateNames.TryGetValue(loop.StateId, out var stateName))
                 continue;
-
-            if (!stateMap.TryGetValue(loop.StateId, out var stateName))
-                continue;
-
-            var pseudoName = $"{stateName}_pseudo_1";
-            var pseudoLines = new List<string>();
-            pseudoLines.Add($"state {pseudoName} ({loop.Predicate}) {{");
-            if (!string.IsNullOrWhiteSpace(loop.Text))
-            {
-                foreach (var line in loop.Text.Split('\n'))
-                    pseudoLines.Add(line.TrimEnd());
-            }
-            pseudoLines.Add($"  from {stateName};");
-            pseudoLines.Add("}");
-            var pseudoStart = lineIndex;
-            lines.AddRange(pseudoLines);
-            lineIndex += pseudoLines.Count;
-            regions.Add(new CodeRegion(pseudoName, pseudoStart, lineIndex - 1));
-
-            // Only add the loop state region if we haven't already added one for this state
-            if (!statesWithLoopRegions.Contains(stateName))
-            {
-                var loopStateLines = new List<string>();
-                loopStateLines.Add($"state {stateName} (1 > 0) {{");
-                loopStateLines.Add($"  from {pseudoName};");
-                loopStateLines.Add("}");
-                var loopStart = lineIndex;
-                lines.AddRange(loopStateLines);
-                lineIndex += loopStateLines.Count;
-                regions.Add(new CodeRegion(stateName, loopStart, lineIndex - 1));
-                statesWithLoopRegions.Add(stateName);
-            }
+            AppendFragment(sb, regions, stateName, LoopToLisma(loop, stateName, statesMap), extraBlankLines: 2);
         }
 
-        var fullText = string.Join('\n', lines);
-        return new LismaTextModel(fullText, regions);
+        return new LismaTextModel(sb.ToString(), regions);
     }
 
-    private static string CreateTransactionKey(string targetStateName, string predicate)
+    private static string LoopToLisma(BlueprintLoopTransactionModel loop, string stateName, Dictionary<string, string> statesMap)
     {
-        return $"{targetStateName} ({predicate})";
+        var pseudoStateName = $"{stateName}_pseudo_1";
+        return new StringBuilder()
+            .AppendLine($"state {pseudoStateName} ({loop.Predicate.Trim()}) {{")
+            .AppendLine(loop.Text)
+            .AppendLine($"}} from {stateName};")
+            .AppendLine()
+            .AppendLine($"state {stateName} ({LismaTrue}) {{")
+            .AppendLine(statesMap.TryGetValue(stateName, out var text) ? text : "")
+            .AppendLine($"}} from {pseudoStateName};")
+            .AppendLine()
+            .ToString();
+    }
+
+    private static void AppendFragment(StringBuilder sb, List<CodeRegion> regions, string name, string fragmentText, int extraBlankLines)
+    {
+        var startLine = LineCount(sb) + 1;
+        sb.AppendLine(fragmentText);
+        for (var i = 0; i < extraBlankLines; i++)
+        {
+            sb.AppendLine();
+        }
+
+        var fragmentLines = fragmentText.Split('\n').Length - (fragmentText.EndsWith('\n') ? 1 : 0);
+        regions.Add(new CodeRegion(name, startLine, startLine + fragmentLines - 1));
+    }
+
+    private static int LineCount(StringBuilder sb) =>
+        sb.ToString().Count(c => c == '\n');
+
+    private static string CreateTransactionKey(string targetStateName, string predicate) =>
+        $"{targetStateName.Trim()} ({predicate.Trim()})";
+
+    private sealed class StateBlockModel(string stateName, string transactionKey, string text)
+    {
+        public string StateName { get; } = stateName;
+
+        public List<string> InputStates { get; } = new();
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder()
+                .AppendLine($"state {transactionKey} {{")
+                .AppendLine(text)
+                .Append('}');
+
+            if (InputStates.Count > 0)
+            {
+                sb.Append(" from ");
+                sb.Append(string.Join(",", InputStates));
+            }
+
+            sb.Append(';');
+            return sb.ToString();
+        }
     }
 }

@@ -35,46 +35,39 @@ public class CodeRegionTests
     }
 
     [Fact]
-    public void FragmentNameByIndex_ValidIndex_ReturnsFragmentName()
+    public void FragmentNameByLine_LineInsideRegion_ReturnsRegionName()
     {
-        var region = new CodeRegion("TestRegion", 0, 10);
+        var model = new LismaTextModel("text", new[]
+        {
+            new CodeRegion("Main", 1, 3),
+            new CodeRegion("State A", 5, 8)
+        });
 
-        region.FragmentNameByIndex(0).Should().Be("Fragment_0");
-        region.FragmentNameByIndex(1).Should().Be("Fragment_1");
-        region.FragmentNameByIndex(5).Should().Be("Fragment_5");
+        model.FragmentNameByLine(1).Should().Be("Main");
+        model.FragmentNameByLine(3).Should().Be("Main");
+        model.FragmentNameByLine(5).Should().Be("State A");
+        model.FragmentNameByLine(8).Should().Be("State A");
     }
 
     [Fact]
-    public void FragmentNameByIndex_InvalidIndex_ReturnsFragmentName()
+    public void FragmentNameByLine_LineOutsideAllRegions_ReturnsDefaultFragment()
     {
-        var region = new CodeRegion("TestRegion", 0, 10);
+        var model = new LismaTextModel("text", new[]
+        {
+            new CodeRegion("Main", 1, 3)
+        });
 
-        region.FragmentNameByIndex(-1).Should().Be("Fragment_-1");
+        model.FragmentNameByLine(0).Should().Be("Main");
+        model.FragmentNameByLine(4).Should().Be("Main");
+        model.FragmentNameByLine(-1).Should().Be("Main");
     }
 
     [Fact]
-    public void FragmentNameByIndex_NegativeIndex_ReturnsFragmentName()
+    public void FragmentNameByLine_NoRegions_ReturnsDefaultFragment()
     {
-        var region = new CodeRegion("TestRegion", 0, 10);
+        var model = new LismaTextModel("text", Array.Empty<CodeRegion>());
 
-        region.FragmentNameByIndex(-1).Should().Be("Fragment_-1");
-        region.FragmentNameByIndex(-100).Should().Be("Fragment_-100");
-    }
-
-    [Fact]
-    public void FragmentNameByIndex_ZeroIndex_ReturnsFragmentZero()
-    {
-        var region = new CodeRegion("TestRegion", 0, 10);
-
-        region.FragmentNameByIndex(0).Should().Be("Fragment_0");
-    }
-
-    [Fact]
-    public void FragmentNameByIndex_LargeIndex_ReturnsFragmentName()
-    {
-        var region = new CodeRegion("TestRegion", 0, 10);
-
-        region.FragmentNameByIndex(999).Should().Be("Fragment_999");
+        model.FragmentNameByLine(1).Should().Be("Main");
     }
 
     [Fact]

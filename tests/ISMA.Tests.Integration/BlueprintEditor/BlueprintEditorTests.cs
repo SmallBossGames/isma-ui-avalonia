@@ -39,13 +39,13 @@ public class BlueprintEditorTests
         // Verify state names
         var mainState = editorVm.MainState;
         var initState = editorVm.InitState;
-        var userState1 = editorVm.States.First(s => s.Name == "New state 1");
-        var userState2 = editorVm.States.First(s => s.Name == "New state 2");
+        var userState1 = editorVm.States.First(s => s.Name == "State 1");
+        var userState2 = editorVm.States.First(s => s.Name == "State 2");
 
         mainState.Name.Should().Be("Main");
         initState.Name.Should().Be("init");
-        userState1.Name.Should().Be("New state 1");
-        userState2.Name.Should().Be("New state 2");
+        userState1.Name.Should().Be("State 1");
+        userState2.Name.Should().Be("State 2");
     }
 
     [AvaloniaFact]

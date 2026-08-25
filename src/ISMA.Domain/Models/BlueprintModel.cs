@@ -19,7 +19,7 @@ public sealed class BlueprintModel
     public BlueprintModel()
     {
         Id = Guid.NewGuid();
-        Main = new BlueprintStateModel(10, 0, "Main", "");
+        Main = new BlueprintStateModel(10, 10, "Main", "");
         Init = new BlueprintStateModel(10, 100, "init", "");
         States = ImmutableArray<BlueprintStateModel>.Empty;
         Transactions = ImmutableArray<BlueprintTransactionModel>.Empty;

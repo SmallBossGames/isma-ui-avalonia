@@ -7,6 +7,8 @@ public sealed class GrinProcessLauncher : IDisposable
 {
     private Process? _process;
     private readonly ILogger<GrinProcessLauncher>? _logger;
+    private readonly object _exitLock = new();
+    private bool _exitHookRegistered;
 
     public GrinProcessLauncher(ILogger<GrinProcessLauncher>? logger = null)
     {
@@ -80,17 +82,24 @@ public sealed class GrinProcessLauncher : IDisposable
             }
         });
 
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        lock (_exitLock)
         {
-            if (_process != null && !_process.HasExited)
+            if (!_exitHookRegistered)
             {
-                try
+                _exitHookRegistered = true;
+                AppDomain.CurrentDomain.ProcessExit += (_, _) =>
                 {
-                    _process.Kill();
-                }
-                catch { }
+                    if (_process != null && !_process.HasExited)
+                    {
+                        try
+                        {
+                            _process.Kill();
+                        }
+                        catch { }
+                    }
+                };
             }
-        };
+        }
 
         return exitTask;
     }

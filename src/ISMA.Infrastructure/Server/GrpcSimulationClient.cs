@@ -70,7 +70,7 @@ public sealed class GrpcSimulationClient : IDisposable
         return RunSimulationAsync(@params, ct).GetAwaiter().GetResult();
     }
 
-    public async IAsyncEnumerable<SimulationProgress> MonitorSimulationAsync(long simulationId, double accuracy = 0.1)
+    public async IAsyncEnumerable<SimulationProgress> MonitorSimulationAsync(long simulationId, double accuracy = MonitorIntervalSeconds)
     {
         var request = new MonitorSimulationRequest
         {
@@ -136,4 +136,6 @@ public sealed class GrpcSimulationClient : IDisposable
     {
         _channelDispose?.Dispose();
     }
+
+    private const double MonitorIntervalSeconds = 0.01;
 }

@@ -21,14 +21,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
         services.AddSingleton<SimulationServerManager>();
+        services.AddSingleton<WindowProvider>();
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
-        services.AddSingleton<IModelErrorService, ModelErrorService>();
         services.AddSingleton<IBlueprintValidationService, BlueprintValidationService>();
-        services.AddSingleton<IUndoRedoService, UndoRedoService>();
-        services.AddSingleton<IBlueprintClipboardService, BlueprintClipboardService>();
         services.AddSingleton<IAutoSaveService>(sp =>
         {
             var projectService = sp.GetService<ProjectService>();
@@ -40,9 +38,9 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
-        services.AddSingleton<ISMA.ViewModels.Services.SimulationParametersService>();
         services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
         services.AddSingleton<ErrorListViewModel>();
+        services.AddSingleton<IModelErrorService>(sp => sp.GetRequiredService<ErrorListViewModel>());
         services.AddSingleton<SimulationParametersViewModel>(sp =>
         {
             var vm = new SimulationParametersViewModel(sp.GetService<ISimulationServerFacade>());
@@ -62,9 +60,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SimulationServiceViewModel>();
         services.AddSingleton<ProjectService>();
         services.AddSingleton<MainWindowViewModel>();
-
-        // Register App layer services after ViewModels so they can be injected
-        services.AddSingleton<ISMA.App.Services.SimulationParametersService>();
 
         return services;
     }

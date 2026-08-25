@@ -58,8 +58,8 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddTransitionToggle();
 
-        _app.Window.ClickStateBoxOnCanvas("New state 1");
-        _app.Window.ClickStateBoxOnCanvas("New state 2");
+        _app.Window.ClickStateBoxOnCanvas("State 1");
+        _app.Window.ClickStateBoxOnCanvas("State 2");
 
         _app.Window.GetArrowLineCount().Should().Be(1);
 
@@ -78,22 +78,22 @@ public class AuthorBlueprintTests
 
         _app.Window.GetStateBoxCount().Should().Be(1);
 
-        var newState = _app.Window.GetStateBoxByName("New state 1");
+        var newState = _app.Window.GetStateBoxByName("State 1");
         newState.Should().NotBeNull();
 
-        // Try to rename "New state 1" to "Main" (duplicate of Main state)
+        // Try to rename "State 1" to "Main" (duplicate of Main state)
         // The NameChangingMonitor should reject this
         var initialCount = _app.Window.GetStateBoxCount();
 
         // Note: Inline editing allows setting any name, but the ViewModel's
         // NameChangingMonitor rejects duplicates. Since we're using ViewModel-based
         // rename in headless mode, duplicate names should be rejected.
-        _app.Window.RenameStateBoxByName("New state 1", "Main");
+        _app.Window.RenameStateBoxByName("State 1", "Main");
 
         // State count should remain the same
         _app.Window.GetStateBoxCount().Should().Be(initialCount);
-        // "New state 1" should still exist (rename was rejected)
-        _app.Window.GetStateBoxByName("New state 1").Should().NotBeNull();
+        // "State 1" should still exist (rename was rejected)
+        _app.Window.GetStateBoxByName("State 1").Should().NotBeNull();
     }
 
     [AvaloniaFact]
@@ -105,14 +105,14 @@ public class AuthorBlueprintTests
 
         _app.Window.GetStateBoxCount().Should().Be(1);
 
-        _app.Window.RenameStateBoxByName("New state 1", "UniqueState");
+        _app.Window.RenameStateBoxByName("State 1", "UniqueState");
 
         _app.Window.GetStateBoxByName("UniqueState").Should().NotBeNull();
 
         _app.Window.ClickAddStateButton();
 
         _app.Window.GetStateBoxCount().Should().Be(2);
-        _app.Window.GetStateBoxByName("New state 2").Should().NotBeNull();
+        _app.Window.GetStateBoxByName("State 2").Should().NotBeNull();
     }
 
     [AvaloniaFact]
@@ -126,8 +126,8 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddTransitionToggle();
 
-        _app.Window.ClickStateBoxOnCanvas("New state 1");
-        _app.Window.ClickStateBoxOnCanvas("New state 2");
+        _app.Window.ClickStateBoxOnCanvas("State 1");
+        _app.Window.ClickStateBoxOnCanvas("State 2");
 
         _app.Window.GetArrowLineCount().Should().Be(1);
 
@@ -137,7 +137,7 @@ public class AuthorBlueprintTests
         modelBefore.Transactions.Should().HaveCount(1);
         var txStartStateId = modelBefore.Transactions[0].StartStateId;
 
-        _app.Window.RenameStateBoxByName("New state 1", "RenamedState");
+        _app.Window.RenameStateBoxByName("State 1", "RenamedState");
 
         var modelAfter = editorVm.GetBlueprintModel();
         modelAfter.Transactions.Should().HaveCount(1);
@@ -152,9 +152,9 @@ public class AuthorBlueprintTests
         var name2 = monitor.CreateNextDefaultName();
         var name3 = monitor.CreateNextDefaultName();
 
-        name1.Should().Be("New state 1");
-        name2.Should().Be("New state 2");
-        name3.Should().Be("New state 3");
+        name1.Should().Be("State 1");
+        name2.Should().Be("State 2");
+        name3.Should().Be("State 3");
     }
 
     [AvaloniaFact]
@@ -176,7 +176,7 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickRemoveStateToggle();
 
-        _app.Window.ClickStateBoxOnCanvas("New state 1");
+        _app.Window.ClickStateBoxOnCanvas("State 1");
 
         var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
@@ -212,8 +212,8 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddTransitionToggle();
 
-        _app.Window.ClickStateBoxOnCanvas("New state 1");
-        _app.Window.ClickStateBoxOnCanvas("New state 2");
+        _app.Window.ClickStateBoxOnCanvas("State 1");
+        _app.Window.ClickStateBoxOnCanvas("State 2");
 
         _app.Window.GetArrowLineCount().Should().Be(1);
 
@@ -260,8 +260,8 @@ public class AuthorBlueprintTests
 
         _app.Window.ClickAddTransitionToggle();
 
-        _app.Window.ClickStateBoxOnCanvas("New state 1");
-        _app.Window.ClickStateBoxOnCanvas("New state 2");
+        _app.Window.ClickStateBoxOnCanvas("State 1");
+        _app.Window.ClickStateBoxOnCanvas("State 2");
 
         _app.Window.GetArrowLineCount().Should().Be(1);
 

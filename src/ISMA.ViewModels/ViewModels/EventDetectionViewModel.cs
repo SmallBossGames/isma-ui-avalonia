@@ -5,6 +5,9 @@ namespace ISMA.ViewModels.ViewModels;
 public partial class EventDetectionViewModel : ObservableObject
 {
     [ObservableProperty]
+    private bool _isEventDetectionInUse;
+
+    [ObservableProperty]
     private bool _isStepLimitInUse;
 
     [ObservableProperty]

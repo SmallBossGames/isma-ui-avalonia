@@ -70,9 +70,36 @@ state ""initial"" (1 > 0) {
         // Step 7: Check simulation completeness
         _app.ViewModel.SimulationService.StatusText.Should().Be("Simulation complete");
 
-        // Step 8: Verify project state
+        // Step 8: Verify the live settings panel values reached the server
+        _app.MockServer.LastRunParams.Should().NotBeNull();
+        _app.MockServer.LastRunParams!.StartTime.Should().Be(0.0);
+        _app.MockServer.LastRunParams.EndTime.Should().Be(10.0);
+        _app.MockServer.LastRunParams.InitialStep.Should().Be(0.1);
+        _app.MockServer.LastRunParams.MethodName.Should().Be("RK4");
+        _app.MockServer.LastRunParams.Accuracy.Should().Be(0.001);
+
+        // Step 9: Verify project state
         _app.Window.GetProjectCount().Should().Be(1);
         _app.Window.GetActiveProject().Should().NotBeNull();
+    }
+
+    [AvaloniaFact]
+    public async Task Simulation_MonitorFailure_TaskAppearsInFailedSection()
+    {
+        _app.Window.ClickMenuItem("MenuNewText");
+        _app.Window.GetActiveProject().Should().NotBeNull();
+
+        _app.MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
+        _app.MockServer.RunHandler = _ => Task.FromResult(1L);
+        _app.MockServer.MonitorHandler = _ => throw new Exception("monitor down");
+
+        _app.Window.ClickMenuItem("MenuRun");
+
+        _app.ViewModel.SimulationService.IsRunning.Should().BeFalse();
+        _app.ViewModel.SimulationService.TrackingTasks.Should().BeEmpty();
+        _app.ViewModel.TasksPopOver.InProgressCount.Should().Be(0);
+        _app.ViewModel.TasksPopOver.FailedCount.Should().Be(1);
+        _app.ViewModel.TasksPopOver.Failed[0].ErrorText.Should().Be("Monitor error: monitor down");
     }
 
     [AvaloniaFact]
@@ -212,7 +239,7 @@ state ""initial"" (1 > 0) {
         var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
         editorVm.Should().NotBeNull();
         editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(1); // New state 1 (Main and Init are not in States)
+        editorVm.States.Should().HaveCount(1); // State 1 (Main and Init are not in States)
 
         // Step 3: Convert to LISMA text
         var lisma = blueprintProject.ConvertToLisma();
