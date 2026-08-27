@@ -35,12 +35,6 @@ public class SimulationParametersTests
             {
                 SavingTarget = SaveTarget.File
             },
-            ResultProcessing = new ResultProcessingParameters
-            {
-                IsSimplifyInUse = true,
-                SelectedSimplifyMethod = "Chamberlain",
-                Tolerance = 0.01
-            }
         };
 
         var options = new JsonSerializerOptions
@@ -63,9 +57,6 @@ public class SimulationParametersTests
         deserialized.EventDetection.Gamma.Should().Be(0.9);
         deserialized.EventDetection.LowBorder.Should().Be(0.01);
         deserialized.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-        deserialized.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        deserialized.ResultProcessing.SelectedSimplifyMethod.Should().Be("Chamberlain");
-        deserialized.ResultProcessing.Tolerance.Should().Be(0.01);
     }
 
     [Fact]
@@ -87,10 +78,6 @@ public class SimulationParametersTests
         parameters.EventDetection.LowBorder.Should().Be(0.001);
 
         parameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.Memory);
-
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeFalse();
-        parameters.ResultProcessing.SelectedSimplifyMethod.Should().Be("Radial-Distance");
-        parameters.ResultProcessing.Tolerance.Should().Be(0.001);
     }
 
     [Fact]
@@ -129,13 +116,5 @@ public class SimulationParametersTests
 
         parameters.ResultSaving.SavingTarget = SaveTarget.File;
         parameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-
-        parameters.ResultProcessing.IsSimplifyInUse = true;
-        parameters.ResultProcessing.SelectedSimplifyMethod = "Custom";
-        parameters.ResultProcessing.Tolerance = 0.1;
-
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        parameters.ResultProcessing.SelectedSimplifyMethod.Should().Be("Custom");
-        parameters.ResultProcessing.Tolerance.Should().Be(0.1);
     }
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <SyntaxDefinition name="LISMA"
                   xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
-  <Color name="Keyword" Foreground="#FF8C00" />
-  <Color name="Comment" Foreground="#808080" />
+  <Color name="Keyword" Foreground="#FF8C00" FontWeight="Bold" />
+  <Color name="Comment" Foreground="#808080" FontStyle="Italic" />
   <Color name="Number"  Foreground="#4169E1" />
   <Color name="String"  Foreground="#2E8B57" />
   <Color name="State"   Foreground="#FF4500" />

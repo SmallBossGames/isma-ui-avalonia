@@ -1,6 +1,4 @@
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Conversion;
 using ISMA.Domain.Models;
@@ -16,7 +14,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     private readonly IProjectFileService _projectFileService;
     private readonly ITextEditorFactory _editorFactory;
     private readonly IModelErrorService? _errorService;
-    private readonly IAutoSaveService? _autoSaveService;
 
     [ObservableProperty]
     private string _name;
@@ -24,21 +21,8 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     [ObservableProperty]
     private string? _filePath;
 
-    [ObservableProperty]
-    private bool _isDirty;
-
-    partial void OnIsDirtyChanged(bool value)
-    {
-        if (value && !string.IsNullOrEmpty(FilePath))
-        {
-            _autoSaveService?.TriggerSave();
-        }
-    }
-
     /// <inheritdoc />
     object? IProjectViewModel.EditorContent => EditorContent;
-
-
 
     /// <summary>
     /// Occurs when the project name has changed.
@@ -51,15 +35,13 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     public BlueprintProjectViewModel(
         IProjectFileService projectFileService,
         ITextEditorFactory editorFactory,
-        IModelErrorService? errorService = null,
-        IAutoSaveService? autoSaveService = null)
+        IModelErrorService? errorService = null)
     {
         _projectFileService = projectFileService;
         _editorFactory = editorFactory;
         _errorService = errorService;
-        _autoSaveService = autoSaveService;
         EditorContent = new BlueprintEditorViewModel();
-        _name = "Untitled Blueprint";
+        _name = "New statechart";
         _filePath = null;
     }
 
@@ -71,22 +53,19 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     /// <param name="model">The blueprint model to initialize with.</param>
     /// <param name="filePath">Optional file path for the project.</param>
     /// <param name="errorService">Optional error service for reporting errors.</param>
-    /// <param name="autoSaveService">Optional auto-save service.</param>
     public BlueprintProjectViewModel(
         IProjectFileService projectFileService,
         ITextEditorFactory editorFactory,
         BlueprintModel model,
         string? filePath,
-        IModelErrorService? errorService = null,
-        IAutoSaveService? autoSaveService = null)
+        IModelErrorService? errorService = null)
     {
         _projectFileService = projectFileService;
         _editorFactory = editorFactory;
         _errorService = errorService;
-        _autoSaveService = autoSaveService;
         EditorContent = new BlueprintEditorViewModel(model);
         _filePath = filePath;
-        _name = !string.IsNullOrEmpty(filePath) ? Path.GetFileNameWithoutExtension(filePath) : "Untitled Blueprint";
+        _name = !string.IsNullOrEmpty(filePath) ? Path.GetFileName(filePath) : "New statechart";
     }
 
     /// <summary>
@@ -102,7 +81,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
         {
             var json = BlueprintFileSerializer.ToJson(EditorContent.GetBlueprintModel());
             await File.WriteAllTextAsync(FilePath, json);
-            IsDirty = false;
             return true;
         }
         catch (Exception ex)
@@ -121,16 +99,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
         return await _projectFileService.SaveAs(this);
     }
 
-    private async Task<bool> OpenAsync()
-    {
-        var paths = await _projectFileService.Open((object?)null);
-        if (paths.Count == 0) return false;
-
-        var path = paths[0];
-        LoadFromFile(path);
-        return true;
-    }
-
     /// <summary>
     /// Loads a blueprint model from a JSON file and recreates the editor view model.
     /// </summary>
@@ -139,7 +107,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
     {
         FilePath = path;
         Name = Path.GetFileName(path);
-        IsDirty = false;
         NameChanged?.Invoke();
 
         try
@@ -173,8 +140,6 @@ public partial class BlueprintProjectViewModel : ObservableObject, IProjectViewM
             syntaxHighlighter,
             lismaModel,
             FilePath?.Replace(".scisma", ".iscm2"));
-
-        IsDirty = false;
         return lismaProject;
     }
 

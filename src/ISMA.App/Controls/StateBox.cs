@@ -40,6 +40,7 @@ public class StateBox : Control
     private const double BoxCornerRadius = 20.0;
 
     private Point _pointerDownPosition;
+    private Point _dragStartCanvasPosition;
     private bool _wasDragging;
     private Avalonia.Input.IPointer? _pointerDownPointer;
     private DispatcherTimer? _singleClickTimer;
@@ -154,10 +155,6 @@ public class StateBox : Control
     }
 
     /// <summary>
-    /// Simulates a state press by invoking the ViewModel's OnStatePressed method.
-    /// For testing purposes — bypasses the need to construct internal PointerEventArgs types.
-    /// </summary>
-    /// <summary>
     /// Raises the NameCommitted event with the given new name. For testing purposes.
     /// </summary>
     /// <param name="newName">The proposed new name.</param>
@@ -249,18 +246,16 @@ public class StateBox : Control
             if (Math.Abs(dx) < DragThreshold && Math.Abs(dy) < DragThreshold)
                 return;
             _wasDragging = true;
+            if (DataContext is not BlueprintStateViewModel startVm)
+                return;
+            _dragStartCanvasPosition = new Point(startVm.CanvasPositionX, startVm.CanvasPositionY);
         }
 
-        if (!_wasDragging)
+        if (DataContext is not BlueprintStateViewModel stateVm)
             return;
 
-        var canvas = GetParentCanvas();
-        if (canvas is null || DataContext is not ISMA.ViewModels.ViewModels.BlueprintStateViewModel stateVm)
-            return;
-
-        var canvasPos = e.GetPosition(canvas);
-        stateVm.CanvasPositionX = Math.Max(0.0, canvasPos.X - _pointerDownPosition.X);
-        stateVm.CanvasPositionY = Math.Max(0.0, canvasPos.Y - _pointerDownPosition.Y);
+        stateVm.CanvasPositionX = Math.Max(0.0, _dragStartCanvasPosition.X + (localPos.X - _pointerDownPosition.X));
+        stateVm.CanvasPositionY = Math.Max(0.0, _dragStartCanvasPosition.Y + (localPos.Y - _pointerDownPosition.Y));
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
@@ -276,16 +271,6 @@ public class StateBox : Control
         _pointerDownPosition = default;
         _pointerDownPointer = null;
         e.Handled = true;
-    }
-
-    private Canvas? GetParentCanvas()
-    {
-        var parent = Parent;
-        while (parent is not null && parent is not Canvas)
-        {
-            parent = parent.Parent;
-        }
-        return parent as Canvas;
     }
 
     private void OnSingleClickTimerTick(object? sender, EventArgs e)

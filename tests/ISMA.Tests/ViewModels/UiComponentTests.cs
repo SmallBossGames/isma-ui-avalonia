@@ -109,6 +109,5 @@ public class UiComponentTests
         viewModel.SimulationParameters.IntegrationMethod.Should().NotBeNull();
         viewModel.SimulationParameters.EventDetection.Should().NotBeNull();
         viewModel.SimulationParameters.ResultSaving.Should().NotBeNull();
-        viewModel.SimulationParameters.ResultProcessing.Should().NotBeNull();
     }
 }

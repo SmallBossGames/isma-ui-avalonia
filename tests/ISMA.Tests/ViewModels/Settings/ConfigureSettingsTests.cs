@@ -22,7 +22,6 @@ public class ConfigureSettingsTests
         parameters.IntegrationMethod.Should().NotBeNull();
         parameters.EventDetection.Should().NotBeNull();
         parameters.ResultSaving.Should().NotBeNull();
-        parameters.ResultProcessing.Should().NotBeNull();
     }
 
     [Fact]
@@ -67,25 +66,6 @@ public class ConfigureSettingsTests
         parameters.EventDetection.IsStepLimitInUse.Should().BeTrue();
         parameters.EventDetection.Gamma.Should().Be(0.5);
         parameters.EventDetection.LowBorder.Should().Be(0.01);
-    }
-
-    [Fact]
-    public void UC13_ResultProcessing_DefaultValues()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeFalse();
-        parameters.ResultProcessing.SelectedSimplifyMethod.Should().Be("Radial-Distance");
-    }
-
-    [Fact]
-    public void UC13_ResultProcessing_CanBeEnabled()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse = true;
-        parameters.ResultProcessing.Tolerance = 0.5;
-
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        parameters.ResultProcessing.Tolerance.Should().Be(0.5);
     }
 
     [Fact]

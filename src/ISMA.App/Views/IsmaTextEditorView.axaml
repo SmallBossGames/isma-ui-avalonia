@@ -17,7 +17,7 @@
                             WordWrap="False"
                             DataContext="{Binding}">
             <editors:TextEditor.ContextMenu>
-                <ContextMenu x:Name="ContextMenu">
+                <ContextMenu>
                     <MenuItem Header="Cut" Click="OnCutClicked" />
                     <MenuItem Header="Copy" Click="OnCopyClicked" />
                     <MenuItem Header="Paste" Click="OnPasteClicked" />
@@ -27,17 +27,5 @@
             </editors:TextEditor.ContextMenu>
         </editors:TextEditor>
 
-        <Border x:Name="SyntaxStatus"
-                ZIndex="1"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Padding="6,2"
-                CornerRadius="3"
-                Background="{DynamicResource SurfaceColor}">
-            <TextBlock Foreground="{DynamicResource SecondaryTextColor}"
-                       FontSize="10"
-                       IsVisible="{Binding IsHighlighting, Mode=OneWay}"
-                       Text="Highlighting..." />
-        </Border>
     </Panel>
 </UserControl>

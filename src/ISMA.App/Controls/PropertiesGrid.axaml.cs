@@ -1,19 +1,43 @@
-using System.Linq;
-using System.Reflection;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Data;
-using Avalonia.Interactivity;
 using ISMA.App.Converters;
 
 namespace ISMA.App.Controls;
+
+/// <summary>
+/// Specifies a single row of a <see cref="PropertiesGrid"/>: the label, the view-model
+/// property to bind, and optional enable condition / combo items source.
+/// </summary>
+/// <param name="Label">The row label text.</param>
+/// <param name="PropertyName">The view-model property to bind.</param>
+/// <param name="EnabledWhen">Optional view-model bool property; the control is enabled only while it is true.</param>
+/// <param name="ItemsSource">Optional view-model collection property; when set, the row renders a ComboBox.</param>
+/// <param name="SelectionProperty">Optional view-model int property bound to the ComboBox SelectedIndex; when omitted, SelectedItem is bound to <paramref name="PropertyName"/>.</param>
+public sealed record PropertyRowSpec(
+    string Label,
+    string PropertyName,
+    string? EnabledWhen = null,
+    string? ItemsSource = null,
+    string? SelectionProperty = null)
+{
+    /// <summary>
+    /// Parameterless constructor for XAML instantiation; properties are set via attributes.
+    /// </summary>
+    public PropertyRowSpec() : this(string.Empty, string.Empty)
+    {
+    }
+}
 
 public partial class PropertiesGrid : UserControl
 {
     public PropertiesGrid()
     {
         InitializeComponent();
+        Rows.CollectionChanged += OnRowsChanged;
     }
 
     public static readonly StyledProperty<object?> ViewModelProperty =
@@ -34,11 +58,10 @@ public partial class PropertiesGrid : UserControl
         set => SetValue(AutomationPrefixProperty, value);
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
-    {
-        base.OnDataContextChanged(e);
-        BuildProperties();
-    }
+    /// <summary>
+    /// Explicit row definitions, rendered in order.
+    /// </summary>
+    public ObservableCollection<PropertyRowSpec> Rows { get; } = new();
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -49,6 +72,11 @@ public partial class PropertiesGrid : UserControl
         }
     }
 
+    private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        BuildProperties();
+    }
+
     private void BuildProperties()
     {
         PropertyPanel.Children.Clear();
@@ -56,124 +84,134 @@ public partial class PropertiesGrid : UserControl
         if (ViewModel is null)
             return;
 
-        var properties = ViewModel.GetType()
-            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-            .Where(p => p.CanRead && p.CanWrite)
-            .OrderBy(p => p.Name)
-            .ToList();
-
-        foreach (var prop in properties)
+        foreach (var row in Rows)
         {
-            var row = CreatePropertyRow(prop, ViewModel);
-            PropertyPanel.Children.Add(row);
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions
+                {
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Star)
+                },
+                Margin = new Thickness(0, 2)
+            };
+
+            var label = new TextBlock
+            {
+                Text = row.Label,
+                Margin = new Thickness(4, 2),
+                FontSize = 11,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            Grid.SetColumn(label, 0);
+            grid.Children.Add(label);
+
+            var valueControl = CreateValueControl(row);
+            Grid.SetColumn(valueControl, 1);
+            grid.Children.Add(valueControl);
+
+            PropertyPanel.Children.Add(grid);
         }
     }
 
-    private Control CreatePropertyRow(System.Reflection.PropertyInfo prop, object viewModel)
+    private Control CreateValueControl(PropertyRowSpec row)
     {
-        var grid = new Grid
+        var automationId = $"{AutomationPrefix}-{row.PropertyName}";
+
+        Control control = row.ItemsSource != null
+            ? CreateComboBox(row)
+            : CreateControlForProperty(row.PropertyName);
+
+        control.SetValue(AutomationProperties.AutomationIdProperty, automationId);
+
+        if (row.EnabledWhen != null)
         {
-            ColumnDefinitions = new ColumnDefinitions
-            {
-                new ColumnDefinition(GridLength.Auto),
-                new ColumnDefinition(GridLength.Star)
-            },
-            Margin = new Thickness(0, 2)
-        };
+            control.Bind(IsEnabledProperty, new Binding(row.EnabledWhen) { Mode = BindingMode.OneWay });
+        }
 
-        var label = new TextBlock
-        {
-            Text = prop.Name,
-            Margin = new Thickness(4, 2),
-            FontSize = 11,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-        };
-        Grid.SetColumn(label, 0);
-        grid.Children.Add(label);
-
-        var valueControl = CreateValueControl(prop, viewModel);
-        Grid.SetColumn(valueControl, 1);
-        grid.Children.Add(valueControl);
-
-        return grid;
+        return control;
     }
 
-    private Control CreateValueControl(System.Reflection.PropertyInfo prop, object viewModel)
+    private ComboBox CreateComboBox(PropertyRowSpec row)
     {
-        var automationId = $"{AutomationPrefix}-{prop.Name}";
-        var binding = new Binding(prop.Name)
+        var comboBox = new ComboBox
         {
-            Mode = BindingMode.TwoWay,
-            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            Margin = new Thickness(4, 2),
+            FontSize = 11,
+            DataContext = ViewModel
         };
+        comboBox.Bind(ComboBox.ItemsSourceProperty, new Binding(row.ItemsSource!) { Mode = BindingMode.OneWay });
+        if (row.SelectionProperty != null)
+        {
+            comboBox.Bind(ComboBox.SelectedIndexProperty, new Binding(row.SelectionProperty)
+            {
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            });
+        }
+        else
+        {
+            comboBox.Bind(ComboBox.SelectedItemProperty, new Binding(row.PropertyName)
+            {
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            });
+        }
+        return comboBox;
+    }
 
-        if (prop.PropertyType == typeof(bool))
+    private Control CreateControlForProperty(string propertyName)
+    {
+        var property = ViewModel!.GetType().GetProperty(propertyName);
+        if (property == null)
+            throw new InvalidOperationException($"View model has no property '{propertyName}'.");
+
+        if (property.PropertyType == typeof(bool))
         {
             var checkBox = new CheckBox
             {
                 Margin = new Thickness(4, 2),
                 FontSize = 11,
-                DataContext = viewModel
+                DataContext = ViewModel
             };
-            checkBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
-            checkBox.Bind(CheckBox.IsCheckedProperty, binding);
+            checkBox.Bind(CheckBox.IsCheckedProperty, new Binding(propertyName)
+            {
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            });
             return checkBox;
         }
-        else if (prop.PropertyType.IsEnum)
+
+        if (property.PropertyType.IsEnum)
         {
             var comboBox = new ComboBox
             {
                 Margin = new Thickness(4, 2),
                 FontSize = 11,
-                DataContext = viewModel
+                DataContext = ViewModel,
+                ItemsSource = System.Enum.GetValues(property.PropertyType).Cast<object>().Select(v => v.ToString()).ToList()
             };
-            comboBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
-            comboBox.ItemsSource = Enum.GetValues(prop.PropertyType).Cast<object>().Select(v => v.ToString());
-            var enumBinding = new Binding(prop.Name)
+            var enumBinding = new Binding(propertyName)
             {
                 Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-                Converter = new EnumToStringConverter(prop.PropertyType)
+                Converter = new EnumToStringConverter(property.PropertyType)
             };
-            comboBox.Bind(ComboBox.TextProperty, enumBinding);
+            comboBox.Bind(ComboBox.SelectedItemProperty, enumBinding);
             return comboBox;
         }
-        else if (prop.PropertyType == typeof(string))
+
+        var textBox = new TextBox
         {
-            var textBox = new TextBox
-            {
-                Margin = new Thickness(4, 2),
-                FontSize = 11,
-                DataContext = viewModel
-            };
-            textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
-            textBox.Bind(TextBox.TextProperty, binding);
-            return textBox;
-        }
-        else if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(double) ||
-                 prop.PropertyType == typeof(float) || prop.PropertyType == typeof(long))
+            Margin = new Thickness(4, 2),
+            FontSize = 11,
+            DataContext = ViewModel
+        };
+        textBox.Bind(TextBox.TextProperty, new Binding(propertyName)
         {
-            var textBox = new TextBox
-            {
-                Margin = new Thickness(4, 2),
-                FontSize = 11,
-                DataContext = viewModel
-            };
-            textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
-            textBox.Bind(TextBox.TextProperty, binding);
-            return textBox;
-        }
-        else
-        {
-            var textBox = new TextBox
-            {
-                Margin = new Thickness(4, 2),
-                FontSize = 11,
-                DataContext = viewModel
-            };
-            textBox.SetValue(AutomationProperties.AutomationIdProperty, automationId);
-            textBox.Bind(TextBox.TextProperty, binding);
-            return textBox;
-        }
+            Mode = BindingMode.TwoWay,
+            UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+        });
+        return textBox;
     }
 }

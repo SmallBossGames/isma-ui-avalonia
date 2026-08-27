@@ -180,30 +180,9 @@ public class SettingsPanelUiTests
         var savingTargetBox = allComboBoxes.First(cb =>
             cb.GetValue(AutomationProperties.AutomationIdProperty) as string == "Settings-ResultSaving-SavingTarget");
 
-        savingTargetBox.Text = "File";
+        savingTargetBox.SelectedItem = "File";
 
         _app.ViewModel.SimulationParameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-    }
-
-
-
-    [AvaloniaFact]
-    public async Task ResultProcessing_CheckBoxAndTextBox_ControlsExist()
-    {
-        var settingsPanel = _app.FindControl<ScrollViewer>("SettingsPanel");
-        settingsPanel.Should().NotBeNull();
-        var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
-        var allControls = grids.SelectMany(g => UiHelpers.FindDescendants<Control>(g)).ToList();
-
-        var simplifyCheckBox = FindCheckBoxByAutomationId(allControls, AutomationIds.SettingsResultProcessingSimplifyEnabled);
-        var allTextBoxes = grids.SelectMany(g => UiHelpers.FindDescendants<TextBox>(g)).ToList();
-        var toleranceBox = FindTextBoxByAutomationId(allTextBoxes, AutomationIds.SettingsResultProcessingTolerance);
-
-        simplifyCheckBox.Should().NotBeNull("IsSimplifyInUse CheckBox should exist");
-        toleranceBox.Should().NotBeNull("Tolerance TextBox should exist");
-
-        simplifyCheckBox.IsChecked.Should().BeFalse();
-        double.Parse(toleranceBox.Text!).Should().BeApproximately(0.001, 0.0001);
     }
 
     [AvaloniaFact]
@@ -213,6 +192,6 @@ public class SettingsPanelUiTests
         settingsPanel.Should().NotBeNull();
         var grids = UiHelpers.FindDescendants<PropertiesGrid>(settingsPanel!).ToList();
 
-        grids.Should().HaveCount(4, "Should have 4 PropertiesGrid controls: CauchyInitials, EventDetection, ResultSaving, ResultProcessing (IntegrationMethod uses native ComboBox)");
+        grids.Should().HaveCount(4, "Should have 4 PropertiesGrid controls: CauchyInitials, Integration, EventDetection, ResultSaving");
     }
 }

@@ -24,9 +24,6 @@ public class SimulationParametersViewModelTests
         viewModel.EventDetection.Gamma = 0.9;
         viewModel.EventDetection.LowBorder = 0.05;
         viewModel.ResultSaving.SavingTarget = SaveTarget.File;
-        viewModel.ResultProcessing.IsSimplifyInUse = true;
-        viewModel.ResultProcessing.SelectedSimplifyMethod = "Custom";
-        viewModel.ResultProcessing.Tolerance = 0.02;
 
         var snapshot = viewModel.Snapshot();
 
@@ -42,9 +39,6 @@ public class SimulationParametersViewModelTests
         snapshot.EventDetection.Gamma.Should().Be(0.9);
         snapshot.EventDetection.LowBorder.Should().Be(0.05);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-        snapshot.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        snapshot.ResultProcessing.SelectedSimplifyMethod.Should().Be("Custom");
-        snapshot.ResultProcessing.Tolerance.Should().Be(0.02);
     }
 
     [Fact]
@@ -65,9 +59,6 @@ public class SimulationParametersViewModelTests
         snapshot.EventDetection.Gamma.Should().Be(0.8);
         snapshot.EventDetection.LowBorder.Should().Be(0.001);
         snapshot.ResultSaving.SavingTarget.Should().Be(SaveTarget.Memory);
-        snapshot.ResultProcessing.IsSimplifyInUse.Should().BeFalse();
-        snapshot.ResultProcessing.SelectedSimplifyMethod.Should().Be("Radial-Distance");
-        snapshot.ResultProcessing.Tolerance.Should().Be(0.001);
     }
 
     [Fact]
@@ -101,12 +92,6 @@ public class SimulationParametersViewModelTests
             {
                 SavingTarget = SaveTarget.File
             },
-            ResultProcessing = new ResultProcessingParameters
-            {
-                IsSimplifyInUse = true,
-                SelectedSimplifyMethod = "SimplifyMethod",
-                Tolerance = 0.05
-            }
         };
 
         viewModel.Commit(parameters);
@@ -123,9 +108,6 @@ public class SimulationParametersViewModelTests
         viewModel.EventDetection.Gamma.Should().Be(0.7);
         viewModel.EventDetection.LowBorder.Should().Be(0.02);
         viewModel.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-        viewModel.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        viewModel.ResultProcessing.SelectedSimplifyMethod.Should().Be("SimplifyMethod");
-        viewModel.ResultProcessing.Tolerance.Should().Be(0.05);
     }
 
     [Fact]
@@ -157,12 +139,6 @@ public class SimulationParametersViewModelTests
             {
                 SavingTarget = SaveTarget.File
             },
-            ResultProcessing = new ResultProcessingParameters
-            {
-                IsSimplifyInUse = true,
-                SelectedSimplifyMethod = "ConstructorMethod",
-                Tolerance = 0.03
-            }
         };
 
         var viewModel = new SimulationParametersViewModel(null, parameters);
@@ -179,9 +155,6 @@ public class SimulationParametersViewModelTests
         viewModel.EventDetection.Gamma.Should().Be(0.6);
         viewModel.EventDetection.LowBorder.Should().Be(0.03);
         viewModel.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-        viewModel.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        viewModel.ResultProcessing.SelectedSimplifyMethod.Should().Be("ConstructorMethod");
-        viewModel.ResultProcessing.Tolerance.Should().Be(0.03);
     }
 
     [Fact]

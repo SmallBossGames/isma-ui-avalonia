@@ -31,23 +31,30 @@
                                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding TaskId, StringFormat='Task #{0}'}"
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TaskId, StringFormat='Task #{0}'}"
                                            FontWeight="SemiBold"
-                                           FontSize="12" />
-                                <ProgressBar Value="{Binding Progress}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <ProgressBar Grid.Column="1"
+                                             Value="{Binding Progress}"
                                              Minimum="0"
                                              Maximum="1"
                                              Height="6"
-                                             Margin="0,2" />
-                                <Button Content="Abort"
-                                        Padding="12,3"
-                                        FontSize="11"
-                                        HorizontalAlignment="Right"
+                                             Margin="6,0"
+                                             VerticalAlignment="Center" />
+                                <Button Grid.Column="2"
+                                        ToolTip.Tip="Abort"
+                                        Padding="4,0"
+                                        Margin="6,0,0,0"
                                         Classes="accent"
                                         Command="{Binding AbortCommand}"
-                                        IsEnabled="{Binding CanAbort}" />
-                            </StackPanel>
+                                        IsEnabled="{Binding CanAbort}">
+                                    <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                                               Width="16" Height="16" />
+                                </Button>
+                            </Grid>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -107,15 +114,14 @@
                                         VerticalAlignment="Center" />
 
                                 <Button Grid.Column="4"
-                                        Content="⋯"
-                                        FontSize="16"
-                                        FontWeight="Bold"
-                                        Margin="8,0,0,0"
                                         Padding="4,0"
+                                        Margin="8,0,0,0"
                                         VerticalAlignment="Center"
                                         Classes="chevron"
                                         ToolTip.Tip="Details"
                                         IsHitTestVisible="True">
+                                    <PathIcon Data="M10,6L8.59,7.41L13.17,12L8.59,16.59L10,18L16,12L10,6Z"
+                                               Width="16" Height="16" />
                                     <Button.Flyout>
                                         <Flyout>
                                             <Border CornerRadius="4"
@@ -156,17 +162,20 @@
                                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Grid.Column="0" Spacing="2">
-                                    <TextBlock Text="{Binding TaskId, StringFormat='Task #{0}'}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding ErrorText}"
-                                               FontSize="11"
-                                               Foreground="Red"
-                                               TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                                <Button Grid.Column="1"
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TaskId, StringFormat='Task #{0}'}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ErrorText}"
+                                           FontSize="11"
+                                           Foreground="Red"
+                                           Margin="6,0"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Button Grid.Column="2"
                                         Content="Remove"
                                         Padding="8,3"
                                         FontSize="10"

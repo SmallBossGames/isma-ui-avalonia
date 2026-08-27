@@ -22,7 +22,6 @@ public class SettingsTests
         parameters.IntegrationMethod.Should().NotBeNull();
         parameters.EventDetection.Should().NotBeNull();
         parameters.ResultSaving.Should().NotBeNull();
-        parameters.ResultProcessing.Should().NotBeNull();
     }
 
     [Fact]
@@ -99,27 +98,6 @@ public class SettingsTests
         var parameters = CreateParameters();
         parameters.ResultSaving.SavingTarget = SaveTarget.File;
         parameters.ResultSaving.SavingTarget.Should().Be(SaveTarget.File);
-    }
-
-    [Fact]
-    public void ResultProcessing_DefaultValues_AreCorrect()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeFalse();
-        parameters.ResultProcessing.SelectedSimplifyMethod.Should().Be("Radial-Distance");
-    }
-
-    [Fact]
-    public void ResultProcessing_CanBeModified()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse = true;
-        parameters.ResultProcessing.SelectedSimplifyMethod = "Douglas-Peucker";
-        parameters.ResultProcessing.Tolerance = 0.01;
-
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-        parameters.ResultProcessing.SelectedSimplifyMethod.Should().Be("Douglas-Peucker");
-        parameters.ResultProcessing.Tolerance.Should().Be(0.01);
     }
 
     [Fact]

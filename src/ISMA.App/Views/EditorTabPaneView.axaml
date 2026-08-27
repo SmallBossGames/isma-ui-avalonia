@@ -12,7 +12,6 @@
             <DataTemplate x:DataType="vm:IProjectViewModel">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <TextBlock Text="{Binding Name}" />
-                    <TextBlock Text=" *" IsVisible="{Binding IsDirty}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" />
                     <Button Width="16"
                             Height="16"
                             Padding="0"

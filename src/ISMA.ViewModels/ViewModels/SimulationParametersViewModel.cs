@@ -22,9 +22,6 @@ public partial class SimulationParametersViewModel : ObservableObject
     [ObservableProperty]
     private ResultSavingViewModel _resultSaving = new();
 
-    [ObservableProperty]
-    private ResultProcessingViewModel _resultProcessing = new();
-
     private readonly ISimulationServerFacade? _serverFacade;
     private SetMethodsAction? _setMethodsAction;
 
@@ -81,13 +78,6 @@ public partial class SimulationParametersViewModel : ObservableObject
         {
             SavingTarget = parameters.ResultSaving.SavingTarget
         };
-
-        ResultProcessing = new ResultProcessingViewModel
-        {
-            IsSimplifyInUse = parameters.ResultProcessing.IsSimplifyInUse,
-            SelectedSimplifyMethod = parameters.ResultProcessing.SelectedSimplifyMethod,
-            Tolerance = parameters.ResultProcessing.Tolerance
-        };
     }
 
     private void LoadSimulationMethodsAsync()
@@ -140,12 +130,6 @@ public partial class SimulationParametersViewModel : ObservableObject
             ResultSaving = new ResultSavingParameters
             {
                 SavingTarget = ResultSaving.SavingTarget
-            },
-            ResultProcessing = new ResultProcessingParameters
-            {
-                IsSimplifyInUse = ResultProcessing.IsSimplifyInUse,
-                SelectedSimplifyMethod = ResultProcessing.SelectedSimplifyMethod,
-                Tolerance = ResultProcessing.Tolerance
             }
         };
     }
@@ -183,12 +167,5 @@ public partial class SimulationParametersViewModel : ObservableObject
         {
             SavingTarget = parameters.ResultSaving.SavingTarget
         };
-
-        ResultProcessing = new ResultProcessingViewModel
-        {
-            IsSimplifyInUse = parameters.ResultProcessing.IsSimplifyInUse,
-            SelectedSimplifyMethod = parameters.ResultProcessing.SelectedSimplifyMethod,
-            Tolerance = parameters.ResultProcessing.Tolerance
-        };
-    }
+}
 }

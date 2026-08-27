@@ -38,13 +38,6 @@ public class SettingsPanelTests
     }
 
     [Fact]
-    public void SimulationParameters_Has_ResultProcessing()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.Should().NotBeNull();
-    }
-
-    [Fact]
     public void CauchyInitials_Has_Default_StartTime()
     {
         var parameters = CreateParameters();
@@ -173,36 +166,6 @@ public class SettingsPanelTests
     }
 
     [Fact]
-    public void ResultProcessing_Has_Default_Is_Simplify_In_Use()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeFalse();
-    }
-
-    [Fact]
-    public void ResultProcessing_Has_Default_Tolerance()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.Tolerance.Should().Be(0.001);
-    }
-
-    [Fact]
-    public void ResultProcessing_Can_Enable_Simplify()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.IsSimplifyInUse = true;
-        parameters.ResultProcessing.IsSimplifyInUse.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ResultProcessing_Can_Update_Tolerance()
-    {
-        var parameters = CreateParameters();
-        parameters.ResultProcessing.Tolerance = 0.00001;
-        parameters.ResultProcessing.Tolerance.Should().Be(0.00001);
-    }
-
-    [Fact]
     public void SimulationParameters_Can_Snapshot()
     {
         var parameters = CreateParameters();
@@ -225,7 +188,6 @@ public class SettingsPanelTests
             IntegrationMethod = new IntegrationMethodParameters { SelectedMethod = "Rk4", Accuracy = 0.00001 },
             EventDetection = new EventDetectionParameters { Gamma = 0.01 },
             ResultSaving = new ResultSavingParameters { SavingTarget = SaveTarget.File },
-            ResultProcessing = new ResultProcessingParameters { IsSimplifyInUse = true, Tolerance = 0.00001 }
         };
 
         parameters.Commit(model);

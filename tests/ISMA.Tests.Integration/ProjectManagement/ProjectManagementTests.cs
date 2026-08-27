@@ -25,7 +25,7 @@ public class ProjectManagementTests
         _app.Window.GetProjectCount().Should().Be(1);
         _app.Window.GetActiveProject().Should().NotBeNull();
         var firstProject = _app.Window.GetActiveProject()!;
-        firstProject.Name.Should().Be("Untitled");
+        firstProject.Name.Should().Be("New project");
 
         // Set content via UI
         _app.Window.SetEditorText("main { x = 0; }");

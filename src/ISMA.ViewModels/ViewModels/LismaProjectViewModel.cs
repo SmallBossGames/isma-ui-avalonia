@@ -29,11 +29,6 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     [ObservableProperty]
     private string _fullText;
 
-    [ObservableProperty]
-    private bool _isDirty;
-
-    [ObservableProperty]
-    private bool _isHighlighting;
 
     private ObservableCollection<SyntaxTokenDto> _highlightTokens = new();
     public ObservableCollection<SyntaxTokenDto> HighlightTokens => _highlightTokens;
@@ -61,7 +56,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         _syntaxHighlighter = syntaxHighlighter;
         _errorService = errorService;
         _model = new LismaTextModel("", Array.Empty<CodeRegion>());
-        _name = "Untitled";
+        _name = "New project";
         FullText = string.Empty;
     }
 
@@ -81,14 +76,10 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         _errorService = errorService;
         _model = model;
         _filePath = filePath;
-        _name = !string.IsNullOrEmpty(filePath) ? Path.GetFileNameWithoutExtension(filePath) : "Untitled";
+        _name = !string.IsNullOrEmpty(filePath) ? Path.GetFileName(filePath) : "New project";
         _fullText = model.FullText;
     }
 
-    public void SetIsHighlighting(bool value)
-    {
-        IsHighlighting = value;
-    }
 
     public async Task ValidateAsync()
     {
@@ -118,7 +109,6 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     public void SetContent(string text)
     {
         FullText = text;
-        IsDirty = true;
         _model = new LismaTextModel(text, _model.Regions);
         ContentChanged?.Invoke(text);
     }
@@ -129,7 +119,6 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         Name = Path.GetFileName(path);
         FullText = File.ReadAllText(path);
         _model = new LismaTextModel(FullText, Array.Empty<CodeRegion>());
-        IsDirty = false;
         NameChanged?.Invoke();
     }
 
@@ -141,7 +130,6 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         try
         {
             await File.WriteAllTextAsync(FilePath, FullText);
-            IsDirty = false;
             return true;
         }
         catch

@@ -27,15 +27,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
         services.AddSingleton<IBlueprintValidationService, BlueprintValidationService>();
-        services.AddSingleton<IAutoSaveService>(sp =>
-        {
-            var projectService = sp.GetService<ProjectService>();
-            return new AutoSaveService(() =>
-            {
-                var activeProject = projectService?.ActiveProject as BlueprintProjectViewModel;
-                activeProject?.SaveAsync();
-            });
-        });
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
         services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();

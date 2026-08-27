@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\LISMA.xshd" />
+    <AvaloniaResource Include="Assets\isma-2016-title.png" />
   </ItemGroup>
 
   <ItemGroup>

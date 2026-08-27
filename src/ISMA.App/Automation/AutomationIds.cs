@@ -78,8 +78,4 @@ public static class AutomationIds
     public const string SettingsEventDetectionLowBorder = "Settings-EventDetection-LowBorder";
     public const string SettingsEventDetectionStepLimit = "Settings-EventDetection-IsStepLimitInUse";
 
-    // Settings panel - Result Processing tab
-    public const string SettingsResultProcessingSimplifyEnabled = "Settings-ResultProcessing-IsSimplifyInUse";
-    public const string SettingsResultProcessingMethod = "Settings-ResultProcessing-SelectedSimplifyMethod";
-    public const string SettingsResultProcessingTolerance = "Settings-ResultProcessing-Tolerance";
 }

@@ -12,12 +12,13 @@
                     Spacing="4"
                     Margin="4"
                     Height="32">
-            <Button ToolTip.Tip="Run Simulation"
+            <Button ToolTip.Tip="Play"
                     AutomationProperties.AutomationId="ProcessBarRun"
                     Command="{Binding RunCommand}"
-                    Content="Run"
-                    Width="60" Height="28"
-                    Padding="0"/>
+                    Width="32" Height="28"
+                    Padding="0">
+                <PathIcon Data="M8,5.14V19.14L19,12.14L8,5.14Z" Width="20" Height="20"/>
+            </Button>
 
             <Button ToolTip.Tip="Simulation Tasks"
                     AutomationProperties.AutomationId="ProcessBarTasks"

@@ -115,13 +115,6 @@ public class MainWindowTests
     }
 
     [Fact]
-    public void MainWindow_SimulationParameters_Has_ResultProcessing()
-    {
-        var viewModel = CreateViewModel();
-        viewModel.SimulationParameters.ResultProcessing.Should().NotBeNull();
-    }
-
-    [Fact]
     public void MainWindow_ShowSettings_Property_Exists()
     {
         var viewModel = CreateViewModel();

@@ -6,8 +6,9 @@
         x:Class="ISMA.App.MainWindow"
         x:CompileBindings="True"
         x:DataType="vm:MainWindowViewModel"
-        Title="ISMA"
-        MinWidth="500" MinHeight="600">
+        Title="ISMA 22"
+        Icon="avares://ISMA.App/Assets/isma-2016-title.png"
+        MinWidth="600" MinHeight="500">
     <Window.KeyBindings>
         <KeyBinding Command="{Binding NewTextCommand}" Gesture="Ctrl+N" />
         <KeyBinding Command="{Binding NewBlueprintCommand}" Gesture="Ctrl+B" />
@@ -44,16 +45,16 @@
             </ScrollViewer>
         </Grid>
 
-        <Border Grid.Row="2" Height="180"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-            <StackPanel>
+        <StackPanel Grid.Row="2">
+            <Expander x:Name="ErrorListDrawer"
+                      Header="Error list"
+                      IsExpanded="False"
+                      AutomationProperties.AutomationId="ErrorListDrawer">
                 <DataGrid x:Name="ErrorList" AutomationProperties.AutomationId="ErrorList" ItemsSource="{Binding ErrorList.Errors}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
-                          CanUserResizeColumns="True"
-                          Height="150">
+                          CanUserResizeColumns="False"
+                          MaxHeight="200">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Width="5*" Header="Row">
                             <DataGridTemplateColumn.CellTemplate>
@@ -85,8 +86,8 @@
                                             Binding="{Binding Message}" />
                     </DataGrid.Columns>
                 </DataGrid>
-                <views:SimulationProcessBarView x:Name="ProcessBar" />
-            </StackPanel>
-        </Border>
+            </Expander>
+            <views:SimulationProcessBarView x:Name="ProcessBar" />
+        </StackPanel>
     </Grid>
 </Window>

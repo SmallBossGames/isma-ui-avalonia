@@ -35,7 +35,6 @@ public partial class BlueprintEditorView : UserControl
         InitializeComponent();
         _textEditorFactory = AppServiceLocator.Services?.GetService<ITextEditorFactory>();
         _popOverView = new EditArrowPopOverView();
-        _popOverView.DismissRequested += OnPopOverDismissRequested;
         _popOverView.AliasChanged += OnPopOverAliasChanged;
         _popOverView.PredicateChanged += OnPopOverPredicateChanged;
         _popOverView.PointerExited += OnPopOverPointerLeave;
@@ -146,7 +145,6 @@ public partial class BlueprintEditorView : UserControl
         _popOverView.DataContext = savedDataContext;
     }
 
-    private void OnPopOverDismissRequested() => _vm?.ClosePopOver();
     private void OnPopOverAliasChanged() => _vm?.OnPopOverAliasChanged();
     private void OnPopOverPredicateChanged() => _vm?.OnPopOverPredicateChanged();
     private void OnPopOverPointerLeave(object? sender, PointerEventArgs e) => _vm?.ClosePopOver();

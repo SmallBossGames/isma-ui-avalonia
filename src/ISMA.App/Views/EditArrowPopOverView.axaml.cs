@@ -12,7 +12,6 @@ public partial class EditArrowPopOverView : UserControl
 
     public event Action? AliasChanged;
     public event Action? PredicateChanged;
-    public event Action? DismissRequested;
 
     public string? Alias
     {
