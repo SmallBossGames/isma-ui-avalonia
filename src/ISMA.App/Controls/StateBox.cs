@@ -195,8 +195,6 @@ public class StateBox : Control
             context.FillRectangle(new Avalonia.Media.SolidColorBrush(fillColor), rect, radius);
         }
 
-        context.DrawRectangle(Avalonia.Media.Brushes.Black, new Pen(Avalonia.Media.Brushes.Black, 1), rect, radius);
-
         var text = Name ?? "";
         if (!string.IsNullOrEmpty(text))
         {

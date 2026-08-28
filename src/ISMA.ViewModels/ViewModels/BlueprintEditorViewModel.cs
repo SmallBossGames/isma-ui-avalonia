@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -158,11 +159,45 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
         if (minX == double.MaxValue)
         {
-            CanvasSize = new CanvasSizeDto(1200, 800);
+            SetCanvasSize(new CanvasSizeDto(1200, 800));
         }
         else
         {
-            CanvasSize = new CanvasSizeDto(Math.Max(400, (maxX - minX) + 200), Math.Max(300, (maxY - minY) + 200));
+            SetCanvasSize(new CanvasSizeDto(Math.Max(400, (maxX - minX) + 200), Math.Max(300, (maxY - minY) + 200)));
+        }
+    }
+
+    private void SetCanvasSize(CanvasSizeDto size)
+    {
+        if (CanvasSize.Width == size.Width && CanvasSize.Height == size.Height)
+            return;
+        CanvasSize = size;
+    }
+
+    private void OnStatesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+        {
+            foreach (BlueprintStateViewModel state in e.OldItems)
+            {
+                state.PropertyChanged -= OnStatePositionChanged;
+            }
+        }
+        if (e.NewItems != null)
+        {
+            foreach (BlueprintStateViewModel state in e.NewItems)
+            {
+                state.PropertyChanged += OnStatePositionChanged;
+            }
+        }
+    }
+
+    private void OnStatePositionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BlueprintStateViewModel.CanvasPositionX) ||
+            e.PropertyName == nameof(BlueprintStateViewModel.CanvasPositionY))
+        {
+            UpdateCanvasSize();
         }
     }
 
@@ -218,6 +253,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
         _nameMonitor = nameMonitor;
         _validationService = validationService;
         _blueprintId = Guid.NewGuid();
+        States.CollectionChanged += OnStatesCollectionChanged;
         LoadFromModel(BlueprintModel.Empty);
     }
 
@@ -315,8 +351,12 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             SelectedState = null;
             SelectedTransition = null;
 
+            if (MainState != null) MainState.PropertyChanged -= OnStatePositionChanged;
+            if (InitState != null) InitState.PropertyChanged -= OnStatePositionChanged;
             MainState = tempMainState!;
             InitState = tempInitState!;
+            MainState.PropertyChanged += OnStatePositionChanged;
+            InitState.PropertyChanged += OnStatePositionChanged;
 
             foreach (var state in tempStates)
             {
@@ -513,7 +553,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsEditable = true,
             IsMain = false,
             IsInit = false,
-            FillColor = "#F08080",
+            FillColor = "#FF7F50",
             StateHeight = 65.0
         };
 
@@ -539,7 +579,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
             IsEditable = true,
             IsMain = false,
             IsInit = false,
-            FillColor = "#F08080",
+            FillColor = "#FF7F50",
             StateHeight = 65.0
         };
 
@@ -809,7 +849,7 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
 
     private BlueprintStateViewModel MapState(BlueprintStateModel model, bool isMain, bool isInit)
     {
-        var fillColor = "#F08080";
+        var fillColor = "#FF7F50";
 
         if (isMain)
         {
@@ -839,6 +879,9 @@ public partial class BlueprintEditorViewModel : ObservableObject, IDisposable
     {
         IsPopOverOpen = false;
         PopOverViewModel = null;
+        States.CollectionChanged -= OnStatesCollectionChanged;
+        if (MainState != null) MainState.PropertyChanged -= OnStatePositionChanged;
+        if (InitState != null) InitState.PropertyChanged -= OnStatePositionChanged;
         States.Clear();
         Transitions.Clear();
         LoopTransactions.Clear();

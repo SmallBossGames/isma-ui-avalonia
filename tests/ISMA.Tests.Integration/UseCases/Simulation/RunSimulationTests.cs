@@ -93,20 +93,25 @@ state ""initial"" (1 > 0) {
     }
 
     [AvaloniaFact]
-    public async Task UC01_Simulation_AlreadyRunning_DoesNotStartAnother()
+    public async Task UC01_Simulation_AlreadyRunning_StartsAnother()
     {
         _app.Window.ClickMenuItem("MenuNewText");
 
         _app.MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
         _app.MockServer.RunHandler = _ => Task.FromResult(1L);
-        _app.MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
+        // Monitor stalls so the first simulation stays running, allowing a second to start.
+        _app.MockServer.MonitorHandler = _ => StallingMonitor();
         _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
-        _app.ViewModel.SimulationService.IsRunning = true;
-
         _app.Window.ClickMenuItem("MenuRun");
+        await Task.Delay(150);
 
-        _app.ViewModel.SimulationService.IsRunning.Should().BeTrue();
+        // A second Run starts a concurrent simulation rather than being blocked.
+        var runItem = _app.Window.FindMenuItem("MenuRun")!;
+        runItem.Command!.Execute(runItem.CommandParameter);
+        await Task.Delay(150);
+
+        _app.ViewModel.SimulationService.TrackingTasks.Count.Should().Be(2);
     }
 
     [AvaloniaFact]
@@ -218,5 +223,11 @@ state ""initial"" (1 > 0) {
                 CurrentTime = t
             };
         }
+    }
+
+    private static async IAsyncEnumerable<SimulationProgress> StallingMonitor()
+    {
+        yield return new SimulationProgress { StartTime = 0, EndTime = 10, CurrentTime = 5 };
+        await Task.Delay(30_000);
     }
 }

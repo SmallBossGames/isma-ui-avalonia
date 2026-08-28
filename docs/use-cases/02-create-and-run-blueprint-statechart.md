@@ -11,7 +11,7 @@
    - **Main** state (green `#90EE90`, fixed name, top-left position)
    - **Init** state (blue `#ADD8E6`, fixed name, below Main)
 3. The user builds the state machine:
-   - **Adding states:** Clicks the **New state** button in the canvas toolbar, then clicks on the canvas to place a new user state (coral `#F08080`). The `NameChangingMonitor` auto-generates unique names (e.g., "State1", "State2").
+   - **Adding states:** Clicks the **New state** button in the canvas toolbar, then clicks on the canvas to place a new user state (coral `#FF7F50`). The `NameChangingMonitor` auto-generates unique names (e.g., "State1", "State2").
    - **Repositioning states:** Drags state boxes to desired canvas positions (tracked via `CanvasPositionX` / `CanvasPositionY`).
    - **Renaming states:** Single-clicks a user state box (after 200ms disambiguation delay to distinguish from drag) to edit its name inline. Names must be unique across all states.
    - **Adding transitions:** Toggles the **New transition** button, then clicks a source state followed by a target state. A straight arrow is drawn between them.

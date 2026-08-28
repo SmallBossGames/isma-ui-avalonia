@@ -244,9 +244,10 @@ public class ArrowLine : Control
         // Draw line with spec stroke width
         context.DrawLine(new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), startOffset, endOffset);
 
-        // Arrowhead at end, rotated to match line direction (not perpendicular)
+        // Arrowhead at the midpoint of the line (matches original), rotated to match line direction
         var lineAngle = Math.Atan2(dy, dx);
-        DrawArrowhead(context, endOffset, lineAngle);
+        var midOffset = new Point((startOffset.X + endOffset.X) / 2, (startOffset.Y + endOffset.Y) / 2);
+        DrawArrowhead(context, midOffset, lineAngle);
 
         // Label at perpendicular offset from midpoint
         var midX = (startOffset.X + endOffset.X) / 2;
@@ -355,13 +356,15 @@ public class ArrowLine : Control
 
         if (length < 1.0) return;
 
-        // Calculate arrowhead position (endOffset) with perpendicular offset
+        // Calculate arrowhead position (midpoint of the line) with perpendicular offset
         var angle = Math.Atan2(dx, dy) + Math.PI / 2;
         var offsetX = ArrowOffset * Math.Sin(angle);
         var offsetY = ArrowOffset * Math.Cos(angle);
+        var startOffset = new Point(start.Value.X + offsetX, start.Value.Y + offsetY);
         var endOffset = new Point(end.Value.X + offsetX, end.Value.Y + offsetY);
+        var midOffset = new Point((startOffset.X + endOffset.X) / 2, (startOffset.Y + endOffset.Y) / 2);
 
-        var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - endOffset.X, 2) + Math.Pow(position.Y - endOffset.Y, 2));
+        var distanceToArrowhead = Math.Sqrt(Math.Pow(position.X - midOffset.X, 2) + Math.Pow(position.Y - midOffset.Y, 2));
 
         var result = new ArrowHitTestResult();
 

@@ -13,6 +13,12 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ProjectService _projectService;
 
+    /// <summary>
+    /// Raised when the user requests to exit the application (File > Exit). The hosting
+    /// window should close itself, which captures preferences and shuts the app down.
+    /// </summary>
+    public event Action? ExitRequested;
+
     public ProjectService ProjectService => _projectService;
 
     private readonly SimulationServiceViewModel _simulationService;
@@ -193,6 +199,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _projectService.CaptureOpenFiles();
         await _projectService.CloseAllAsync();
+        ExitRequested?.Invoke();
     }
 
     [RelayCommand]

@@ -180,26 +180,36 @@ state ""initial"" (1 > 0) {
     }
 
     [AvaloniaFact]
-    public async Task Simulation_AlreadyRunning_DoesNotStartAnother()
+    public async Task Simulation_AlreadyRunning_StartsAnother()
     {
         // Create project via UI
         _app.Window.ClickMenuItem("MenuNewText");
         _app.Window.GetActiveProject().Should().NotBeNull();
 
-        // Mock server
+        // Mock server; the monitor yields one progress then stalls so the
+        // simulation stays in the "running" state, letting a second start.
         _app.MockServer.CompileHandler = _ => Task.FromResult(new CompileResult { ModelId = "test-model" });
         _app.MockServer.RunHandler = _ => Task.FromResult(1L);
-        _app.MockServer.MonitorHandler = _ => AsyncEnumerable.Empty<SimulationProgress>();
+        _app.MockServer.MonitorHandler = _ => StallingMonitor();
         _app.MockServer.DownloadHandler = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/result.bin" });
 
-        // Set running manually
-        _app.ViewModel.SimulationService.IsRunning = true;
-
-        // Try to run again via UI
+        // Start first simulation via UI
         _app.Window.ClickMenuItem("MenuRun");
+        await WaitForCount(_app.ViewModel.SimulationService.TrackingTasks, 1);
 
-        // Should still be running (not started another)
-        _app.ViewModel.SimulationService.IsRunning.Should().BeTrue();
+        // Start a second simulation while the first is still running (concurrent).
+        // Execute the Run command directly (reliable re-invocation in headless mode).
+        var runItem = _app.Window.FindMenuItem("MenuRun")!;
+        runItem.Command!.Execute(runItem.CommandParameter);
+        await WaitForCount(_app.ViewModel.SimulationService.TrackingTasks, 2);
+
+        _app.ViewModel.SimulationService.TrackingTasks.Count.Should().Be(2);
+    }
+
+    private static async IAsyncEnumerable<SimulationProgress> StallingMonitor()
+    {
+        yield return new SimulationProgress { StartTime = 0, EndTime = 10, CurrentTime = 5 };
+        await Task.Delay(30_000);
     }
 
     [AvaloniaFact]
@@ -258,6 +268,14 @@ state ""initial"" (1 > 0) {
                 EndTime = 10,
                 CurrentTime = t
             };
+        }
+    }
+
+    private static async Task WaitForCount(System.Collections.ObjectModel.ObservableCollection<InProgressSimulationViewModel> tasks, int expected)
+    {
+        for (var i = 0; i < 200 && tasks.Count < expected; i++)
+        {
+            await Task.Delay(20);
         }
     }
 }

@@ -35,7 +35,17 @@ public sealed class GrinProcessLauncher : IDisposable
 
     public Task RunAsync(string resultFile, string xAxisColumn, IEnumerable<string> chartColumns, string? scriptPath = null, CancellationToken ct = default)
     {
-        var path = scriptPath ?? ResolveScriptPath();
+        string path;
+        try
+        {
+            path = scriptPath ?? ResolveScriptPath();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Cannot resolve Grin script path; chart viewer will not launch");
+            return Task.CompletedTask;
+        }
+
         var args = BuildArguments(resultFile, xAxisColumn, chartColumns);
 
         var psi = new ProcessStartInfo

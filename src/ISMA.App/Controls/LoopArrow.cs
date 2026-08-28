@@ -26,6 +26,7 @@ public class LoopArrow : Control
     private const double StateHeight = 65.0;
     private const double StrokeWidth = 3.0;
     private const double LabelFontSize = 16;
+    private const double LabelMaxHalfWidth = 80.0;
 
     public static readonly StyledProperty<Guid?> StateIdProperty =
         AvaloniaProperty.Register<LoopArrow, Guid?>(nameof(StateId));
@@ -107,16 +108,13 @@ public class LoopArrow : Control
         var center = GetCenter();
         if (center != default)
         {
-            var circleCenterX = center.X + LoopCircleCenterX;
-            var arrowheadX = circleCenterX + LoopArrowheadX;
-            var labelX = circleCenterX + LoopLabelX;
-            var maxExtentX = Math.Max(arrowheadX, labelX) + ArrowheadSize;
+            // Absolute extent from the canvas origin so the control's bounds cover the drawn geometry
+            // (the control is pinned at Canvas.Left=0, Canvas.Top=0).
+            var maxExtentX = center.X + LoopLabelX + LabelMaxHalfWidth + ArrowheadSize;
             var maxExtentY = center.Y + LoopRadius + ArrowheadSize;
-            var minExtentX = center.X - LoopRadius - ArrowheadSize;
-            var minExtentY = center.Y - LoopRadius * 2 - ArrowheadSize;
             return new Size(
-                Math.Max(200, maxExtentX - minExtentX),
-                Math.Max(200, maxExtentY - minExtentY));
+                Math.Max(200, maxExtentX),
+                Math.Max(200, maxExtentY));
         }
         return new Size(200, 200);
     }
@@ -133,22 +131,22 @@ public class LoopArrow : Control
 
         var r = LoopRadius;
 
-        // Circle center offset per spec: (60, -40) from state center
-        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y - r);
+        // Circle center: (60, 0) relative to state center (vertically centered on the state)
+        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y);
 
         // Draw circle with spec stroke width
         context.DrawEllipse(null, new Pen(Avalonia.Media.Brushes.Black, StrokeWidth), circleCenter, r, r);
 
-        // Arrowhead at (100, 0) relative to circle center, pointing right
-        var arrowheadPos = new Point(circleCenter.X + LoopArrowheadX, circleCenter.Y + LoopLabelYOffset);
+        // Arrowhead at (100, 0) relative to state center (the circle's right edge), pointing right
+        var arrowheadPos = new Point(center.X + LoopArrowheadX, center.Y);
         DrawArrowhead(context, arrowheadPos, 0.0); // 0 radians = pointing right
 
-        // Label to the right of circle per spec: (120, -10)
+        // Label centered at (120, -10) relative to state center
         var labelText = !string.IsNullOrEmpty(Alias) ? Alias : Predicate;
         if (!string.IsNullOrEmpty(labelText))
         {
             var formattedText = new FormattedText(labelText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Arial"), LabelFontSize, Avalonia.Media.Brushes.Black);
-            context.DrawText(formattedText, new Point(circleCenter.X + LoopLabelX - formattedText.Width, circleCenter.Y + LoopLabelYOffset - formattedText.Height / 2));
+            context.DrawText(formattedText, new Point(center.X + LoopLabelX - formattedText.Width / 2, center.Y + LoopLabelYOffset - formattedText.Height / 2));
         }
     }
 
@@ -192,13 +190,6 @@ public class LoopArrow : Control
     {
         base.OnPointerPressed(e);
 
-        if (e.ClickCount > 1)
-        {
-            LoopArrowDoubleClick?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, e.GetPosition(this)));
-            e.Handled = true;
-            return;
-        }
-
         var center = GetCenter();
         if (center == default) return;
 
@@ -217,18 +208,29 @@ public class LoopArrow : Control
         var position = canvasPosition ?? e.GetPosition(this);
         var r = LoopRadius;
 
-        // Circle center per spec
-        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y - r);
+        // Circle center: (60, 0) relative to state center
+        var circleCenter = new Point(center.X + LoopCircleCenterX, center.Y);
+
+        // Arrowhead at (100, 0) relative to state center
+        var arrowheadPos = new Point(center.X + LoopArrowheadX, center.Y);
+        var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
+
+        if (e.ClickCount > 1)
+        {
+            // Double-click on the arrowhead opens the loop editor (matches original ClickDisambiguator target)
+            if (headDist < ArrowheadSize * 2)
+            {
+                LoopArrowDoubleClick?.Invoke(this, new ArrowHitTestEventArgs(new ArrowHitTestResult { IsArrowHead = true }, position));
+                e.Handled = true;
+            }
+            return;
+        }
 
         // Check if click is near the circle edge (body click)
         var dx = position.X - circleCenter.X;
         var dy = position.Y - circleCenter.Y;
         var distFromCenter = Math.Sqrt(dx * dx + dy * dy);
         var distFromEdge = Math.Abs(distFromCenter - r);
-
-        // Check if click is near the arrowhead at (100, 0) relative to circle
-        var arrowheadPos = new Point(circleCenter.X + LoopArrowheadX, circleCenter.Y + LoopLabelYOffset);
-        var headDist = Math.Sqrt(Math.Pow(position.X - arrowheadPos.X, 2) + Math.Pow(position.Y - arrowheadPos.Y, 2));
 
         if (headDist < ArrowheadSize * 2)
         {

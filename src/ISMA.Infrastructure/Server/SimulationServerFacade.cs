@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
@@ -63,7 +64,33 @@ public sealed class SimulationServerFacade : ISimulationServerFacade, IDisposabl
     public async Task<CachedSimulationResult> DownloadResult(long id)
     {
         EnsureClients();
-        return await _simulationClient!.DownloadResultAsync(id).ConfigureAwait(false);
+        var result = await _simulationClient!.DownloadResultAsync(id).ConfigureAwait(false);
+
+        // The gRPC response carries a download URL, not a local file. Download it to the
+        // local cache and read the column metadata so the chart viewer and CSV export work.
+        var file = result.File;
+        if (!File.Exists(file))
+        {
+            var fileInfo = await _httpClient!.DownloadToCacheAsync(file).ConfigureAwait(false);
+            file = fileInfo.FullName;
+        }
+
+        ImmutableArray<string> columnNames;
+        try
+        {
+            columnNames = BinaryFilePointProvider.ReadMetadata(file).ColumnNames;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to read simulation result metadata from {File}", file);
+            columnNames = ImmutableArray<string>.Empty;
+        }
+
+        return new CachedSimulationResult
+        {
+            File = file,
+            ColumnNames = columnNames,
+        };
     }
 
     public async Task CancelSimulation(long id)

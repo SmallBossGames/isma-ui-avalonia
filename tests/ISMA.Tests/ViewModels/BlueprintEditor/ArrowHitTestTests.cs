@@ -149,6 +149,6 @@ public class ArrowHitTestTests
         mainState.StateHeight.Should().Be(60);
         userState.StateHeight.Should().Be(65);
 
-        mainState.CanvasPositionY.Should().Be(10);
+        mainState.CanvasPositionY.Should().Be(0);
     }
 }

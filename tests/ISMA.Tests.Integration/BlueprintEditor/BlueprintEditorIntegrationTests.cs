@@ -249,7 +249,7 @@ public class BlueprintEditorIntegrationTests
         editorVm!.AddStateCommand.Execute(null);
 
         var userState = editorVm.States.First();
-        userState.FillColor.Should().Be("#F08080");
+        userState.FillColor.Should().Be("#FF7F50");
     }
 
     [AvaloniaFact]

@@ -18,7 +18,7 @@ public partial class SimulationServiceViewModel : ObservableObject
     private readonly TasksPopOverViewModel? _tasksPopOver;
 
     private long _nextTaskId = 1;
-
+    private int _runningCount;
     public ISimulationServerFacade SimulationServerFacade => _serverFacade;
 
     [ObservableProperty]
@@ -51,9 +51,7 @@ public partial class SimulationServiceViewModel : ObservableObject
 
     public async Task SimulateAsync(LismaProjectViewModel project)
     {
-        if (IsRunning)
-            return;
-
+        Interlocked.Increment(ref _runningCount);
         IsRunning = true;
         StatusText = "Compiling...";
 
@@ -181,7 +179,8 @@ public partial class SimulationServiceViewModel : ObservableObject
         }
         finally
         {
-            IsRunning = false;
+            Interlocked.Decrement(ref _runningCount);
+            IsRunning = _runningCount > 0;
         }
     }
 

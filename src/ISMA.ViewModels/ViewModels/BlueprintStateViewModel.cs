@@ -38,7 +38,7 @@ public partial class BlueprintStateViewModel : ObservableObject
     private bool _isInit;
 
     [ObservableProperty]
-    private string? _fillColor = "#F08080";
+    private string? _fillColor = "#FF7F50";
 
     [ObservableProperty]
     private double _stateHeight;

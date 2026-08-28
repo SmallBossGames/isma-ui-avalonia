@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     public MainWindow(MainWindowViewModel viewModel) : this()
     {
         DataContext = viewModel;
+        viewModel.ExitRequested += OnExitRequested;
     }
 
     public MainWindow(MainWindowViewModel viewModel, IPreferencesProvider preferencesProvider) : this()
@@ -27,6 +28,12 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         _preferencesProvider = preferencesProvider;
         _shouldRestoreGeometry = true;
+        viewModel.ExitRequested += OnExitRequested;
+    }
+
+    private void OnExitRequested()
+    {
+        Close();
     }
 
     protected override void OnOpened(EventArgs e)

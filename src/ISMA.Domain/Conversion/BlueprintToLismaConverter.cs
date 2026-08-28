@@ -39,6 +39,9 @@ public static class BlueprintToLismaConverter
         sb.AppendLine(model.Main.Text);
 
         var stateBlockModels = new Dictionary<string, StateBlockModel>();
+        // Explicit insertion order (matches the original's LinkedHashMap guarantee;
+        // Dictionary order is not part of the contract).
+        var blockOrder = new List<string>();
         foreach (var tx in model.Transactions)
         {
             if (!stateNames.TryGetValue(tx.EndStateId, out var endStateName))
@@ -53,13 +56,15 @@ public static class BlueprintToLismaConverter
                 blockModel = new StateBlockModel(endStateName, key,
                     statesMap.TryGetValue(endStateName, out var text) ? text : "");
                 stateBlockModels[key] = blockModel;
+                blockOrder.Add(key);
             }
 
             blockModel.InputStates.Add(startStateName);
         }
 
-        foreach (var block in stateBlockModels.Values)
+        foreach (var key in blockOrder)
         {
+            var block = stateBlockModels[key];
             AppendFragment(sb, regions, block.StateName, block.ToString(), extraBlankLines: 1);
         }
 
