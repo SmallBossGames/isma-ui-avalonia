@@ -1,11 +1,10 @@
 using System.Collections.ObjectModel;
 using ISMA.App.Services;
+using ISMA.App.ViewModels;
 using ISMA.Domain.Contracts;
-using ISMA.Infrastructure.ChartViewer;
-using ISMA.Infrastructure.FileStorage;
-using ISMA.Infrastructure.Server;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
+using ISMA.ExternalServices.ChartViewer;
+using ISMA.ExternalServices.FileStorage;
+using ISMA.ExternalServices.Server;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ISMA.App;
@@ -26,10 +25,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
         services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
-        services.AddSingleton<IBlueprintValidationService, BlueprintValidationService>();
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
-        services.AddSingleton<ISMA.ViewModels.Services.ISimulationParametersStoreService, ISMA.App.Services.SimulationParametersService>();
+        services.AddSingleton<ISimulationParametersStoreService, SimulationParametersService>();
+        services.AddSingleton<ISMA.BlueprintEditor.Services.ITextEditorFactory, BlueprintTextEditorFactory>();
+        services.AddSingleton<IProjectEditorPort, ProjectEditorPortImpl>();
         services.AddSingleton<ErrorListViewModel>();
         services.AddSingleton<IModelErrorService>(sp => sp.GetRequiredService<ErrorListViewModel>());
         services.AddSingleton<SimulationParametersViewModel>(sp =>

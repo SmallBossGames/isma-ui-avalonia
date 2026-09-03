@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration.UseCases.ProjectManagement;
 

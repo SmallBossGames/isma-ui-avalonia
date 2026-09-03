@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -7,8 +7,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ISMA.Domain\ISMA.Domain.csproj" />
-    <ProjectReference Include="..\ISMA.Infrastructure\ISMA.Infrastructure.csproj" />
-    <ProjectReference Include="..\ISMA.ViewModels\ISMA.ViewModels.csproj" />
+    <ProjectReference Include="..\ISMA.ExternalServices\ISMA.ExternalServices.csproj" />
+    <ProjectReference Include="..\ISMA.BlueprintEditor\ISMA.BlueprintEditor.csproj" />
+    <ProjectReference Include="..\ISMA.TextEditor\ISMA.TextEditor.csproj" />
+    <ProjectReference Include="..\ISMA.Toolkit\ISMA.Toolkit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

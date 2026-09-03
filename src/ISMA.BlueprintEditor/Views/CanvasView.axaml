@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ISMA.BlueprintEditor.Controls"
+             xmlns:conv="clr-namespace:ISMA.BlueprintEditor.Converters"
+             xmlns:views="clr-namespace:ISMA.BlueprintEditor.Views"
+             xmlns:vm="clr-namespace:ISMA.BlueprintEditor.ViewModels"
+             x:Class="ISMA.BlueprintEditor.Views.CanvasView"
+             x:DataType="vm:CanvasViewModel">
+  <UserControl.Resources>
+    <conv:StateKindToBrushConverter x:Key="StateKindBrush" />
+  </UserControl.Resources>
+  <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+    <views:BlueprintCanvas x:Name="RootCanvas">
+      <ItemsControl ItemsSource="{Binding States}" ZIndex="0">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <views:BlueprintCanvas />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:StateViewModel">
+            <controls:StateBox Margin="{Binding BoxMargin}"
+                               State="{Binding}"
+                               Fill="{Binding Kind, Converter={StaticResource StateKindBrush}}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <ItemsControl ItemsSource="{Binding Transactions}" ZIndex="1">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <views:BlueprintCanvas />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:TransactionViewModel">
+            <controls:TransactionArrow Transaction="{Binding}"
+                                       StartState="{Binding StartState}"
+                                       EndState="{Binding EndState}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <ItemsControl ItemsSource="{Binding LoopTransactions}" ZIndex="2">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <views:BlueprintCanvas />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:LoopTransactionViewModel">
+            <controls:LoopTransactionArrow Loop="{Binding}"
+                                           State="{Binding State}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </views:BlueprintCanvas>
+  </ScrollViewer>
+</UserControl>

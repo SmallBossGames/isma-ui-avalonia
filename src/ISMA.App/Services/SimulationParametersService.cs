@@ -3,8 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using System.Text.Json;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
 
 namespace ISMA.App.Services;
 

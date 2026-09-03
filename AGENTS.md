@@ -12,29 +12,38 @@ No `cd` required — the solution file is at the repo root.
 
 ## Architecture
 
-5-layer Clean Architecture, dependency direction is strict:
+Layered Clean Architecture, dependency direction is strict:
 
 ```mermaid
 graph LR
     subgraph Presentation
-        App["`**ISMA.App**<br/>Avalonia views, controls, DI wiring`"]
-        VM["`**ISMA.ViewModels**<br/>CommunityToolkit.Mvvm ViewModels`"]
+        App["`**ISMA.App**<br/>Avalonia views, DI wiring, project lifecycle`"]
+        BE["`**ISMA.BlueprintEditor**<br/>Visual statechart editor (no project deps)`"]
+        TE["`**ISMA.TextEditor**<br/>AvaloniaEdit LISMA text editor`"]
+        TK["`**ISMA.Toolkit**<br/>PropertiesGrid, converters`"]
     end
     subgraph Infrastructure
-        Infra["`**ISMA.Infrastructure**<br/>gRPC/HTTP clients, file storage`"]
+        Infra["`**ISMA.ExternalServices**<br/>gRPC clients, process launchers`"]
     end
     subgraph Domain
         Dom["`**ISMA.Domain**<br/>Pure models, DTOs, contracts`"]
+        Grpc["`**ISMA.Grpc**<br/>Generated gRPC stubs`"]
     end
     subgraph Tests
         UT["`**ISMA.Tests**<br/>xUnit v3 unit tests`"]
         IT["`**ISMA.Tests.Integration**<br/>xUnit v3 headless UI tests`"]
     end
 
-    App --> VM
+    App --> BE
+    App --> TE
+    App --> TK
     App --> Infra
-    VM --> Dom
+    App --> Dom
+    TE --> Dom
     Infra --> Dom
+    Infra --> Grpc
+    UT --> App
+    UT --> BE
     IT --> App
 ```
 
@@ -50,7 +59,7 @@ graph LR
 
 Two test projects with different scopes:
 
-**Unit tests** (`tests/ISMA.Tests`): Domain models and ViewModels. Uses Moq for interfaces.
+**Unit tests** (`tests/ISMA.Tests`): Domain models, app view models, and blueprint editor view models/utilities. Uses Moq for interfaces.
 
 **Integration tests** (`tests/ISMA.Tests.Integration`): Headless Avalonia UI tests.
 - Integration tests checks end-to-end flows with Avalonia Headless Platform
@@ -79,8 +88,6 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 - Stricly follow MVVM pattern
 - **No XAML code-behind logic** — Views contain only markup. All logic is in ViewModels or services.
 
-## Key files
-
 | File | Role |
 |---|---|
 | `src/ISMA.App/Program.cs` | Entry point — `BuildAvaloniaApp()` |
@@ -88,7 +95,12 @@ Centralized via `Directory.Packages.props` at both root and `src/` level. All ve
 | `src/ISMA.App/ServiceCollectionExtensions.cs` | Shared DI config for app + integration tests |
 | `src/ISMA.App/Styles/GlobalStyles.axaml` | Global theme: colors, fonts, control styles |
 | `src/ISMA.App/MainWindow.axaml` | Main window: menu, toolbar, editor tabs, settings, error list, process bar |
-| `src/ISMA.ViewModels/Services/ProjectService.cs` | Multi-project lifecycle (open, save, close, tabs) |
+| `src/ISMA.App/Services/ProjectService.cs` | Multi-project lifecycle (open, save, close, tabs) |
+| `src/ISMA.App/Services/ProjectFileService.cs` | File pickers (open/save/save-as) and `.im2`/`.iscm2` routing |
+| `src/ISMA.App/Services/Blueprint/BlueprintFileSerializer.cs` | `.iscm2` JSON (de)serialization of `BlueprintModel` |
+| `src/ISMA.BlueprintEditor/Views/IsmaBlueprintEditor.axaml` | Blueprint editor: toolbar, canvas, state/loop editor tabs |
+| `src/ISMA.BlueprintEditor/ViewModels/IsmaBlueprintViewModel.cs` | Editor state machine (modes, states, transactions) |
+| `src/ISMA.TextEditor/IsmaTextEditor.cs` | LISMA text editor control (AvaloniaEdit) |
 | `run.sh` | Convenience script — auto-detects script dir for `appsettings.json` |
 
 ## Docs

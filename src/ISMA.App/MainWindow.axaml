@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ISMA.ViewModels.ViewModels"
+        xmlns:vm="using:ISMA.App.ViewModels"
         xmlns:views="using:ISMA.App.Views"
         xmlns:m="using:ISMA.Domain.Models"
         x:Class="ISMA.App.MainWindow"

@@ -6,7 +6,7 @@
 
 ## Main Flow
 
-1. **Open project:** The user opens an existing project via **File > Open...** (`Ctrl+O`). The file may be a LISMA text project (`.iscm2`) or a Blueprint statechart (`.scisma`).
+1. **Open project:** The user opens an existing project via **File > Open...** (`Ctrl+O`). The file may be a LISMA text project (`.im2`) or a Blueprint statechart (`.iscm2`).
 
 2. **Initial run attempt:** The user clicks **Simulation > Run** (`Ctrl+F5`) expecting the model to execute.
 

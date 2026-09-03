@@ -1,10 +1,11 @@
 global using global::Xunit;
 using FluentAssertions;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
+using ISMA.BlueprintEditor.Models;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
 using Moq;
 
 namespace ISMA.Tests.ViewModels;
@@ -25,12 +26,14 @@ public class ProjectViewModelTests
         var mockFacade = new Mock<ISimulationServerFacade>();
         var mockEditorFactory = new Mock<ITextEditorFactory>();
         var mockSyntax = CreateSyntaxHighlighterMock();
+        var mockEditorPort = new Mock<IProjectEditorPort>();
 
         return new ProjectService(
             mockFileService.Object,
             mockFacade.Object,
             mockEditorFactory.Object,
-            mockSyntax.Object);
+            mockSyntax.Object,
+            mockEditorPort.Object);
     }
 
     private static LismaProjectViewModel CreateLismaProject(
@@ -57,12 +60,16 @@ public class ProjectViewModelTests
         BlueprintModel? blueprintModel = null)
     {
         var mockFileService = new Mock<IProjectFileService>();
-        var mockEditorFactory = new Mock<ITextEditorFactory>();
+        var mockEditorPort = new Mock<IProjectEditorPort>();
+        mockEditorPort
+            .Setup(p => p.CreateBlueprintEditor())
+            .Returns(new ISMA.BlueprintEditor.Views.IsmaBlueprintEditor(
+                new Mock<ISMA.BlueprintEditor.Services.ITextEditorFactory>().Object));
         var model = blueprintModel ?? BlueprintModel.Empty;
 
         return new BlueprintProjectViewModel(
+            mockEditorPort.Object,
             mockFileService.Object,
-            mockEditorFactory.Object,
             model,
             null);
     }
@@ -221,7 +228,7 @@ public class ProjectViewModelTests
     public void ProjectViewModel_Dispose_CleansUpEditor()
     {
         var mockEditorFactory = new Mock<ITextEditorFactory>();
-        var mockEditor = new Mock<object>();
+        var editor = new object();
         var mockFileService = new Mock<IProjectFileService>();
         var mockSyntax = CreateSyntaxHighlighterMock();
 
@@ -233,9 +240,9 @@ public class ProjectViewModelTests
             new LismaTextModel("", Array.Empty<CodeRegion>()),
             null);
 
-        project.SetEditorInstance(mockEditor.Object);
+        project.SetEditorInstance(editor);
         project.Dispose();
 
-        mockEditorFactory.Verify(f => f.DisposeInstance(mockEditor.Object), Times.Once);
+        mockEditorFactory.Verify(f => f.DisposeInstance(editor), Times.Once);
     }
 }

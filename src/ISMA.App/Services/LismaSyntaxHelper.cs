@@ -53,7 +53,7 @@ public static class LismaSyntaxHelper
                 using var reader = new StreamReader(stream);
                 using var xmlReader = XmlReader.Create(reader);
                 _fallbackHighlighting = HighlightingLoader.Load(xmlReader, null);
-                HighlightingManager.Instance.RegisterHighlighting("LISMA", new[] { ".iscm2", ".scisma", ".im" }, _fallbackHighlighting);
+                HighlightingManager.Instance.RegisterHighlighting("LISMA", new[] { ".im2" }, _fallbackHighlighting);
             }
             else
             {

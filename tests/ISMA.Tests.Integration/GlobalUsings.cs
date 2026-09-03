@@ -1,13 +1,13 @@
 global using global::Xunit;
 global using global::Avalonia.Headless.XUnit;
 global using FluentAssertions;
+global using ISMA.App.Services;
+global using ISMA.App.Services.Blueprint;
+global using ISMA.App.ViewModels;
+global using ISMA.App.Views;
 global using ISMA.Domain.Contracts;
-global using ISMA.Domain.Conversion;
 global using ISMA.Domain.Dtos;
 global using ISMA.Domain.Models;
 global using ISMA.Tests.Integration;
-global using ISMA.ViewModels.Services;
-global using ISMA.ViewModels.ViewModels;
 global using Microsoft.Extensions.DependencyInjection;
 global using Avalonia.Controls;
-global using ISMA.App.Views;

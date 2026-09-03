@@ -18,9 +18,8 @@
 
 1. The user clicks **File > Save As...** (or presses `Ctrl+Shift+S`).
 2. A file picker dialog opens with file type filters:
-   - `*.iscm2` for LISMA text projects.
-   - `*.scisma` for Blueprint statechart projects.
-   - `*.im` is not offered as a Save As target (legacy format, write-only).
+   - `*.iscm2` for Blueprint statechart projects.
+   - `*.im2` for LISMA text projects (a legacy `*.im` choice is also offered).
 3. The user enters or selects a filename and location, then confirms.
 4. The application writes the project content to the chosen path.
 5. The project's `FilePath` is updated to the new path. The tab title changes to the filename (without extension).

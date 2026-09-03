@@ -8,13 +8,13 @@ namespace ISMA.App.Services;
 
 public class EditorPlatformService
 {
-    private TextEditor? _focusedEditor;
+    private AvaloniaEdit.TextEditor? _focusedEditor;
 
     public Action? CutRequested { get; set; }
     public Action? CopyRequested { get; set; }
     public Action? PasteRequested { get; set; }
 
-    public void SetFocusedEditor(TextEditor? editor)
+    public void SetFocusedEditor(AvaloniaEdit.TextEditor? editor)
     {
         _focusedEditor = editor;
     }
@@ -46,7 +46,7 @@ public class EditorPlatformService
         }
     }
 
-    public void HandleSelectAll(TextEditor editor)
+    public void HandleSelectAll(AvaloniaEdit.TextEditor editor)
     {
         if (editor is not null)
         {
@@ -63,7 +63,7 @@ public class EditorPlatformService
     {
         if ((e.KeyModifiers & KeyModifiers.Control) == 0) return;
 
-        var focused = e.Source as TextEditor;
+        var focused = e.Source as AvaloniaEdit.TextEditor;
         if (focused is null) return;
 
         _focusedEditor = focused;

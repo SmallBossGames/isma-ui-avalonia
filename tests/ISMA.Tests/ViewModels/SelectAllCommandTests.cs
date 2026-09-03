@@ -1,9 +1,9 @@
 global using global::Xunit;
 using FluentAssertions;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
 using Moq;
 
 namespace ISMA.Tests.ViewModels;
@@ -25,7 +25,8 @@ public class SelectAllCommandTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        CreateSyntaxHighlighterMock().Object);
+        CreateSyntaxHighlighterMock().Object,
+        Mock.Of<IProjectEditorPort>());
 
     [Fact]
     public void SelectAllCommand_ExistsInMainWindowViewModel()

@@ -59,7 +59,7 @@ This document describes the complete user experience of the ISMA desktop applica
 |------|-------------------|--------|
 | **New Text** | `Ctrl+N` / `Cmd+N` | Creates a new text-based LISMA project tab named "New project" |
 | **New Statechart** | `Ctrl+B` / `Cmd+B` | Creates a new blueprint (visual statechart) project tab named "New statechart" |
-| **Open…** | `Ctrl+O` / `Cmd+O` | Opens a file picker dialog. Filters: `*.iscm2` (text), `*.scisma` (statechart), `*.im` (legacy) |
+| **Open…** | `Ctrl+O` / `Cmd+O` | Opens a file picker dialog. Filters: `*.im2` (text), `*.iscm2` (statechart) |
 | **Save** | `Ctrl+S` / `Cmd+S` | Saves the active project tab. If unsaved, prompts "Save as". |
 | **Save As…** | `Ctrl+Shift+S` | Opens file picker to save the active project with a chosen filename and type |
 | **Save All** | — | Saves all open project tabs |
@@ -68,9 +68,9 @@ This document describes the complete user experience of the ISMA desktop applica
 | **Exit** | `Ctrl+W` / `Ctrl+Q` | Terminates the application |
 
 **File format behavior:**
-- `*.iscm2` — Text-based LISMA source code (plain text file)
-- `*.scisma` — Blueprint statechart (JSON-encoded visual statechart model)
-- `*.im` — Legacy ISMA project (backward compatibility)
+- `*.im2` — Text-based LISMA source code (plain text file)
+- `*.iscm2` — Blueprint statechart (JSON-encoded visual statechart model)
+- `*.im` — Legacy ISMA project (not supported; opening reports an error)
 
 ### Edit Menu
 
@@ -603,13 +603,13 @@ sequenceDiagram
 **Trigger:** File → Open, or toolbar `folder_open` button, or `Ctrl+O`
 
 **Dialog behavior:**
-- File picker with filters: `All ISMA Files` (`.iscm2`, `.scisma`, `.im`), `LISMA Text` (`.iscm2`), `State Chart` (`.scisma`), `Legacy` (`.im`)
-- Multi-select supported (can open multiple files at once)
+- File picker with a single filter: `All ISMA project files` (`.im2`, `.iscm2`)
+- Single selection
 
 **After open:**
 - Each file creates a new tab in the editor area
-- Text files (`.iscm2`, `.im`) → LISMA text editor tab
-- Statechart files (`.scisma`) → Blueprint editor tab
+- Text files (`.im2`) → LISMA text editor tab
+- Statechart files (`.iscm2`) → Blueprint editor tab
 - Tab name is derived from the filename (without extension)
 
 ### Save Project

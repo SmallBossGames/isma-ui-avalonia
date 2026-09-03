@@ -4,8 +4,9 @@ using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using ISMA.App;
 using ISMA.App.Services;
-using ISMA.Infrastructure.ChartViewer;
-using ISMA.Infrastructure.FileStorage;
+using ISMA.App.ViewModels;
+using ISMA.ExternalServices.ChartViewer;
+using ISMA.ExternalServices.FileStorage;
 using Microsoft.Extensions.Logging;
 
 namespace ISMA.Tests.Integration;

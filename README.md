@@ -4,20 +4,34 @@ Cross-platform desktop application for the ISMA simulation platform, built with 
 
 ## Architecture
 
-The project follows a 5-layer Clean Architecture with explicit dependency direction:
+The project follows a layered Clean Architecture with explicit dependency direction, mirroring the module layout of the original ISMA UI:
 
 ```
-ISMA.App (Presentation)
-  ├── ISMA.ViewModels (Presentation - ViewModel layer)
-  │     ├── ISMA.Domain (Domain)
-  │     └── Microsoft.Extensions.DependencyInjection.Abstractions
-  ├── ISMA.Infrastructure (Infrastructure)
+src/
+  ├── ISMA.App (Presentation)
+  │     ├── ISMA.Domain
+  │     ├── ISMA.ExternalServices
+  │     ├── ISMA.BlueprintEditor
+  │     ├── ISMA.TextEditor
+  │     └── ISMA.Toolkit
+  ├── ISMA.ExternalServices (Infrastructure)
+  │     ├── ISMA.Domain
+  │     └── ISMA.Grpc
+  ├── ISMA.TextEditor (Presentation)
   │     └── ISMA.Domain
-  └── ISMA.Domain (Domain - no dependencies)
+  ├── ISMA.BlueprintEditor (Presentation — zero project dependencies)
+  ├── ISMA.Toolkit (shared UI toolkit — zero project dependencies)
+  ├── ISMA.Grpc (generated gRPC stubs — zero project dependencies)
+  └── ISMA.Domain (Domain — zero project dependencies)
 
-ISMA.Tests (Test project)
-  ├── ISMA.Domain
-  └── ISMA.ViewModels
+tests/
+  ├── ISMA.Tests (unit tests)
+  │     ├── ISMA.Domain
+  │     ├── ISMA.App
+  │     └── ISMA.BlueprintEditor
+  └── ISMA.Tests.Integration (headless Avalonia UI tests)
+        ├── ISMA.Domain
+        └── ISMA.App
 ```
 
 ### Layer responsibilities
@@ -25,20 +39,27 @@ ISMA.Tests (Test project)
 | Layer | Purpose |
 |---|---|
 | **ISMA.Domain** | Pure domain models, DTOs, contracts, and domain logic. Zero external dependencies. |
-| **ISMA.Infrastructure** | gRPC/HTTP client implementations, file storage, process launchers, and external service integrations. |
-| **ISMA.ViewModels** | CommunityToolkit.Mvvm view models, services, converters, and the DI registration surface. |
-| **ISMA.App** | Avalonia UI — views (AXAML), application bootstrapper, DI wiring, and platform services. |
-| **ISMA.Tests** | xUnit tests covering domain models, view models, and conversion logic. |
+| **ISMA.Grpc** | Generated gRPC/protobuf stubs for the simulation server. Zero project dependencies. |
+| **ISMA.ExternalServices** | gRPC client implementations, process launchers, and external service integrations. |
+| **ISMA.Toolkit** | Shared UI toolkit: `PropertiesGrid` control, value converters, and presentation helpers. |
+| **ISMA.TextEditor** | AvaloniaEdit-based LISMA text editor (`IsmaTextEditor`) with syntax highlighting. |
+| **ISMA.BlueprintEditor** | Visual blueprint (statechart) editor: canvas, states, transactions, loop transactions. Framework-agnostic view models, zero project dependencies. |
+| **ISMA.App** | Avalonia UI — views (AXAML), application bootstrapper, DI wiring, project lifecycle, and platform services. |
+| **ISMA.Tests** | xUnit unit tests covering domain models, view models, and editor logic. |
+| **ISMA.Tests.Integration** | Headless Avalonia end-to-end tests driving the real UI with pointer events. |
 
 ### Dependency graph
 
 ```
-ISMA.App ──► ISMA.ViewModels ──► ISMA.Domain
+ISMA.App ──► ISMA.ExternalServices ──► ISMA.Grpc
      │              │
-     └──────────────┼──► ISMA.Infrastructure ──► ISMA.Domain
+     ├──► ISMA.TextEditor ────────────► ISMA.Domain
+     ├──► ISMA.BlueprintEditor
+     ├──► ISMA.Toolkit
+     └──► ISMA.Domain
 ```
 
-The Application layer depends on ViewModels and Infrastructure. ViewModels depend on Domain only. Infrastructure depends on Domain only. This ensures the domain remains testable and framework-agnostic.
+The Application layer depends on all presentation and infrastructure modules; each module depends on `ISMA.Domain` (and `ISMA.Grpc` for transport) only. This keeps the domain testable and framework-agnostic, and lets the editors ship as self-contained modules.
 
 ## Key features
 
@@ -73,8 +94,7 @@ The Application layer depends on ViewModels and Infrastructure. ViewModels depen
 ## Build
 
 ```bash
-cd isma-ui-dotnet
-dotnet build
+dotnet build isma-ui-dotnet.slnx
 ```
 
 Centralized package management is enabled via `Directory.Packages.props`. All versions are pinned in one place.
@@ -82,8 +102,7 @@ Centralized package management is enabled via `Directory.Packages.props`. All ve
 ## Run
 
 ```bash
-cd isma-ui-dotnet
-dotnet run --project ISMA.App
+dotnet run --project src/ISMA.App
 ```
 
 The application bootstraps via `Program.cs`, configures the DI container in `App.axaml.cs`, and creates the `MainWindow`.
@@ -91,14 +110,13 @@ The application bootstraps via `Program.cs`, configures the DI container in `App
 ## Test
 
 ```bash
-cd isma-ui-dotnet
 dotnet test
 ```
 
-Tests use xUnit with FluentAssertions and Moq. The test project covers:
+Tests use xUnit v3 with FluentAssertions and Moq:
 
-- **Domain** — `BlueprintModel`, `SimulationPoint`, `SimulationParameters`, `CodeRegion`, `Preferences`
-- **ViewModels** — `BlueprintEditorViewModel`, `MainWindowViewModel`, `SimulationService`, `SimulationParametersViewModel`, `ErrorListViewModel`, `ProjectViewModel`, blueprint-to-LISMA conversion
+- **ISMA.Tests** (unit) — domain models, app view models, blueprint editor view models (`IsmaBlueprintViewModel`, `CanvasViewModel`, `EditorMode`), and editor utilities (`ArrowGeometryCalculator`, `NameChangingMonitor`), blueprint-to-LISMA conversion
+- **ISMA.Tests.Integration** (headless UI) — end-to-end flows driving the real Avalonia UI with pointer events, including blueprint canvas interactions (state creation, dragging, transitions, loop transitions, rename, delete, save/reload round-trip)
 
 ## Architectural decisions
 

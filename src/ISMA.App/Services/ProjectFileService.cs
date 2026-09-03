@@ -2,9 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using ISMA.Domain.Contracts;
-using ISMA.Domain.Conversion;
+using ISMA.App.Services.Blueprint;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.App.Services;
 

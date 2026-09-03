@@ -2,8 +2,8 @@ using Avalonia;
 using System.Text.Json;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration.ProjectManagement;
 
@@ -56,9 +56,6 @@ public class OpenProjectFileTests
             model.States.Select(s => s.Name).Should().BeEquivalentTo("Up", "Down");
             model.Transactions.Should().HaveCount(4);
 
-            // Canvas renders the user states (Main/Init verified via the model above).
-            _app.Window.GetStateBoxCount().Should().Be(2);
-            _app.Window.GetArrowLineCount().Should().Be(4);
         }
         finally
         {

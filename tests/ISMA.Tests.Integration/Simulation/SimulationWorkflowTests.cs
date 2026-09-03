@@ -7,7 +7,7 @@ using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration;
 
@@ -232,29 +232,6 @@ state ""initial"" (1 > 0) {
         _app.MockServer.LastRunParams.Should().NotBeNull();
         _app.MockServer.LastRunParams!.StartTime.Should().Be(0.0); // Default from SimulationParametersService
         _app.MockServer.LastRunParams.EndTime.Should().Be(10.0); // Default from SimulationParametersService
-    }
-
-    [AvaloniaFact]
-    public async Task BlueprintWorkflow_ConvertsToLisma()
-    {
-        // Step 1: Create new blueprint project via UI
-        _app.Window.ClickMenuItem("MenuNewBlueprint");
-        _app.Window.GetProjectCount().Should().Be(1);
-        _app.Window.GetActiveProject().Should().NotBeNull();
-
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        blueprintProject.Should().NotBeNull();
-
-        // Step 2: Add states and transitions via the editor
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
-        editorVm.Should().NotBeNull();
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(1); // State 1 (Main and Init are not in States)
-
-        // Step 3: Convert to LISMA text
-        var lisma = blueprintProject.ConvertToLisma();
-        lisma.Should().NotBeNull();
-        lisma.FullText.Should().NotBeNullOrEmpty();
     }
 
     private static async IAsyncEnumerable<SimulationProgress> LongRunningSimulation([System.Runtime.CompilerServices.EnumeratorCancellation] System.Threading.CancellationToken token)

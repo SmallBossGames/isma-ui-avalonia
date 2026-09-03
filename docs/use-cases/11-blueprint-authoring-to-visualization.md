@@ -42,7 +42,7 @@
 
 8. **Export:** The user closes Grin and returns to ISMA UI. The user clicks **Export** on the same completed simulation. A file picker opens. The user saves the result as `model_results.csv`.
 
-9. **Save blueprint:** The user clicks **File > Save As** (`Ctrl+Shift+S`), saves the blueprint as `my_statechart.scisma`.
+9. **Save blueprint:** The user clicks **File > Save As** (`Ctrl+Shift+S`), saves the blueprint as `my_statechart.iscm2`.
 
 ## Alternative Flows
 
@@ -52,7 +52,7 @@
 
 ## Postconditions
 
-- A visual statechart blueprint file (`my_statechart.scisma`) is saved on disk.
+- A visual statechart blueprint file (`my_statechart.iscm2`) is saved on disk.
 - A CSV result file (`model_results.csv`) is saved on disk.
 - The blueprint tab remains open with all states, transitions, and loop transactions intact.
 
@@ -60,8 +60,8 @@
 
 | File | Role |
 |------|------|
-| `src/ISMA.ViewModels/ViewModels/BlueprintEditorViewModel.cs` | Canvas state machine management |
-| `src/ISMA.Domain/Conversion/BlueprintToLismaConverter.cs` | Visual-to-text transformation |
-| `src/ISMA.ViewModels/Services/SimulationService.cs` | Full simulation pipeline |
-| `src/ISMA.Infrastructure/ChartViewer/GrinProcessLauncher.cs` | Chart viewer launch |
-| `src/ISMA.App/Views/BlueprintEditorView.axaml` | Visual canvas |
+| `src/ISMA.BlueprintEditor/ViewModels/IsmaBlueprintViewModel.cs` | Canvas state machine management |
+| `src/ISMA.App/Services/Blueprint/LismaCodegen.cs` | Visual-to-text transformation |
+| `src/ISMA.App/Services/SimulationService.cs` | Full simulation pipeline |
+| `src/ISMA.ExternalServices/ChartViewer/GrinProcessLauncher.cs` | Chart viewer launch |
+| `src/ISMA.BlueprintEditor/Views/CanvasView.axaml` | Visual canvas |

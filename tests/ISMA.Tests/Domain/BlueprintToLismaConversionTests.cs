@@ -1,7 +1,8 @@
 global using global::Xunit;
 using System.Collections.Immutable;
 using FluentAssertions;
-using ISMA.Domain.Conversion;
+using ISMA.App.Services.Blueprint;
+using ISMA.BlueprintEditor.Models;
 using ISMA.Domain.Models;
 
 namespace ISMA.Tests.Domain;
@@ -22,35 +23,16 @@ public class BlueprintToLismaConversionTests
     {
         var main = State("Main", mainText);
         var init = State("init");
-        var byName = new Dictionary<string, BlueprintStateModel> { [main.Name] = main, [init.Name] = init };
-        foreach (var s in states) byName[s.Name] = s;
 
         var transactions = txs
-            .Select(t => new BlueprintTransactionModel
-            {
-                StartStateId = byName[t.Start].Id,
-                EndStateId = byName[t.End].Id,
-                Predicate = t.Predicate
-            })
+            .Select(t => new BlueprintTransactionModel(t.Start, t.End, t.Predicate))
             .ToImmutableArray();
 
         var loopTransactions = (loops ?? Array.Empty<(string, string, string)>())
-            .Select(l => new BlueprintLoopTransactionModel
-            {
-                StateId = byName[l.State].Id,
-                Predicate = l.Predicate,
-                Text = l.Text
-            })
+            .Select(l => new BlueprintLoopTransactionModel(l.State, l.Predicate, "", l.Text))
             .ToImmutableArray();
 
-        return new BlueprintModel
-        {
-            Main = main,
-            Init = init,
-            States = states.ToImmutableArray(),
-            Transactions = transactions,
-            LoopTransactions = loopTransactions
-        };
+        return new BlueprintModel(main, init, states.ToImmutableArray(), transactions, loopTransactions);
     }
 
     [Fact]
@@ -60,7 +42,7 @@ public class BlueprintToLismaConversionTests
             new[] { State("A", "a body"), State("B", "b body") },
             new[] { ("Main", "A", ""), ("Main", "B", "x > 1") });
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         result.FullText.Should().Be(
             "main body\n" +
@@ -89,7 +71,7 @@ public class BlueprintToLismaConversionTests
             new[] { State("A", "a body") },
             new[] { ("Main", "A", ""), ("init", "A", "") });
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         result.FullText.Should().Contain("} from Main,init;");
         result.Regions.Should().HaveCount(1);
@@ -102,7 +84,7 @@ public class BlueprintToLismaConversionTests
             new[] { State("A"), State("B") },
             new[] { ("Main", "B", ""), ("Main", "A", "") });
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         var bIndex = result.FullText.IndexOf("state B (", StringComparison.Ordinal);
         var aIndex = result.FullText.IndexOf("state A (", StringComparison.Ordinal);
@@ -120,7 +102,7 @@ public class BlueprintToLismaConversionTests
             new[] { ("Main", "A", "") },
             new[] { ("A", "p > 0", "loop body") });
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         result.FullText.Should().Be(
             "main body\n" +
@@ -156,7 +138,7 @@ public class BlueprintToLismaConversionTests
             new[] { State("A", "a body"), State("B", "b body") },
             new[] { ("Main", "A", ""), ("Main", "B", "x > 1") });
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         result.FragmentNameByLine(2).Should().Be("A");
         result.FragmentNameByLine(4).Should().Be("A");
@@ -170,7 +152,7 @@ public class BlueprintToLismaConversionTests
     [Fact]
     public void EmptyModel_ProducesOnlyMainText()
     {
-        var result = BlueprintToLismaConverter.ConvertToLisma(BlueprintModel.Empty);
+        var result = LismaCodegen.ToLismaText(BlueprintModel.Empty);
 
         result.FullText.Should().Be("\n");
         result.Regions.Should().BeEmpty();
@@ -195,7 +177,7 @@ public class BlueprintToLismaConversionTests
              "loopTransactions":[]}
             """);
 
-        var result = BlueprintToLismaConverter.ConvertToLisma(model);
+        var result = LismaCodegen.ToLismaText(model);
 
         result.FullText.Should().Be(
             "v' = -g;\n" +

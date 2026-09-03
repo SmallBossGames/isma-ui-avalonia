@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
-using ISMA.Infrastructure.FileStorage;
-using ISMA.ViewModels.ViewModels;
+using ISMA.ExternalServices.FileStorage;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration.UseCases.Startup;
 

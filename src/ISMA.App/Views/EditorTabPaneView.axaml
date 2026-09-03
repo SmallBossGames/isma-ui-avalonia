@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-              xmlns:vm="using:ISMA.ViewModels.ViewModels"
+              xmlns:vm="using:ISMA.App.ViewModels"
               xmlns:views="using:ISMA.App.Views"
               x:Class="ISMA.App.Views.EditorTabPaneView"
               x:CompileBindings="True"
@@ -36,7 +36,7 @@
                  <views:IsmaTextEditorView DataContext="{Binding}" />
              </DataTemplate>
              <DataTemplate x:DataType="vm:BlueprintProjectViewModel">
-                  <views:BlueprintEditorView DataContext="{Binding EditorContent}" />
+                  <ContentControl Content="{Binding Editor}" />
               </DataTemplate>
          </TabControl.DataTemplates>
      </TabControl>

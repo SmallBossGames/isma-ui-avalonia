@@ -2,8 +2,8 @@ global using global::Xunit;
 using System.Collections.Immutable;
 using System.Text.Json;
 using FluentAssertions;
-using ISMA.Domain.Conversion;
-using ISMA.Domain.Models;
+using ISMA.App.Services.Blueprint;
+using ISMA.BlueprintEditor.Models;
 
 namespace ISMA.Tests.Domain;
 
@@ -45,28 +45,27 @@ public class BlueprintFileSerializerTests
 
         model.Transactions.Should().HaveCount(4);
 
-        var initToUp = model.Transactions.First(t =>
-            NameOf(t.StartStateId, model) == "init" && NameOf(t.EndStateId, model) == "Up");
+        var initToUp = model.Transactions.First(t => t.StartStateName == "init" && t.EndStateName == "Up");
         initToUp.Predicate.Should().Be("y < 0");
     }
 
     [Fact]
-    public void FromJson_OriginalFile_TransactionReferencesResolveToStateIds()
+    public void FromJson_OriginalFile_TransactionReferencesMatchStateNames()
     {
         var model = BlueprintFileSerializer.FromJson(OriginalSampleJson);
 
-        var up = model.States.First(s => s.Name == "Up");
-        var down = model.States.First(s => s.Name == "Down");
+        var knownNames = new[] { model.Main.Name, model.Init.Name }
+            .Concat(model.States.Select(s => s.Name));
 
-        model.Transactions.First(t =>
-            NameOf(t.StartStateId, model) == "init" && NameOf(t.EndStateId, model) == "Up")
-            .EndStateId.Should().Be(up.Id);
-        model.Transactions.First(t => NameOf(t.StartStateId, model) == "Down")
-            .EndStateId.Should().Be(up.Id);
-        model.Transactions.First(t =>
-            NameOf(t.StartStateId, model) == "Up" && NameOf(t.EndStateId, model) == "Down")
-            .StartStateId.Should().Be(up.Id);
-        down.Id.Should().NotBe(up.Id);
+        foreach (var tx in model.Transactions)
+        {
+            knownNames.Should().Contain(tx.StartStateName);
+            knownNames.Should().Contain(tx.EndStateName);
+        }
+
+        model.Transactions.First(t => t.StartStateName == "init" && t.EndStateName == "Up").Predicate.Should().Be("y < 0");
+        model.Transactions.First(t => t.StartStateName == "Down").EndStateName.Should().Be("Up");
+        model.Transactions.First(t => t.StartStateName == "Up" && t.EndStateName == "Down").Predicate.Should().Be("v < 0");
     }
 
     [Fact]
@@ -114,18 +113,11 @@ public class BlueprintFileSerializerTests
         restored.LoopTransactions[0].Alias.Should().Be(model.LoopTransactions[0].Alias);
         restored.LoopTransactions[0].Text.Should().Be(model.LoopTransactions[0].Text);
 
-        var restoredByName = new Dictionary<string, BlueprintStateModel>();
-        restoredByName[restored.Main.Name] = restored.Main;
-        restoredByName[restored.Init.Name] = restored.Init;
-        foreach (var s in restored.States) restoredByName[s.Name] = s;
-
         foreach (var tx in model.Transactions)
         {
-            var startName = NameOf(tx.StartStateId, model);
-            var endName = NameOf(tx.EndStateId, model);
             restored.Transactions.Should().Contain(t =>
-                NameOf(t.StartStateId, restored) == startName &&
-                NameOf(t.EndStateId, restored) == endName &&
+                t.StartStateName == tx.StartStateName &&
+                t.EndStateName == tx.EndStateName &&
                 t.Predicate == tx.Predicate &&
                 t.Alias == tx.Alias);
         }
@@ -168,23 +160,14 @@ public class BlueprintFileSerializerTests
         var a = new BlueprintStateModel(200, 10, "State A", "a code");
         var b = new BlueprintStateModel(200, 200, "State B", "");
 
-        return new BlueprintModel
-        {
-            Main = main,
-            Init = init,
-            States = ImmutableArray.Create(a, b),
-            Transactions = ImmutableArray.Create(
-                new BlueprintTransactionModel { StartStateId = init.Id, EndStateId = a.Id, Predicate = "x > 0", Alias = "go" },
-                new BlueprintTransactionModel { StartStateId = a.Id, EndStateId = b.Id, Predicate = "x < 0" }),
-            LoopTransactions = ImmutableArray.Create(
-                new BlueprintLoopTransactionModel { StateId = a.Id, Predicate = "loop > 0", Alias = "spin", Text = "loop code" })
-        };
-    }
-
-    private static string NameOf(Guid stateId, BlueprintModel model)
-    {
-        if (stateId == model.Main.Id) return model.Main.Name;
-        if (stateId == model.Init.Id) return model.Init.Name;
-        return model.States.FirstOrDefault(s => s.Id == stateId)?.Name ?? "<unknown>";
+        return new BlueprintModel(
+            main,
+            init,
+            ImmutableArray.Create(a, b),
+            ImmutableArray.Create(
+                new BlueprintTransactionModel("init", "State A", "x > 0", "go"),
+                new BlueprintTransactionModel("State A", "State B", "x < 0")),
+            ImmutableArray.Create(
+                new BlueprintLoopTransactionModel("State A", "loop > 0", "spin", "loop code")));
     }
 }

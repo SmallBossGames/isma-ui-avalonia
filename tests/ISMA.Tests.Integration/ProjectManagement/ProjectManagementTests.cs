@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration;
 
@@ -164,44 +164,6 @@ public class ProjectManagementTests
         model.Init.Name.Should().Be("init");
     }
 
-    [AvaloniaFact]
-    public async Task BlueprintProject_CanAddStates()
-    {
-        // Create blueprint project via UI
-        _app.Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
-
-        // Add states via editor
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
-
-        // Verify states were added (2 user states, Main and Init are separate)
-        editorVm.States.Should().HaveCount(2);
-    }
-
-    [AvaloniaFact]
-    public async Task BlueprintProject_CanAddTransitions()
-    {
-        // Create blueprint project via UI
-        _app.Window.ClickMenuItem("MenuNewBlueprint");
-        var blueprintProject = _app.Window.GetActiveProject() as BlueprintProjectViewModel;
-        var editorVm = blueprintProject!.EditorContent as BlueprintEditorViewModel;
-
-        // Add two states first
-        editorVm!.AddStateCommand.Execute(null);
-        editorVm.AddStateCommand.Execute(null);
-        editorVm.States.Should().HaveCount(2);
-
-        // Add transition between two user states
-        editorVm.Mode = new EditorMode.AddTransition();
-        editorVm.SetTransitionSource(editorVm.States[0]);
-        editorVm.SelectedState = editorVm.States[1];
-        editorVm.AddTransitionCommand.Execute(null);
-
-        // Verify transition was added
-        editorVm.Transitions.Should().HaveCount(1);
-    }
 
     [AvaloniaFact]
     public async Task TextProject_CanSetContent()

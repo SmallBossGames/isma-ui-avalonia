@@ -1,31 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-               xmlns:editors="using:AvaloniaEdit"
-               xmlns:vm="using:ISMA.ViewModels.ViewModels"
-               x:Class="ISMA.App.Views.IsmaTextEditorView"
-               x:CompileBindings="False">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ISMA.App.ViewModels"
+             xmlns:texteditors="using:ISMA.TextEditor"
+             x:Class="ISMA.App.Views.IsmaTextEditorView"
+             x:CompileBindings="False">
     <Panel>
-        <editors:TextEditor x:Name="Editor"
-                            x:CompileBindings="False"
-                            FontFamily="Consolas, Cascadia Code, Courier New"
-                            FontSize="12"
-                            ShowLineNumbers="True"
-                            Background="{DynamicResource SurfaceColor}"
-                            Foreground="{DynamicResource PrimaryTextColor}"
-                            VerticalScrollBarVisibility="Auto"
-                            HorizontalScrollBarVisibility="Auto"
-                            WordWrap="False"
-                            DataContext="{Binding}">
-            <editors:TextEditor.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Cut" Click="OnCutClicked" />
-                    <MenuItem Header="Copy" Click="OnCopyClicked" />
-                    <MenuItem Header="Paste" Click="OnPasteClicked" />
-                    <Separator />
-                    <MenuItem Header="Select All" Click="OnSelectAllClicked" />
-                </ContextMenu>
-            </editors:TextEditor.ContextMenu>
-        </editors:TextEditor>
-
+        <texteditors:IsmaTextEditor x:Name="Editor" DataContext="{Binding}" />
     </Panel>
 </UserControl>

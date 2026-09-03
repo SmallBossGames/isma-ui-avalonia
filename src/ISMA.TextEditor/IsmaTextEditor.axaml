@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             x:Class="ISMA.TextEditor.IsmaTextEditor">
+  <ae:TextEditor x:Name="InnerEditor"
+                 ShowLineNumbers="True"
+                 FontFamily="Consolas, Cascadia Code, Courier New"
+                 FontSize="12"
+                 WordWrap="False"
+                 HorizontalScrollBarVisibility="Auto"
+                 VerticalScrollBarVisibility="Auto">
+    <ae:TextEditor.ContextMenu>
+      <ContextMenu>
+        <MenuItem Header="Cut" Command="{x:Static ae:ApplicationCommands.Cut}" />
+        <MenuItem Header="Copy" Command="{x:Static ae:ApplicationCommands.Copy}" />
+        <MenuItem Header="Paste" Command="{x:Static ae:ApplicationCommands.Paste}" />
+        <MenuItem Header="Select All" Command="{x:Static ae:ApplicationCommands.SelectAll}" />
+      </ContextMenu>
+    </ae:TextEditor.ContextMenu>
+  </ae:TextEditor>
+</UserControl>

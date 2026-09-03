@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:ISMA.BlueprintEditor.Views"
+             xmlns:vm="clr-namespace:ISMA.BlueprintEditor.ViewModels"
+             x:Class="ISMA.BlueprintEditor.Views.IsmaBlueprintEditor"
+             x:DataType="vm:IsmaBlueprintViewModel">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Bottom" x:Name="Toolbar" Orientation="Horizontal" Spacing="4">
+      <Button Content="New state" Command="{Binding AddStateCommand}" />
+      <Button Content="{Binding AddTransitionButtonText}" Command="{Binding ToggleAddTransitionCommand}" />
+      <Separator Width="1" Margin="4,0" Background="#CCCCCC" />
+      <Button Content="{Binding RemoveStateButtonText}" Command="{Binding ToggleRemoveStateCommand}" />
+      <Button Content="{Binding RemoveTransitionButtonText}" Command="{Binding ToggleRemoveTransitionCommand}" />
+    </StackPanel>
+    <TabControl x:Name="Tabs">
+      <TabItem x:Name="DiagramTab" Header="Diagram">
+        <views:CanvasView x:Name="DiagramCanvas" DataContext="{Binding CanvasViewModel}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

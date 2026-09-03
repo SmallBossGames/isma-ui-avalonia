@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:ISMA.ViewModels.ViewModels"
+             xmlns:vm="using:ISMA.App.ViewModels"
              x:Class="ISMA.App.Views.IsmaMenuBarView"
              x:CompileBindings="True"
              x:DataType="vm:MainWindowViewModel">

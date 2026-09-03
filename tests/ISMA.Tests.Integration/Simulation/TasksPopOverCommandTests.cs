@@ -7,7 +7,7 @@ using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration;
 

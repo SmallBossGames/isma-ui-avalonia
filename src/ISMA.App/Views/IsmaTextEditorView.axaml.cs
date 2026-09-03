@@ -1,45 +1,32 @@
-using System.Threading.Tasks;
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using AvaloniaEdit;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
+using ISMA.TextEditor;
 
 namespace ISMA.App.Views;
 
+/// <summary>
+/// Thin host for LISMA text projects: syncs <see cref="LismaProjectViewModel.FullText"/>
+/// with the <see cref="IsmaTextEditor"/> and forwards Cut/Copy/Paste requests.
+/// </summary>
 public partial class IsmaTextEditorView : UserControl
 {
-    private TextEditor? _textEditor;
+    private IsmaTextEditor? _ismaEditor;
+    private AvaloniaEdit.TextEditor? _textEditor;
     private LismaProjectViewModel? _currentVm;
     private LismaProjectViewModel? _lastDataContextVm;
     private bool _suppressEditorSync;
 
-    public TextEditor? TextEditor => _textEditor;
+    public AvaloniaEdit.TextEditor? TextEditor => _textEditor;
 
     public IsmaTextEditorView()
     {
         InitializeComponent();
 
-        _textEditor = this.FindControl<TextEditor>("Editor");
-    }
-
-    private void OnCutClicked(object? sender, RoutedEventArgs e)
-    {
-        _textEditor?.Cut();
-    }
-
-    private void OnCopyClicked(object? sender, RoutedEventArgs e)
-    {
-        _textEditor?.Copy();
-    }
-
-    private void OnPasteClicked(object? sender, RoutedEventArgs e)
-    {
-        _textEditor?.Paste();
-    }
-
-    private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
-    {
-        _textEditor?.SelectAll();
+        _ismaEditor = this.FindControl<IsmaTextEditor>("Editor");
+        _textEditor = _ismaEditor?.Editor;
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -71,10 +58,10 @@ public partial class IsmaTextEditorView : UserControl
             _textEditor.TextChanged -= OnEditorTextChanged;
             if (vm != _lastDataContextVm)
             {
-                _textEditor.Text = vm.FullText;
+                _ismaEditor!.Text = vm.FullText;
                 _lastDataContextVm = vm;
             }
-            vm.SetEditorInstance(_textEditor);
+            vm.SetEditorInstance(_ismaEditor);
             _textEditor.TextChanged += OnEditorTextChanged;
         }
         else
@@ -84,7 +71,7 @@ public partial class IsmaTextEditorView : UserControl
         }
     }
 
-    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(LismaProjectViewModel.FullText))
             return;
@@ -95,14 +82,14 @@ public partial class IsmaTextEditorView : UserControl
         if (_textEditor.Text != _currentVm.FullText)
         {
             _suppressEditorSync = true;
-            _textEditor.Text = _currentVm.FullText;
+            _ismaEditor!.Text = _currentVm.FullText;
             _suppressEditorSync = false;
         }
     }
 
     private void OnCutRequested()
     {
-        var editor = _textEditor ?? (_currentVm?.EditorContent as TextEditor);
+        var editor = _textEditor;
         if (editor is not null && editor.SelectionLength > 0)
         {
             var newText = editor.Document.Text.Remove(editor.SelectionStart, editor.SelectionLength);
@@ -114,17 +101,15 @@ public partial class IsmaTextEditorView : UserControl
 
     private void OnCopyRequested()
     {
-        var editor = _textEditor ?? (_currentVm?.EditorContent as TextEditor);
-        editor?.Copy();
+        _textEditor?.Copy();
     }
 
     private void OnPasteRequested()
     {
-        var editor = _textEditor ?? (_currentVm?.EditorContent as TextEditor);
-        editor?.Paste();
+        _textEditor?.Paste();
     }
 
-    private void OnEditorTextChanged(object? sender, System.EventArgs e)
+    private void OnEditorTextChanged(object? sender, EventArgs e)
     {
         if (_textEditor is null || _currentVm is null)
             return;

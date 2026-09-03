@@ -220,7 +220,7 @@ File operations using Avalonia `OpenFilePicker` / `SaveFilePicker`:
 
 | Method | Description |
 |--------|-------------|
-| `OpenAsync()` | Opens file picker with filters: `*.iscm2`, `*.scisma`, `*.im` |
+| `OpenAsync()` | Opens file picker with filters: `*.im2`, `*.iscm2` |
 | `SaveAsync(project)` | Saves active project (or prompts "Save as" if unsaved) |
 | `SaveAllAsync()` | Saves all open projects |
 | `SaveAsAsync(project)` | Opens file picker to save with a chosen filename |
@@ -228,9 +228,9 @@ File operations using Avalonia `OpenFilePicker` / `SaveFilePicker`:
 **File type mapping:**
 | Extension | Type | Editor |
 |-----------|------|--------|
-| `*.iscm2` | LISMA Text | AvaloniaEdit |
-| `*.scisma` | Blueprint/Statechart | Visual canvas |
-| `*.im` | Legacy | AvaloniaEdit |
+| `*.im2` | LISMA Text | AvaloniaEdit |
+| `*.iscm2` | Blueprint/Statechart | Visual canvas |
+| `*.im` | Legacy | Not supported (open reports an error) |
 
 ### SimulationServiceViewModel
 

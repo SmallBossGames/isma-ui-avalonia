@@ -2,17 +2,17 @@
 
 **Actor:** Modeler
 **Goal:** Load existing project files, make modifications, and persist changes.
-**Preconditions:** ISMA UI is running. Project files exist on disk (`.iscm2`, `.scisma`, or `.im`).
+**Preconditions:** ISMA UI is running. Project files exist on disk (`.im2` or `.iscm2`).
 
 ## Main Flow
 
 1. The user clicks **File > Open...** (or presses `Ctrl+O`).
-2. A file picker dialog opens with filters for `*.iscm2`, `*.scisma`, and `*.im` files.
-3. The user selects one or more files (multi-select is supported) and confirms.
+2. A file picker dialog opens with a filter for `*.im2` and `*.iscm2` files.
+3. The user selects a file and confirms.
 4. Each selected file is opened as a new tab in the main editor area:
-   - **`.iscm2`** files → LISMA text editor (`IsmaTextEditorView` with AvaloniaEdit)
-   - **`.scisma`** files → Blueprint canvas editor (`BlueprintEditorView` with visual statechart)
-   - **`.im`** files → LISMA text editor (legacy format, backward compatibility)
+   - **`.im2`** files → LISMA text editor (`IsmaTextEditorView` with AvaloniaEdit)
+   - **`.iscm2`** files → Blueprint canvas editor (visual statechart)
+   - **`.im`** files → not supported; opening reports a legacy-format error
 5. Each tab displays the project name (derived from the filename) and loads the file content:
    - For LISMA projects: the raw text content is loaded into `FullText` property.
    - For blueprint projects: the JSON model is deserialized into `BlueprintModel` (states, transactions, loop transactions) and rendered on the canvas.

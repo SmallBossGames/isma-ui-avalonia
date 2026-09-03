@@ -7,11 +7,10 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using FluentAssertions;
 using ISMA.App.Automation;
-using ISMA.App.Controls;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 
 namespace ISMA.Tests.Integration.UseCases.Simulation;
 

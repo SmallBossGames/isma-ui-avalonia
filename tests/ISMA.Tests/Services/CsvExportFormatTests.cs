@@ -5,7 +5,7 @@ using FluentAssertions;
 using ISMA.App.Services;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
-using ISMA.Infrastructure.ChartViewer;
+using ISMA.ExternalServices.ChartViewer;
 
 namespace ISMA.Tests.Services;
 

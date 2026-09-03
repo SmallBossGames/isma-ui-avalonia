@@ -1,8 +1,11 @@
 <Solution>
   <Project type="crossplat" Path="src/ISMA.App/ISMA.App.csproj" />
   <Project Path="src/ISMA.Domain/ISMA.Domain.csproj" />
-  <Project Path="src/ISMA.Infrastructure/ISMA.Infrastructure.csproj" />
-  <Project Path="src/ISMA.ViewModels/ISMA.ViewModels.csproj" />
+  <Project Path="src/ISMA.Grpc/ISMA.Grpc.csproj" />
+  <Project Path="src/ISMA.ExternalServices/ISMA.ExternalServices.csproj" />
+  <Project Path="src/ISMA.Toolkit/ISMA.Toolkit.csproj" />
+  <Project Path="src/ISMA.TextEditor/ISMA.TextEditor.csproj" />
+  <Project Path="src/ISMA.BlueprintEditor/ISMA.BlueprintEditor.csproj" />
   <Project Path="tests/ISMA.Tests/ISMA.Tests.csproj" />
   <Project Path="tests/ISMA.Tests.Integration/ISMA.Tests.Integration.csproj" />
 </Solution>

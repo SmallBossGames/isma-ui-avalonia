@@ -7,7 +7,7 @@ using Avalonia.Interactivity;
 using FluentAssertions;
 using ISMA.App;
 using ISMA.App.Automation;
-using ISMA.App.Controls;
+using ISMA.Toolkit.Controls;
 using ISMA.Domain.Models;
 using TextBox = Avalonia.Controls.TextBox;
 

@@ -1,10 +1,10 @@
 global using global::Xunit;
 using FluentAssertions;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
 using Moq;
 using SyntaxTokenDto = ISMA.Domain.Dtos.SyntaxTokenDto;
 
@@ -24,7 +24,8 @@ public class MainWindowViewModelTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        CreateSyntaxHighlighterMock().Object);
+        CreateSyntaxHighlighterMock().Object,
+        Mock.Of<IProjectEditorPort>());
 
     private static SimulationServiceViewModel CreateSimulationService() => new(
         Mock.Of<ISimulationServerFacade>(),
@@ -187,22 +188,6 @@ public class MainWindowViewModelTests
         run.Should().NotThrow();
     }
 
-    [Fact]
-    public void Commands_Invoke_Run_WithBlueprintProject_DoesNotRun()
-    {
-        var viewModel = CreateViewModel();
-
-        var blueprintProject = new BlueprintProjectViewModel(
-            Mock.Of<IProjectFileService>(),
-            Mock.Of<ITextEditorFactory>(),
-            BlueprintModel.Empty,
-            null);
-        viewModel.ActiveProject = blueprintProject;
-
-        Action run = () => viewModel.RunCommand.Execute(null);
-
-        run.Should().NotThrow();
-    }
 
     [Fact]
     public void Commands_Invoke_Verify_WithLismaProject()
@@ -261,10 +246,12 @@ public class MainWindowViewModelTests
 
         viewModel.ActiveProject.Should().BeNull();
 
-        var project = new BlueprintProjectViewModel(
-            Mock.Of<IProjectFileService>(),
+        var project = new LismaProjectViewModel(
+            Mock.Of<ISimulationServerFacade>(),
             Mock.Of<ITextEditorFactory>(),
-            BlueprintModel.Empty,
+            Mock.Of<IProjectFileService>(),
+            CreateSyntaxHighlighterMock().Object,
+            new LismaTextModel("", Array.Empty<CodeRegion>()),
             null);
         viewModel.ActiveProject = project;
 

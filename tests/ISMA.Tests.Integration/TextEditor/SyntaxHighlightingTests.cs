@@ -6,9 +6,10 @@ using AvaloniaEdit;
 using AvaloniaEdit.Rendering;
 using FluentAssertions;
 using ISMA.App.Services;
+using ISMA.TextEditor;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.ViewModels;
 using AvaloniaEdit.Highlighting;
 using Avalonia.Media;
 

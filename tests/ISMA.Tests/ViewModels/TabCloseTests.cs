@@ -2,8 +2,8 @@ global using global::Xunit;
 using FluentAssertions;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
-using ISMA.ViewModels.Services;
-using ISMA.ViewModels.ViewModels;
+using ISMA.App.Services;
+using ISMA.App.ViewModels;
 using Moq;
 
 namespace ISMA.Tests.ViewModels;
@@ -22,7 +22,8 @@ public class TabCloseTests
         Mock.Of<IProjectFileService>(),
         Mock.Of<ISimulationServerFacade>(),
         Mock.Of<ITextEditorFactory>(),
-        CreateSyntaxHighlighterMock().Object);
+        CreateSyntaxHighlighterMock().Object,
+        Mock.Of<ISMA.App.Services.IProjectEditorPort>());
 
     private static MainWindowViewModel CreateViewModel()
     {
