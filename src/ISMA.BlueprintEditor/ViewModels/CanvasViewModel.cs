@@ -52,18 +52,17 @@ public partial class CanvasViewModel : ObservableObject
     public void RemoveState(StateViewModel state)
     {
         States.Remove(state);
-        string name = state.Name;
-        foreach (var t in Transactions.Where(t => t.StartStateName == name || t.EndStateName == name).ToList())
+        foreach (var t in Transactions.Where(t => t.StartState == state || t.EndState == state).ToList())
         {
             Transactions.Remove(t);
         }
 
-        foreach (var l in LoopTransactions.Where(l => l.StateName == name).ToList())
+        foreach (var l in LoopTransactions.Where(l => l.State == state).ToList())
         {
             LoopTransactions.Remove(l);
         }
 
-        nameMonitor.TryUnregister(name);
+        nameMonitor.TryUnregister(state.Name);
     }
 
     /// <summary>Adds a transaction, resolving its start/end state references by name.</summary>

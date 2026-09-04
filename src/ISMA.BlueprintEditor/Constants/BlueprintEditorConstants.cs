@@ -1,3 +1,5 @@
+using Avalonia.Media;
+
 namespace ISMA.BlueprintEditor.Constants;
 
 /// <summary>
@@ -39,4 +41,8 @@ public static class BlueprintEditorConstants
     public const double PopoverPadding = 10.0;
     public const double PopoverCornerRadius = 5.0;
     public const double PopoverShadowRadius = 20.0;
+
+    // Colors
+    /// <summary>Arrow/label color — light so arrows stay visible on the dark canvas.</summary>
+    public static readonly IBrush ArrowColor = Brushes.White;
 }

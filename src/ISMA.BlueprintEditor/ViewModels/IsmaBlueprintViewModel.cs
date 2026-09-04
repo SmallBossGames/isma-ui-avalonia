@@ -253,11 +253,42 @@ public partial class IsmaBlueprintViewModel : ObservableObject
         FireEvent(new BlueprintEvent.OpenLoopEditor(loop, state));
     }
 
-    /// <summary>Commits a name edit (uniqueness-gated) and leaves edit mode.</summary>
+    /// <summary>
+    /// Commits a name edit (uniqueness-gated) and leaves edit mode. An accepted
+    /// rename propagates to the transactions and loops referencing the old name,
+    /// so cascade removal and serialization keep working.
+    /// </summary>
     public void CommitNameEdit(StateViewModel state, string newName)
     {
+        string oldName = state.Name;
         state.Name = newName;
         state.CommitEdit();
+
+        if (state.Name == oldName)
+        {
+            return;
+        }
+
+        foreach (var t in CanvasViewModel.Transactions)
+        {
+            if (t.StartStateName == oldName)
+            {
+                t.StartStateName = state.Name;
+            }
+
+            if (t.EndStateName == oldName)
+            {
+                t.EndStateName = state.Name;
+            }
+        }
+
+        foreach (var l in CanvasViewModel.LoopTransactions)
+        {
+            if (l.StateName == oldName)
+            {
+                l.StateName = state.Name;
+            }
+        }
     }
 
     /// <summary>Fires an event toward the editor view.</summary>

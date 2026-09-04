@@ -14,6 +14,9 @@ public sealed class HttpSimulationClient : IDisposable
     public HttpSimulationClient(IUnixSocketHandler socketHandler, string httpAddress, ILogger? logger = null)
     {
         _httpClient = socketHandler.CreateHttpClient(httpAddress);
+        // The server returns relative download paths (e.g. /simulation/1/download);
+        // resolve them against a base so HttpClient accepts them over the Unix socket.
+        _httpClient.BaseAddress = new Uri("http://localhost/");
         _httpClient.Timeout = TimeSpan.FromMinutes(5);
         _logger = logger;
 
@@ -63,17 +66,12 @@ public sealed class HttpSimulationClient : IDisposable
         return DownloadResultToFileAsync(downloadUrl, destinationPath, ct).GetAwaiter().GetResult();
     }
 
-    public async Task<FileInfo> DownloadToCacheAsync(string downloadUrl, CancellationToken ct = default)
+    public async Task<FileInfo> DownloadToCacheAsync(string downloadUrl, string fileName, CancellationToken ct = default)
     {
-        var fileName = Path.GetFileName(new Uri(downloadUrl).AbsolutePath) ?? Guid.NewGuid().ToString();
         var cachePath = Path.Combine(_cacheDirectory, fileName);
         return await DownloadResultToFileAsync(downloadUrl, cachePath, ct).ConfigureAwait(false);
     }
 
-    public FileInfo DownloadToCache(string downloadUrl, CancellationToken ct = default)
-    {
-        return DownloadToCacheAsync(downloadUrl, ct).GetAwaiter().GetResult();
-    }
 
     public void Dispose()
     {

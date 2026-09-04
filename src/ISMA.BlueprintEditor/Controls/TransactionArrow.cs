@@ -24,8 +24,8 @@ public class TransactionArrow : Control, ICustomHitTest
     private const double ArrowheadHitTolerance = 8.0;
     private const double BodyHitTolerance = 6.0;
 
-    private static readonly Pen LinePen = new(Brushes.Black, BlueprintEditorConstants.ArrowLineStroke);
-    private static readonly Pen ArrowheadPen = new(Brushes.Black, BlueprintEditorConstants.ArrowheadStroke);
+    private static readonly Pen LinePen = new(BlueprintEditorConstants.ArrowColor, BlueprintEditorConstants.ArrowLineStroke);
+    private static readonly Pen ArrowheadPen = new(BlueprintEditorConstants.ArrowColor, BlueprintEditorConstants.ArrowheadStroke);
     private static readonly Typeface LabelTypeface = new("Arial");
 
     private TransactionViewModel? _transaction;
@@ -299,7 +299,7 @@ public class TransactionArrow : Control, ICustomHitTest
                 ctx.EndFigure(isClosed: true);
             }
 
-            context.DrawGeometry(Brushes.Black, ArrowheadPen, stream);
+            context.DrawGeometry(BlueprintEditorConstants.ArrowColor, ArrowheadPen, stream);
         }
 
         if (Transaction is { } tx)
@@ -313,7 +313,7 @@ public class TransactionArrow : Control, ICustomHitTest
                     FlowDirection.LeftToRight,
                     LabelTypeface,
                     BlueprintEditorConstants.ArrowLabelFontSize,
-                    Brushes.Black);
+                    BlueprintEditorConstants.ArrowColor);
 
                 var label = LabelCenter;
                 context.DrawText(ft, new Point(label.X - ft.Width / 2, label.Y - ft.Height / 2));

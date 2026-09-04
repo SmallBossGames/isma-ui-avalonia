@@ -66,12 +66,13 @@ public sealed class SimulationServerFacade : ISimulationServerFacade, IDisposabl
         EnsureClients();
         var result = await _simulationClient!.DownloadResultAsync(id).ConfigureAwait(false);
 
-        // The gRPC response carries a download URL, not a local file. Download it to the
-        // local cache and read the column metadata so the chart viewer and CSV export work.
+        // The gRPC response carries a relative download path, not a local file.
+        // Download it to the local cache and read the column metadata so the chart
+        // viewer and CSV export work.
         var file = result.File;
         if (!File.Exists(file))
         {
-            var fileInfo = await _httpClient!.DownloadToCacheAsync(file).ConfigureAwait(false);
+            var fileInfo = await _httpClient!.DownloadToCacheAsync(file, $"simulation_{id}.bin").ConfigureAwait(false);
             file = fileInfo.FullName;
         }
 

@@ -292,4 +292,46 @@ public class IsmaBlueprintViewModelTests
         roundTrip.CanvasViewModel.LoopTransactions.Count.Should().Be(1);
         roundTrip.CanvasViewModel.LoopTransactions[0].Text.Should().Be("loop body");
     }
+
+    [Fact]
+    public void CommitNameEditPropagatesToTransactionsAndLoops()
+    {
+        var a = UserState();
+        var b = UserState();
+        _vm.AddTransactionArrow(a, b, "p", "");
+        _vm.AddLoopArrow(a, "loop body", "lp", "la");
+
+        _vm.CommitNameEdit(a, "Renamed");
+
+        a.Name.Should().Be("Renamed");
+        _vm.CanvasViewModel.Transactions[0].StartStateName.Should().Be("Renamed");
+        _vm.CanvasViewModel.Transactions[0].EndStateName.Should().Be(b.Name);
+        _vm.CanvasViewModel.LoopTransactions[0].StateName.Should().Be("Renamed");
+    }
+
+    [Fact]
+    public void RemoveStateAfterRenameStillCascadesToLoop()
+    {
+        var a = UserState();
+        _vm.AddLoopArrow(a, "loop body", "lp", "");
+        _vm.CommitNameEdit(a, "Renamed");
+
+        _vm.RemoveState(a);
+
+        _vm.CanvasViewModel.LoopTransactions.Should().BeEmpty();
+        _vm.CanvasViewModel.States.Should().NotContain(a);
+    }
+
+    [Fact]
+    public void CommitNameEditKeepsOldNameWhenDuplicate()
+    {
+        var a = UserState();
+        var b = UserState();
+        _vm.AddLoopArrow(a, "loop body", "lp", "");
+
+        _vm.CommitNameEdit(a, b.Name);
+
+        a.Name.Should().NotBe(b.Name);
+        _vm.CanvasViewModel.LoopTransactions[0].StateName.Should().Be(a.Name);
+    }
 }

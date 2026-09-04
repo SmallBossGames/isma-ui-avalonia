@@ -71,9 +71,14 @@ public partial class TestApp : Application
         services.AddSingleton<MockSimulationServerFacade>();
         services.AddSingleton<ISimulationServerFacade>(x => x.GetRequiredService<MockSimulationServerFacade>());
         services.AddSingleton<GrinProcessLauncher>();
-        services.AddSingleton<PreferencesProvider>();
 
         services.ConfigureAppServices();
+
+        // Isolate preferences in a temp file so tests never read or write the
+        // user's real settings (last-opened files would be auto-restored).
+        var settingsPath = Path.Combine(Path.GetTempPath(), "isma-tests", "preferences.json");
+        services.AddSingleton<PreferencesProvider>(_ => new PreferencesProvider(settingsPath));
+        services.AddSingleton<IPreferencesProvider>(_ => _.GetRequiredService<PreferencesProvider>());
 
         return services;
     }
