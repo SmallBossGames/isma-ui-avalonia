@@ -18,14 +18,20 @@ public class SimulationResultService : ISimulationResultService
     private readonly GrinProcessLauncher _grinLauncher;
     private readonly Window? _owner;
     private readonly WindowProvider? _windowProvider;
+    private readonly Func<SelectVariablesDialogViewModel, SelectVariablesDialogWindow> _dialogWindowFactory;
     private readonly ObservableCollection<CompletedSimulation> _trackingTasksResults = new();
     private readonly object _lock = new();
 
-    public SimulationResultService(GrinProcessLauncher grinLauncher, Window? owner = null, WindowProvider? windowProvider = null)
+    public SimulationResultService(
+        GrinProcessLauncher grinLauncher,
+        Window? owner = null,
+        WindowProvider? windowProvider = null,
+        Func<SelectVariablesDialogViewModel, SelectVariablesDialogWindow>? dialogWindowFactory = null)
     {
         _grinLauncher = grinLauncher;
         _owner = owner;
         _windowProvider = windowProvider;
+        _dialogWindowFactory = dialogWindowFactory ?? (viewModel => new SelectVariablesDialogWindow(viewModel));
     }
 
     private Window? Owner => _owner ?? _windowProvider?.Current;
@@ -58,13 +64,13 @@ public class SimulationResultService : ISimulationResultService
 
         var dialog = new SelectVariablesDialogViewModel();
         dialog.InitializeColumns(columns);
-        var window = new SelectVariablesDialogWindow(dialog);
+        var window = _dialogWindowFactory(dialog);
 
         var result = await window.ShowDialog<bool?>(owner);
 
         if (result == true && !string.IsNullOrEmpty(dialog.SelectedXAxis))
         {
-            var yAxes = dialog.SelectedYAxes.ToArray();
+            var yAxes = dialog.GetSelectedYAxes();
             await _grinLauncher.RunAsync(simulation.CachedFile, dialog.SelectedXAxis, yAxes);
         }
     }

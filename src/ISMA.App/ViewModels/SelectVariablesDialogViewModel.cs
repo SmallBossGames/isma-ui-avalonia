@@ -26,8 +26,6 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
         set => SetProperty(ref _yAxisItems, value);
     }
 
-    [ObservableProperty]
-    private ObservableCollection<string> _selectedYAxes = new();
 
     [ObservableProperty]
     private bool _okPressed;
@@ -56,14 +54,12 @@ public partial class SelectVariablesDialogViewModel : ObservableObject
         }
     }
 
-    public void GetSelectedYAxes(out ObservableCollection<string> axes)
+    public IReadOnlyList<string> GetSelectedYAxes()
     {
-        axes = new ObservableCollection<string>();
-        foreach (var item in YAxisItems)
-        {
-            if (item.IsSelected)
-                axes.Add(item.Value);
-        }
+        return YAxisItems
+            .Where(item => item.IsSelected)
+            .Select(item => item.Value)
+            .ToList();
     }
 
     [RelayCommand]

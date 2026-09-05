@@ -55,12 +55,14 @@ public partial class TestApp : Application
 
     public MainWindowViewModel ViewModel => _services!.GetRequiredService<MainWindowViewModel>();
 
+    public TestDialogTracker DialogTracker => _services!.GetRequiredService<TestDialogTracker>();
+
     public T GetRequiredService<T>() where T : class
     {
         return _services.GetRequiredService<T>();
     }
 
-    private static IServiceCollection ConfigureServiceCollection()
+    private IServiceCollection ConfigureServiceCollection()
     {
         var services = new ServiceCollection();
 
@@ -71,6 +73,15 @@ public partial class TestApp : Application
         services.AddSingleton<MockSimulationServerFacade>();
         services.AddSingleton<ISimulationServerFacade>(x => x.GetRequiredService<MockSimulationServerFacade>());
         services.AddSingleton<GrinProcessLauncher>();
+
+        var dialogTracker = new TestDialogTracker();
+        services.AddSingleton(dialogTracker);
+        services.AddSingleton<Func<SelectVariablesDialogViewModel, SelectVariablesDialogWindow>>(_ => viewModel =>
+        {
+            var window = new SelectVariablesDialogWindow(viewModel);
+            dialogTracker.Dialogs.Add(window);
+            return window;
+        });
 
         services.ConfigureAppServices();
 
