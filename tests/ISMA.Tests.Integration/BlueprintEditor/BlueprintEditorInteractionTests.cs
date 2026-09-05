@@ -170,6 +170,22 @@ public class BlueprintEditorInteractionTests
     // ------------------------------------------------------------------
 
     [AvaloniaFact]
+    public async Task ArrowsAreLayeredBehindStateBoxes()
+    {
+        await NewBlueprintProject();
+
+        var panels = GetCanvas().Children.OfType<ItemsControl>().ToArray();
+        panels.Should().HaveCount(3, "states, transactions and loop transactions layers");
+
+        var statesPanel = panels.First(p => p.ItemsSource is System.Collections.ObjectModel.ObservableCollection<ISMA.BlueprintEditor.ViewModels.StateViewModel>);
+        var transactionsPanel = panels.First(p => p.ItemsSource is System.Collections.ObjectModel.ObservableCollection<ISMA.BlueprintEditor.ViewModels.TransactionViewModel>);
+        var loopsPanel = panels.First(p => p.ItemsSource is System.Collections.ObjectModel.ObservableCollection<ISMA.BlueprintEditor.ViewModels.LoopTransactionViewModel>);
+
+        statesPanel.ZIndex.Should().BeGreaterThan(transactionsPanel.ZIndex, "state boxes must be drawn above transaction arrows");
+        statesPanel.ZIndex.Should().BeGreaterThan(loopsPanel.ZIndex, "state boxes must be drawn above loop arrows");
+    }
+
+    [AvaloniaFact]
     public async Task NewStateButton_AddsStateRenderedAtExpectedPosition()
     {
         await NewBlueprintProject();

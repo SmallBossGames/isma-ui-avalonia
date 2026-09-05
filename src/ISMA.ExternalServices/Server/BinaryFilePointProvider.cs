@@ -1,19 +1,23 @@
-using System.Collections.Immutable;
 using System.Text;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 
 namespace ISMA.ExternalServices.Server;
 
+/// <summary>
+/// Reads simulation result files in the ISMA binary exchange format written by
+/// the server (big-endian, Java <c>DataOutputStream</c>): a <c>short</c> column
+/// count, then per column a <c>short</c> name length + UTF-8 name, then
+/// <c>columnCount</c> big-endian doubles per row until EOF. Row layout:
+/// [x, DE values, AE values, f values].
+/// </summary>
 public sealed class BinaryFilePointProvider : ISimulationResultReader
 {
-    private readonly string _filePath;
     private readonly SimulationMetadata _metadata;
     private readonly IEnumerable<SimulationPoint> _points;
 
-    private BinaryFilePointProvider(string filePath, SimulationMetadata metadata, IEnumerable<SimulationPoint> points)
+    private BinaryFilePointProvider(SimulationMetadata metadata, IEnumerable<SimulationPoint> points)
     {
-        _filePath = filePath;
         _metadata = metadata;
         _points = points;
     }
@@ -25,32 +29,20 @@ public sealed class BinaryFilePointProvider : ISimulationResultReader
     public static SimulationMetadata ReadMetadata(string filePath)
     {
         using var fs = File.OpenRead(filePath);
-        using var br = new BinaryReader(fs, Encoding.UTF8, leaveOpen: true);
 
-        var magic = ReadString(br, 4);
-        if (magic != "ISMR")
-        {
-            throw new InvalidDataException($"Invalid simulation result file: bad magic '{magic}'");
-        }
-
-        var version = br.ReadInt32();
-        if (version != 1)
-        {
-            throw new NotSupportedException($"Unsupported simulation result file version: {version}");
-        }
-
-        var columnCount = br.ReadInt32();
+        var columnCount = ReadUInt16BE(fs);
         var columnNames = new string[columnCount];
         for (var i = 0; i < columnCount; i++)
         {
-            columnNames[i] = ReadString(br, br.ReadInt32());
+            var length = ReadUInt16BE(fs);
+            var bytes = new byte[length];
+            ReadFully(fs, bytes);
+            columnNames[i] = Encoding.UTF8.GetString(bytes);
         }
-
-        var equationCount = br.ReadInt32();
 
         return new SimulationMetadata
         {
-            ColumnNames = columnNames.ToImmutableArray(),
+            ColumnNames = [.. columnNames],
         };
     }
 
@@ -58,56 +50,124 @@ public sealed class BinaryFilePointProvider : ISimulationResultReader
     {
         var metadata = ReadMetadata(filePath);
         var points = ParsePoints(filePath, metadata);
-        return new BinaryFilePointProvider(filePath, metadata, points);
+        return new BinaryFilePointProvider(metadata, points);
     }
 
     private static IEnumerable<SimulationPoint> ParsePoints(string filePath, SimulationMetadata metadata)
     {
-        using var fs = File.OpenRead(filePath);
-        using var br = new BinaryReader(fs, Encoding.UTF8, leaveOpen: true);
+        var columnNames = metadata.ColumnNames;
+        var columnCount = columnNames.Length;
+        if (columnCount == 0)
+        {
+            yield break;
+        }
 
-        var magic = ReadString(br, 4);
-        var version = br.ReadInt32();
-        var columnCount = br.ReadInt32();
+        var deCount = 0;
+        var aeCount = 0;
+        foreach (var name in columnNames)
+        {
+            if (name.StartsWith("DE_"))
+            {
+                deCount++;
+            }
+            else if (name.StartsWith("AE_"))
+            {
+                aeCount++;
+            }
+        }
+
+        using var fs = File.OpenRead(filePath);
+
+        // Skip the header (column count + per-column name length + name bytes).
+        ReadUInt16BE(fs);
         for (var i = 0; i < columnCount; i++)
         {
-            ReadString(br, br.ReadInt32());
+            var length = ReadUInt16BE(fs);
+            fs.Seek(length, SeekOrigin.Current);
         }
-        br.ReadInt32();
 
-        var pointCount = br.ReadInt64();
-
-        for (var p = 0L; p < pointCount; p++)
+        var row = new double[columnCount];
+        while (true)
         {
-            var x = br.ReadDouble();
-
-            var yCount = br.ReadInt32();
-            var yForDe = new double[yCount];
-            for (var i = 0; i < yCount; i++)
+            var complete = true;
+            for (var i = 0; i < columnCount; i++)
             {
-                yForDe[i] = br.ReadDouble();
-            }
-
-            var rhsRowCount = br.ReadInt32();
-            var rhs = new double[rhsRowCount][];
-            for (var r = 0; r < rhsRowCount; r++)
-            {
-                var rhsColCount = br.ReadInt32();
-                rhs[r] = new double[rhsColCount];
-                for (var c = 0; c < rhsColCount; c++)
+                try
                 {
-                    rhs[r][c] = br.ReadDouble();
+                    row[i] = ReadDoubleBE(fs);
+                }
+                catch (EndOfStreamException)
+                {
+                    complete = false;
+                    break;
                 }
             }
 
-            yield return new SimulationPoint(x, yForDe, rhs);
+            if (!complete)
+            {
+                yield break;
+            }
+
+            // Row layout written by the server: [x, DE values, AE values, f values].
+            // Mapping ported verbatim from the original Kotlin BinaryFilePointProvider.
+            var yForDe = new double[deCount + aeCount];
+            for (var i = 0; i < yForDe.Length; i++)
+            {
+                yForDe[i] = row[1 + i];
+            }
+
+            var rhsDe = new double[deCount];
+            for (var i = 0; i < rhsDe.Length; i++)
+            {
+                rhsDe[i] = row[1 + deCount + aeCount + i];
+            }
+
+            var rhsAe = new double[aeCount];
+            for (var i = 0; i < rhsAe.Length; i++)
+            {
+                rhsAe[i] = row[1 + deCount + i];
+            }
+
+            yield return new SimulationPoint(row[0], yForDe, [rhsDe, rhsAe]);
         }
     }
 
-    private static string ReadString(BinaryReader br, int length)
+    private static ushort ReadUInt16BE(Stream stream)
     {
-        if (length <= 0) return string.Empty;
-        var bytes = br.ReadBytes(length);
-        return Encoding.UTF8.GetString(bytes);
+        var hi = stream.ReadByte();
+        var lo = stream.ReadByte();
+        if (hi < 0 || lo < 0)
+        {
+            throw new EndOfStreamException();
+        }
+
+        return (ushort)((hi << 8) | lo);
+    }
+
+    private static double ReadDoubleBE(Stream stream)
+    {
+        var bytes = new byte[8];
+        ReadFully(stream, bytes);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(bytes);
+        }
+
+        return BitConverter.ToDouble(bytes, 0);
+    }
+
+    private static void ReadFully(Stream stream, byte[] buffer)
+    {
+        var offset = 0;
+        while (offset < buffer.Length)
+        {
+            var count = stream.Read(buffer, offset, buffer.Length - offset);
+            if (count == 0)
+            {
+                throw new EndOfStreamException();
+            }
+
+            offset += count;
+        }
     }
 }

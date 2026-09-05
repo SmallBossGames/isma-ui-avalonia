@@ -22,49 +22,45 @@ public class CsvExportFormatTests : IDisposable
     {
         var path = Path.Combine(Path.GetTempPath(), $"isma-test-{Guid.NewGuid():N}.bin");
         using var fs = File.Create(path);
-        using var bw = new BinaryWriter(fs, Encoding.UTF8);
 
-        bw.Write(Encoding.UTF8.GetBytes("ISMR"));
-        bw.Write(1);
-        bw.Write(3);
-        WriteColumn(bw, "TIME");
-        WriteColumn(bw, "y0");
-        WriteColumn(bw, "y1");
-        bw.Write(2);
+        // Real ISMA exchange format (big-endian, as written by the server's Java
+        // DataOutputStream): short column count, then per column short name length
+        // + UTF-8 name; no magic, no version, no row count.
+        var columns = new[] { "TIME", "DE_0-y0", "DE_1-y1", "AE_0-z0", "f0", "f1" };
+        WriteUInt16BE(fs, (ushort)columns.Length);
+        foreach (var name in columns)
+        {
+            var bytes = Encoding.UTF8.GetBytes(name);
+            WriteUInt16BE(fs, (ushort)bytes.Length);
+            fs.Write(bytes);
+        }
 
-        bw.Write(2L);
-
-        bw.Write(0.0);
-        bw.Write(2);
-        bw.Write(1.0);
-        bw.Write(2.0);
-        bw.Write(2);
-        bw.Write(2);
-        bw.Write(0.5);
-        bw.Write(0.6);
-        bw.Write(1);
-        bw.Write(0.7);
-
-        bw.Write(0.1);
-        bw.Write(2);
-        bw.Write(3.0);
-        bw.Write(4.0);
-        bw.Write(2);
-        bw.Write(2);
-        bw.Write(1.5);
-        bw.Write(2.6);
-        bw.Write(1);
-        bw.Write(3.7);
+        // Rows: columnCount big-endian doubles each, layout [x, DE values, AE values, f values], until EOF.
+        WriteRow(fs, 0.0, 1.0, 2.0, 0.7, 0.5, 0.6);
+        WriteRow(fs, 0.1, 3.0, 4.0, 3.7, 1.5, 2.6);
 
         _tempFiles.Add(path);
         return path;
     }
 
-    private static void WriteColumn(BinaryWriter bw, string name)
+    private static void WriteUInt16BE(Stream stream, ushort value)
     {
-        var bytes = Encoding.UTF8.GetBytes(name);
-        bw.Write(bytes.Length);
-        bw.Write(bytes);
+        stream.WriteByte((byte)(value >> 8));
+        stream.WriteByte((byte)value);
+    }
+
+    private static void WriteRow(Stream stream, params double[] values)
+    {
+        foreach (var value in values)
+        {
+            var bytes = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
+
+            stream.Write(bytes);
+        }
     }
 
     private sealed class TestEquationIndexProvider : IEquationIndexProvider
@@ -96,8 +92,8 @@ public class CsvExportFormatTests : IDisposable
 
         var lines = File.ReadAllLines(csvFile);
         lines[0].Should().Be("x, y0, y1, z0, f0, f1");
-        lines[1].Should().Be("0.0, 1.0, 2.0, 0.7, 0.5, 0.6");
-        lines[2].Should().Be("0.1, 3.0, 4.0, 3.7, 1.5, 2.6");
+        lines[1].Should().Be("0.0, 1.0, 2.0, 0.7, 0.7, 0.5, 0.6");
+        lines[2].Should().Be("0.1, 3.0, 4.0, 3.7, 3.7, 1.5, 2.6");
     }
 
     public void Dispose()

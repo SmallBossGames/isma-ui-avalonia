@@ -11,7 +11,7 @@
   </UserControl.Resources>
   <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
     <views:BlueprintCanvas x:Name="RootCanvas">
-      <ItemsControl ItemsSource="{Binding States}" ZIndex="0">
+      <ItemsControl ItemsSource="{Binding States}" ZIndex="2">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <views:BlueprintCanvas />
@@ -25,7 +25,7 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <ItemsControl ItemsSource="{Binding Transactions}" ZIndex="1">
+      <ItemsControl ItemsSource="{Binding Transactions}" ZIndex="0">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <views:BlueprintCanvas />
@@ -39,7 +39,7 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <ItemsControl ItemsSource="{Binding LoopTransactions}" ZIndex="2">
+      <ItemsControl ItemsSource="{Binding LoopTransactions}" ZIndex="1">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <views:BlueprintCanvas />
