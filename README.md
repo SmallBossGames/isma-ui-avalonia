@@ -77,18 +77,19 @@ The Application layer depends on all presentation and infrastructure modules; ea
 
 | Package | Version | Purpose |
 |---|---|---|
-| Avalonia | 12.0.3 | UI framework |
-| Avalonia.Themes.Fluent | 12.0.3 | Fluent design theme |
-| Avalonia.Controls.DataGrid | 12.0.0 | Data grid control |
+| Avalonia | 12.1.2 | UI framework |
+| Avalonia.Themes.Fluent | 12.1.2 | Fluent design theme |
+| Avalonia.Controls.DataGrid | 12.1.2 | Data grid control |
 | Avalonia.AvaloniaEdit | 12.0.0 | Code editing control |
 | AvaloniaEdit.TextMate | 12.0.0 | TextMate syntax integration |
-| CommunityToolkit.Mvvm | 8.4.0 | MVVM toolkit |
-| Microsoft.Extensions.DependencyInjection | 10.0.0 | DI container |
-| Grpc.Net.Client | 2.71.0 | gRPC client |
-| Grpc.Net.Client.Web | 2.71.0 | gRPC-Web client |
-| Google.Protobuf | 3.33.0 | Protocol Buffers |
-| xUnit | 2.9.3 | Testing framework |
-| FluentAssertions | 8.2.0 | Fluent assertions |
+| Avalonia.Wayland | 12.1.2 | Native Wayland backend (Linux) |
+| CommunityToolkit.Mvvm | 8.4.2 | MVVM toolkit |
+| Microsoft.Extensions.DependencyInjection | 10.0.11 | DI container |
+| Grpc.Net.Client | 2.83.0 | gRPC client |
+| Grpc.Net.Client.Web | 2.83.0 | gRPC-Web client |
+| Google.Protobuf | 3.36.1 | Protocol Buffers |
+| xunit.v3 | 4.0.0 | Testing framework |
+| FluentAssertions | 8.10.0 | Fluent assertions |
 | Moq | 4.20.72 | Mocking framework |
 
 ## Build
