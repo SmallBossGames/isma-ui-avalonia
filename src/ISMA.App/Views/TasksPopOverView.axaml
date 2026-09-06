@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ISMA.App.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia"
              x:Class="ISMA.App.Views.TasksPopOverView"
              x:CompileBindings="True"
              x:DataType="vm:TasksPopOverViewModel">
@@ -9,7 +10,7 @@
             Padding="12"
             MinWidth="340"
             MaxWidth="420"
-            Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
             BorderThickness="1"
             BoxShadow="0 4 16 0 #80000000">
@@ -48,11 +49,9 @@
                                         ToolTip.Tip="Abort"
                                         Padding="4,0"
                                         Margin="6,0,0,0"
-                                        Classes="accent"
                                         Command="{Binding AbortCommand}"
                                         IsEnabled="{Binding CanAbort}">
-                                    <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                                               Width="16" Height="16" />
+                                    <ic:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="16" />
                                 </Button>
                             </Grid>
                         </Border>
@@ -108,7 +107,6 @@
                                         Padding="8,3"
                                         FontSize="10"
                                         Margin="4,0,0,0"
-                                        Classes="danger"
                                         Command="{Binding RemoveCommand}"
                                         AutomationProperties.AutomationId="SimulationRemove"
                                         VerticalAlignment="Center" />
@@ -117,18 +115,16 @@
                                         Padding="4,0"
                                         Margin="8,0,0,0"
                                         VerticalAlignment="Center"
-                                        Classes="chevron"
                                         ToolTip.Tip="Details"
                                         IsHitTestVisible="True">
-                                    <PathIcon Data="M10,6L8.59,7.41L13.17,12L8.59,16.59L10,18L16,12L10,6Z"
-                                               Width="16" Height="16" />
+                                    <ic:FluentIcon Icon="ChevronRight" IconVariant="Regular" FontSize="16" />
                                     <Button.Flyout>
                                         <Flyout>
                                             <Border CornerRadius="4"
                                                     Padding="10"
                                                     MinWidth="220"
                                                     MaxWidth="320"
-                                                    Background="{DynamicResource SystemControlBackgroundChromeMediumHighBrush}"
+                                                    Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                                                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                     BorderThickness="1"
                                                     BoxShadow="0 2 8 0 #60000000">
@@ -171,7 +167,7 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding ErrorText}"
                                            FontSize="11"
-                                           Foreground="Red"
+                                           Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
                                            Margin="6,0"
                                            VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis" />
@@ -180,7 +176,6 @@
                                         Padding="8,3"
                                         FontSize="10"
                                         Margin="6,0,0,0"
-                                        Classes="danger"
                                         Command="{Binding RemoveCommand}"
                                         VerticalAlignment="Center" />
                             </Grid>

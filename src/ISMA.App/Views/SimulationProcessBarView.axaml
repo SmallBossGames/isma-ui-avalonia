@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ISMA.App.ViewModels"
              xmlns:views="using:ISMA.App.Views"
+             xmlns:ic="using:FluentIcons.Avalonia"
              x:Class="ISMA.App.Views.SimulationProcessBarView"
              x:CompileBindings="True"
              x:DataType="vm:MainWindowViewModel">
@@ -17,7 +18,7 @@
                     Command="{Binding RunCommand}"
                     Width="32" Height="28"
                     Padding="0">
-                <PathIcon Data="M8,5.14V19.14L19,12.14L8,5.14Z" Width="20" Height="20"/>
+                <ic:FluentIcon Icon="Play" IconVariant="Regular"/>
             </Button>
 
             <Button ToolTip.Tip="Simulation Tasks"

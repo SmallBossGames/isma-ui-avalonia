@@ -5,11 +5,6 @@
 >
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <StyleInclude
-                    Source="avares://ISMA.App/Styles/GlobalStyles.axaml"
-                />
-            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 

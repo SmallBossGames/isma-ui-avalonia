@@ -5,7 +5,7 @@
              x:Class="ISMA.App.Views.SettingsPanelView"
              x:CompileBindings="True"
              x:DataType="vm:SimulationParametersViewModel">
-    <StackPanel Spacing="8" Margin="8" Width="240">
+    <StackPanel Spacing="8" Margin="8">
         <Expander Header="Initials" IsExpanded="True">
             <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" AutomationPrefix="Settings-CauchyInitials">
                 <controls:PropertiesGrid.Rows>

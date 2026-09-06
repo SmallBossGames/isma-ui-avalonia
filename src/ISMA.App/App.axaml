@@ -10,9 +10,6 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <StyleInclude
-                    Source="avares://ISMA.App/Styles/GlobalStyles.axaml"
-                />
-                <StyleInclude
                     Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"
                 />
             </ResourceDictionary.MergedDictionaries>

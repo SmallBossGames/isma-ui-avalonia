@@ -2,6 +2,7 @@
               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
               xmlns:vm="using:ISMA.App.ViewModels"
               xmlns:views="using:ISMA.App.Views"
+              xmlns:ic="using:FluentIcons.Avalonia"
               x:Class="ISMA.App.Views.EditorTabPaneView"
               x:CompileBindings="True"
               x:DataType="vm:MainWindowViewModel">
@@ -23,9 +24,8 @@
                             AutomationProperties.AutomationId="TabCloseButton"
                             Command="{Binding $parent[TabControl].DataContext.CloseTabCommand, x:DataType=vm:MainWindowViewModel}"
                             CommandParameter="{Binding }">
-                        <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" 
-                                  FontSize="10"
-                                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <ic:FluentIcon Icon="Dismiss" IconVariant="Regular" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </Button>
                 </StackPanel>
             </DataTemplate>
