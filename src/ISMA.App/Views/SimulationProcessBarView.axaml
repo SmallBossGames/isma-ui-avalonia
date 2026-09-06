@@ -11,21 +11,18 @@
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
         <StackPanel Orientation="Horizontal"
                     Spacing="4"
-                    Margin="4"
-                    Height="32">
+                    Margin="4">
             <Button ToolTip.Tip="Play"
                     AutomationProperties.AutomationId="ProcessBarRun"
-                    Command="{Binding RunCommand}"
-                    Width="32" Height="28"
-                    Padding="0">
+                    VerticalAlignment="Stretch"
+                    Command="{Binding RunCommand}">
                 <ic:FluentIcon Icon="Play" IconVariant="Regular"/>
             </Button>
 
             <Button ToolTip.Tip="Simulation Tasks"
                     AutomationProperties.AutomationId="ProcessBarTasks"
                     Content="Tasks"
-                    Width="80" Height="28"
-                    Padding="0">
+                    VerticalAlignment="Stretch">
                 <Button.Flyout>
                     <Flyout>
                         <views:TasksPopOverView DataContext="{Binding TasksPopOver}" />

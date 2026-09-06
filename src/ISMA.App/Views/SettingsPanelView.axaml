@@ -4,9 +4,10 @@
              xmlns:controls="using:ISMA.Toolkit.Controls"
              x:Class="ISMA.App.Views.SettingsPanelView"
              x:CompileBindings="True"
-             x:DataType="vm:SimulationParametersViewModel">
+             x:DataType="vm:SimulationParametersViewModel"
+             HorizontalContentAlignment="Stretch">
     <StackPanel Spacing="8" Margin="8">
-        <Expander Header="Initials" IsExpanded="True">
+        <Expander Header="Initials" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
             <controls:PropertiesGrid ViewModel="{Binding CauchyInitials}" AutomationPrefix="Settings-CauchyInitials">
                 <controls:PropertiesGrid.Rows>
                     <controls:PropertyRowSpec Label="Start" PropertyName="StartTime"/>
@@ -15,7 +16,7 @@
                 </controls:PropertiesGrid.Rows>
             </controls:PropertiesGrid>
         </Expander>
-        <Expander Header="Integration" IsExpanded="True">
+        <Expander Header="Integration" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
             <controls:PropertiesGrid ViewModel="{Binding IntegrationMethod}" AutomationPrefix="Settings-IntegrationMethod">
                 <controls:PropertiesGrid.Rows>
                     <controls:PropertyRowSpec Label="Method" PropertyName="SelectedMethod" ItemsSource="IntegrationMethods" SelectionProperty="SelectedMethodIndex"/>
@@ -28,7 +29,7 @@
                 </controls:PropertiesGrid.Rows>
             </controls:PropertiesGrid>
         </Expander>
-        <Expander Header="Event detection" IsExpanded="True">
+        <Expander Header="Event detection" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
             <controls:PropertiesGrid ViewModel="{Binding EventDetection}" AutomationPrefix="Settings-EventDetection">
                 <controls:PropertiesGrid.Rows>
                     <controls:PropertyRowSpec Label="In use" PropertyName="IsEventDetectionInUse"/>
@@ -38,7 +39,7 @@
                 </controls:PropertiesGrid.Rows>
             </controls:PropertiesGrid>
         </Expander>
-        <Expander Header="Result saving" IsExpanded="True">
+        <Expander Header="Result saving" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
             <controls:PropertiesGrid ViewModel="{Binding ResultSaving}" AutomationPrefix="Settings-ResultSaving">
                 <controls:PropertiesGrid.Rows>
                     <controls:PropertyRowSpec Label="Save result" PropertyName="SavingTarget"/>

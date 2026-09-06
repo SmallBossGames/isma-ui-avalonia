@@ -35,7 +35,7 @@
                           AutomationProperties.AutomationId="SettingsPanel"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
-                <ContentControl Content="{Binding SimulationParameters}">
+                <ContentControl Content="{Binding SimulationParameters}" HorizontalContentAlignment="Stretch">
                     <ContentControl.DataTemplates>
                         <DataTemplate x:DataType="vm:SimulationParametersViewModel">
                             <views:SettingsPanelView />
