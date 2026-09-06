@@ -108,6 +108,23 @@ dotnet run --project src/ISMA.App
 
 The application bootstraps via `Program.cs`, configures the DI container in `App.axaml.cs`, and creates the `MainWindow`.
 
+## Local configuration
+
+The app needs the paths to your local ISMA server and Grin chart viewer to start simulations and show charts. These are machine-specific, so they live in a gitignored file:
+
+1. Create `src/ISMA.App/appsettings.Local.json`:
+
+   ```json
+   {
+     "Server": { "ScriptPath": "/path/to/isma-server-app/bin/app" },
+     "Grin": { "ScriptPath": "/path/to/grin-app/bin/app" }
+   }
+   ```
+
+2. Rebuild — the file is copied next to the app and overrides the checked-in `appsettings.json`, which ships with empty values.
+
+Alternatively, set the environment variables `ISMA_SERVER_SCRIPT` and/or `ISMA_GRIN_SCRIPT` — these take precedence over the config file. Without either source, the app still starts, but starting a simulation or opening the chart viewer fails with an error naming the missing setting.
+
 ## Test
 
 ```bash

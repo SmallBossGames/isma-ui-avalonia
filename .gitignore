@@ -133,3 +133,5 @@ $RECYCLE.BIN/
 _NCrunch*
 
 docs/todo/
+# Local development configuration (machine-specific paths)
+src/ISMA.App/appsettings.Local.json

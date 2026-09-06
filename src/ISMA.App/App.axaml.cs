@@ -60,26 +60,23 @@ public partial class App : Application
     private void ConfigureServerPaths()
     {
         var assemblyDir = Path.GetDirectoryName(typeof(App).Assembly.Location) ?? Directory.GetCurrentDirectory();
-        var configPath = Path.Combine(assemblyDir, "appsettings.json");
 
-        if (File.Exists(configPath))
+        var config = new ConfigurationBuilder()
+            .SetBasePath(assemblyDir)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .Build();
+
+        var serverPath = config["Server:ScriptPath"];
+        if (!string.IsNullOrWhiteSpace(serverPath))
         {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(assemblyDir)
-                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
-                .Build();
+            AppContext.SetData("isma.server.script", serverPath);
+        }
 
-            var serverPath = config["Server:ScriptPath"];
-            if (!string.IsNullOrWhiteSpace(serverPath))
-            {
-                AppContext.SetData("isma.server.script", serverPath);
-            }
-
-            var grinPath = config["Grin:ScriptPath"];
-            if (!string.IsNullOrWhiteSpace(grinPath))
-            {
-                AppContext.SetData("isma.grin.script", grinPath);
-            }
+        var grinPath = config["Grin:ScriptPath"];
+        if (!string.IsNullOrWhiteSpace(grinPath))
+        {
+            AppContext.SetData("isma.grin.script", grinPath);
         }
     }
 
