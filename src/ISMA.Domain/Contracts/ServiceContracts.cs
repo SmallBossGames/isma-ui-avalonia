@@ -9,7 +9,6 @@ public interface ISimulationServerFacade
 {
     Task<CompileResult> CompileModel(string source);
     Task<ValidationResult> ValidateModel(string source);
-    Task<SyntaxTokenDto[]> HighlightSource(string source);
     Task<long> RunSimulation(RunSimulationParams @params);
     IAsyncEnumerable<SimulationProgress> MonitorSimulation(long id);
     Task<CachedSimulationResult> DownloadResult(long id);
@@ -34,7 +33,15 @@ public interface ISimulationResultReader
 
 public interface ISyntaxHighlighter
 {
-    Task<SyntaxTokenDto[]> Highlight(string source);
+    /// <summary>
+    /// Requests semantic tokens for the full document. The document is
+    /// identified by <paramref name="documentId"/>; the first call opens it
+    /// on the provider, subsequent calls update it.
+    /// </summary>
+    Task<SyntaxTokenDto[]> Highlight(string documentId, string source);
+
+    /// <summary>Releases provider state for the document.</summary>
+    Task CloseDocument(string documentId);
 }
 
 public interface ITextEditorFactory

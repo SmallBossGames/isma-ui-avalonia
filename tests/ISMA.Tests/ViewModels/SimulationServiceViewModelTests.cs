@@ -18,7 +18,7 @@ public class SimulationServiceViewModelTests
         var editorFactory = new Mock<ITextEditorFactory>();
         var fileService = new Mock<IProjectFileService>();
         var syntax = new Mock<ISyntaxHighlighter>();
-        syntax.Setup(m => m.Highlight(It.IsAny<string>())).ReturnsAsync(Array.Empty<SyntaxTokenDto>());
+        syntax.Setup(m => m.Highlight(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(Array.Empty<SyntaxTokenDto>());
         var project = new LismaProjectViewModel(
             facade.Object,
             editorFactory.Object,

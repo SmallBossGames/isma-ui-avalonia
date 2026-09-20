@@ -13,18 +13,15 @@ public class MockSimulationServerFacade : ISimulationServerFacade
 {
     public bool CompileCalled { get; private set; }
     public bool ValidateCalled { get; private set; }
-    public bool HighlightCalled { get; private set; }
     public bool RunCalled { get; private set; }
     public bool CancelCalled { get; private set; }
     public bool ShutdownCalled { get; private set; }
     public string? LastCompileSource { get; private set; }
     public string? LastValidateSource { get; private set; }
-    public string? LastHighlightSource { get; private set; }
     public RunSimulationParams? LastRunParams { get; private set; }
 
     public Func<string, Task<CompileResult>> CompileHandler { get; set; } = _ => Task.FromResult(new CompileResult { Errors = ImmutableArray<CompilationError>.Empty });
     public Func<string, Task<ValidationResult>> ValidateHandler { get; set; } = _ => Task.FromResult(new ValidationResult { Errors = ImmutableArray<CompilationError>.Empty });
-    public Func<string, Task<SyntaxTokenDto[]>> HighlightHandler { get; set; } = _ => Task.FromResult(Array.Empty<SyntaxTokenDto>());
     public Func<RunSimulationParams, Task<long>> RunHandler { get; set; } = _ => Task.FromResult(1L);
     public Func<long, IAsyncEnumerable<SimulationProgress>> MonitorHandler { get; set; } = _ => AsyncEnumerable.Empty<SimulationProgress>();
     public Func<long, Task<CachedSimulationResult>> DownloadHandler { get; set; } = _ => Task.FromResult(new CachedSimulationResult { File = "/tmp/test.bin" });
@@ -43,13 +40,6 @@ public class MockSimulationServerFacade : ISimulationServerFacade
         ValidateCalled = true;
         LastValidateSource = source;
         return await ValidateHandler(source);
-    }
-
-    public async Task<SyntaxTokenDto[]> HighlightSource(string source)
-    {
-        HighlightCalled = true;
-        LastHighlightSource = source;
-        return await HighlightHandler(source);
     }
 
     public async Task<long> RunSimulation(RunSimulationParams @params)

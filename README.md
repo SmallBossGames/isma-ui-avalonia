@@ -142,9 +142,9 @@ Tests use xUnit v3 with FluentAssertions and Moq:
 
 2. **CommunityToolkit.Mvvm** — Chosen over ReactiveUI/HandyMvvm for its lightweight source-generator approach, minimal runtime overhead, and broad adoption.
 
-3. **gRPC-first communication** — The simulation server is contacted via gRPC for simulation execution, syntax highlighting, and metadata. HTTP is used as a fallback transport via `Grpc.Net.Client.Web`.
+3. **gRPC-first communication** — The simulation server is contacted via gRPC for simulation execution and metadata. HTTP is used as a fallback transport via `Grpc.Net.Client.Web`.
 
-4. **Server-side syntax highlighting** — Tokenization is delegated to the ISMA server for consistency with other clients. The `SyntaxHighlighterService` wraps the gRPC call and feeds results to AvaloniaEdit.
+4. **LSP-driven syntax highlighting** — Tokenization is delegated to the standalone `isma-lsp` language server process (LSP over stdio) for consistency with the JavaFX client. `LspSyntaxHighlighter` wraps the `LspClient` and feeds decoded tokens to AvaloniaEdit.
 
 5. **Immutable domain collections** — Blueprint states and transactions use `ImmutableArray<T>` to prevent accidental mutation and support structural sharing.
 

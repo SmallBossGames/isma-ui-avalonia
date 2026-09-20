@@ -82,6 +82,9 @@ public partial class TestApp : Application
             dialogTracker.Dialogs.Add(window);
             return window;
         });
+        var lspTransport = new FakeLspTransport();
+        services.AddSingleton(lspTransport);
+        services.AddSingleton<ISMA.ExternalServices.Lsp.ILspTransport>(lspTransport);
 
         services.ConfigureAppServices();
 

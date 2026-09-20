@@ -770,15 +770,16 @@ sequenceDiagram
 When building a replacement UI with the same features:
 
 1. **Separation of concerns:** The UI is cleanly layered — domain models (pure data) → infrastructure (server communication) → ViewModels (business logic) → views (UI components)
-2. **Server communication:** All compilation, validation, and simulation happen on a separate server process. The UI communicates via gRPC (compile, validate, run, monitor, cancel, download, highlight) and HTTP (binary result download).
+2. **Server communication:** All compilation, validation, and simulation happen on a separate server process. The UI communicates via gRPC (compile, validate, run, monitor, cancel, download) and HTTP (binary result download).
 3. **Multi-project:** Projects are managed in an `ObservableCollection` with an active project concept. Each project has its own ViewModel.
 4. **Observable collections:** UI state is driven by `ObservableCollection<T>` that updates the UI reactively via Avalonia bindings.
 5. **Blueprint-to-text:** The blueprint editor is a visual layer that serializes to/from a LISMA text representation. The conversion happens at compile time via `BlueprintToLismaConverter`, not in real-time.
-6. **External processes:** Two external processes are launched by the UI:
+6. **External processes:** Three external processes are launched by the UI:
    - ISMA Server (gRPC backend) — launched automatically on first use via `SimulationServerManager`
+   - LISMA Language Server (`isma-lsp`) — launched at startup via `LspProcessManager`, provides syntax highlighting over LSP
    - Grin Chart Viewer — launched on-demand when user clicks "Show" on results via `GrinProcessLauncher`
 7. **Preferences:** Window geometry and last-opened files are persisted as JSON via `PreferencesProvider`. Simulation parameters are stored/loaded as separate JSON files by the user via `ISimulationParametersStoreService`.
-8. **Syntax highlighting:** Computed server-side via `HighlightSource()` gRPC call. The UI receives token positions and kinds, then applies colors via `DocumentColorizingTransformer` in AvaloniaEdit.
+8. **Syntax highlighting:** Computed by the `isma-lsp` language server process (LSP `semanticTokens/full` over stdio). The UI receives line/column token positions and kinds, then applies colors via `DocumentColorizingTransformer` in AvaloniaEdit.
 9. **Result format:** Binary files containing `SimulationPoint` records (x, yForDE[], rhs[][]). Column names come from server metadata. Both the chart viewer and CSV export consume this binary format via `BinaryFilePointProvider`.
 10. **Clipboard propagation:** Cut/copy/paste events are propagated via `EditorPlatformService` to the focused AvaloniaEdit `TextEditor`.
 11. **Result simplification:** Post-processing simplification uses Radial-Distance or Douglas-Peucker algorithms to reduce data points for smoother chart rendering.

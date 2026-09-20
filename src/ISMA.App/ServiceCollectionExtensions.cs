@@ -4,6 +4,7 @@ using ISMA.App.ViewModels;
 using ISMA.Domain.Contracts;
 using ISMA.ExternalServices.ChartViewer;
 using ISMA.ExternalServices.FileStorage;
+using ISMA.ExternalServices.Lsp;
 using ISMA.ExternalServices.Server;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +25,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();
         services.AddSingleton<ISimulationResultService, SimulationResultService>();
-        services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
+        services.AddSingleton<LspClient>();
+        services.AddSingleton<ISyntaxHighlighter, LspSyntaxHighlighter>();
         services.AddSingleton<IPreferencesProvider, PreferencesProvider>();
         services.AddSingleton<EditorPlatformService>();
         services.AddSingleton<ISimulationParametersStoreService, SimulationParametersService>();

@@ -66,7 +66,7 @@ public class TextEditorFactory : ITextEditorFactory
 
         if (tokens is { Length: > 0 })
         {
-            transformers.Add(new ServerDrivenHighlightingTransformer(tokens));
+            transformers.Add(new ServerDrivenHighlightingTransformer(tokens, inner.Document, source.Length));
         }
 
         textView.Redraw();

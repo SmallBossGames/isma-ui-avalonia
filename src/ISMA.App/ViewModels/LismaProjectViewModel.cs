@@ -18,6 +18,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     private readonly IProjectFileService _projectFileService;
     private readonly ISyntaxHighlighter _syntaxHighlighter;
     private readonly IModelErrorService? _errorService;
+    private readonly string _documentId = Guid.NewGuid().ToString("N");
     private LismaTextModel _model;
     private object? _editorInstance;
 
@@ -179,7 +180,7 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
         try
         {
             var version = ++_highlightVersion;
-            var tokens = await _syntaxHighlighter.Highlight(source);
+            var tokens = await _syntaxHighlighter.Highlight(_documentId, source);
 
             await Task.Delay(100);
 
@@ -224,5 +225,6 @@ public partial class LismaProjectViewModel : ObservableObject, IProjectViewModel
     {
         OnBeforeDispose?.Invoke();
         ResetEditor();
+        _ = _syntaxHighlighter.CloseDocument(_documentId);
     }
 }

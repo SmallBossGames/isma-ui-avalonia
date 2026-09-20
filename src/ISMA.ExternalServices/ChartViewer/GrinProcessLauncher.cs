@@ -58,6 +58,7 @@ public sealed class GrinProcessLauncher : IDisposable
             CreateNoWindow = true,
         };
 
+        _logger?.LogDebug("Launching Grin: {Command}", $"{path} {args}");
         _process = new Process { StartInfo = psi };
 
         var outputTask = Task.Run(async () =>

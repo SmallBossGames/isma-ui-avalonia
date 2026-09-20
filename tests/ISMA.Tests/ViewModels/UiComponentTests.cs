@@ -13,7 +13,7 @@ public class UiComponentTests
     private static Mock<ISyntaxHighlighter> CreateSyntaxHighlighterMock()
     {
         var mock = new Mock<ISyntaxHighlighter>();
-        mock.Setup(m => m.Highlight(It.IsAny<string>()))
+        mock.Setup(m => m.Highlight(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(Array.Empty<ISMA.Domain.Dtos.SyntaxTokenDto>());
         return mock;
     }

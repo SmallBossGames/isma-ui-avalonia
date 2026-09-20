@@ -293,34 +293,51 @@ public class EditorPlatformService : IEditorPlatformService
 }
 ```
 
-### SyntaxHighlighterService
+### LspSyntaxHighlighter
 
-**File:** `ISMA.ViewModels/Services/SyntaxHighlighterService.cs`
+**File:** `ISMA.ExternalServices/Lsp/LspSyntaxHighlighter.cs`
 
-Calls `_serverFacade.HighlightSource(source)` to get `SyntaxTokenDto[]`:
+Implements `ISyntaxHighlighter` by delegating to the `LspClient` (see [`03-external-services.md`](03-external-services.md)). Maps LSP token types to `SyntaxTokenKind` and returns line-based `SyntaxTokenDto` records:
 
 ```csharp
-public class SyntaxHighlighterService : ISyntaxHighlighter
+public sealed class LspSyntaxHighlighter : ISyntaxHighlighter
 {
-    public async Task<SyntaxTokenDto[]> HighlightSource(string source)
-        => await _serverFacade.HighlightSource(source);
+    public async Task<SyntaxTokenDto[]> Highlight(string documentId, string source)
+        => await _lspClient.SemanticTokensAsync(documentId, source)
+            .Select(t => new SyntaxTokenDto(t.Line, t.StartChar, t.Length, MapKind(t.Type)))
+            .ToArray();
+
+    public Task CloseDocument(string documentId)
+    { _lspClient.CloseDocument(documentId); return Task.CompletedTask; }
 }
 ```
 
 ### ServerDrivenHighlightingTransformer
 
-**File:** `ISMA.App/Services/ServerDrivenHighlightingTransformer.cs`
+**File:** `ISMA.TextEditor/ServerDrivenHighlightingTransformer.cs`
 
-`DocumentColorizingTransformer` subclass that applies server tokens to AvaloniaEdit rendering:
+`DocumentColorizingTransformer` subclass that applies line-based server tokens to AvaloniaEdit rendering:
 
 ```csharp
-public class ServerDrivenHighlightingTransformer : DocumentColorizingTransformer
+public class ServerDrivenHighlightingTransformer(IReadOnlyList<SyntaxTokenDto> tokens) : DocumentColorizingTransformer
 {
-    private readonly IReadOnlyList<SyntaxTokenDto> _tokens;
-
-    protected override void ColorizeLine(DocumentLine line, IColorizingContext context)
+    protected override void ColorizeLine(DocumentLine line)
     {
-        // Find tokens overlapping this line, apply foreground brushes
+        var relevantTokens = tokens
+            .Where(t => t.Line == line.LineNumber)
+            .OrderBy(t => t.StartChar)
+            .ToList();
+
+        foreach (var token in relevantTokens)
+        {
+            var start = line.Offset + token.StartChar;
+            var (color, weight, style) = GetStyleForKind(token.Kind);
+            ChangeLinePart(start, start + token.Length, element =>
+            {
+                element.TextRunProperties.SetForegroundBrush(color);
+                // ... set typeface (weight/style)
+            });
+        }
     }
 }
 ```
@@ -332,7 +349,7 @@ public class ServerDrivenHighlightingTransformer : DocumentColorizingTransformer
 | `Keyword` | Orange |
 | `Comment` | Gray |
 | `Number` | Blue |
-| `Text` | Green |
+| `Text` | Black |
 | Other | Black |
 
 **Debouncing:** Uses a version counter (`_highlightVersion`) in `LismaProjectViewModel` to discard stale highlighting updates. A 100ms delay is used between text changes and highlighting requests.

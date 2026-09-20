@@ -69,7 +69,7 @@ public partial class IsmaTextEditor : UserControl, IDisposable
             textView.LineTransformers.Remove(old);
         }
 
-        _highlightingTransformer = new ServerDrivenHighlightingTransformer(tokens);
+        _highlightingTransformer = new ServerDrivenHighlightingTransformer(tokens, Editor.Document, source.Length);
         textView.LineTransformers.Add(_highlightingTransformer);
         textView.Redraw();
     }

@@ -6,25 +6,15 @@ using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
 using ISMA.App.ViewModels;
 using Moq;
-using SyntaxTokenDto = ISMA.Domain.Dtos.SyntaxTokenDto;
 
 namespace ISMA.Tests.TextEditor;
 
 public class TextEditorServiceTests
 {
-    private static Mock<ISyntaxHighlighter> CreateSyntaxHighlighterMock()
-    {
-        var mock = new Mock<ISyntaxHighlighter>();
-        mock.Setup(m => m.Highlight(It.IsAny<string>()))
-            .ReturnsAsync(Array.Empty<SyntaxTokenDto>());
-        return mock;
-    }
 
     private static Mock<ISimulationServerFacade> CreateFacadeMock()
     {
         var mock = new Mock<ISimulationServerFacade>();
-        mock.Setup(f => f.HighlightSource(It.IsAny<string>()))
-            .ReturnsAsync(Array.Empty<SyntaxTokenDto>());
         mock.Setup(f => f.CompileModel(It.IsAny<string>()))
             .ReturnsAsync(new CompileResult { Errors = default });
         mock.Setup(f => f.ValidateModel(It.IsAny<string>()))
@@ -32,47 +22,6 @@ public class TextEditorServiceTests
         return mock;
     }
 
-    [Fact]
-    public async Task SyntaxHighlighter_Can_Highlight_Empty_Source()
-    {
-        var mockFacade = CreateFacadeMock();
-        var tokens = await mockFacade.Object.HighlightSource("");
-        tokens.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task SyntaxHighlighter_Can_Highlight_Valid_Source()
-    {
-        var mockFacade = CreateFacadeMock();
-        var expectedTokens = new SyntaxTokenDto[]
-        {
-            new SyntaxTokenDto { Start = 0, Length = 5, Kind = SyntaxTokenKind.Keyword },
-            new SyntaxTokenDto { Start = 6, Length = 10, Kind = SyntaxTokenKind.Text },
-            new SyntaxTokenDto { Start = 17, Length = 3, Kind = SyntaxTokenKind.Keyword },
-        };
-        mockFacade.Setup(f => f.HighlightSource(It.IsAny<string>()))
-            .ReturnsAsync(expectedTokens);
-
-        var source = "state TestState\nend";
-        var tokens = await mockFacade.Object.HighlightSource(source);
-        tokens.Should().NotBeEmpty();
-        tokens.Length.Should().Be(3);
-        tokens[0].Kind.Should().Be(SyntaxTokenKind.Keyword);
-        tokens[1].Kind.Should().Be(SyntaxTokenKind.Text);
-        tokens[2].Kind.Should().Be(SyntaxTokenKind.Keyword);
-    }
-
-    [Fact]
-    public async Task SyntaxHighlighter_Returns_Empty_For_Invalid_Source()
-    {
-        var mockFacade = new Mock<ISimulationServerFacade>();
-        mockFacade.Setup(f => f.HighlightSource(It.IsAny<string>()))
-            .ReturnsAsync(Array.Empty<SyntaxTokenDto>());
-
-        var source = "invalid$$syntax";
-        var tokens = await mockFacade.Object.HighlightSource(source);
-        tokens.Should().BeEmpty();
-    }
 
     [Fact]
     public async Task CompileModel_Can_Compile_Valid_Source()

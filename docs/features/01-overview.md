@@ -168,29 +168,25 @@ public partial class SimulationServiceViewModel : ISimulationServiceViewModel
 
 ## DI Configuration
 
-**File:** `ISMA.App/App.axaml.cs::ConfigureServiceCollection()`
+**File:** `ISMA.App/App.axaml.cs::ConfigureServiceCollection()` + `ISMA.App/ServiceCollectionExtensions.cs::ConfigureAppServices()`
 
 ```csharp
-services
-    // Domain contracts
-    .AddSingleton<ISimulationServerFacade, SimulationServerFacade>()
-    .AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>()
-    .AddSingleton<IProjectService, ProjectService>()
-    .AddSingleton<IProjectFileService, ProjectFileService>()
-    .AddSingleton<IErrorListViewModel, ErrorListViewModel>()
-    .AddSingleton<ISimulationServiceViewModel, SimulationServiceViewModel>()
-    .AddSingleton<ISimulationResultService, SimulationResultService>()
-    .AddSingleton<ISimulationParametersStoreService, SimulationParametersService>()
-    .AddSingleton<IPreferencesProvider, PreferencesProvider>()
-    .AddSingleton<IDialogService, DialogService>()
-    .AddSingleton<IEditorPlatformService, EditorPlatformService>()
-    // ViewModels
-    .AddSingleton<MainWindowViewModel>()
-    // Views
-    .AddSingleton<MainWindow>();
+// App.axaml.cs — app-specific registrations (transport + facade)
+services.AddSingleton<ISimulationServerFacade>(sp => /* manager + socket handler + logger */);
+services.AddSingleton<LspProcessManager>();
+services.AddSingleton<ILspTransport>(sp => sp.GetRequiredService<LspProcessManager>().Start());
+
+services.ConfigureAppServices();
 ```
 
-All registrations use `AddSingleton()` (singleton) lifecycle. Views are resolved on-demand by the Avalonia `ViewLocator`.
+```csharp
+// ServiceCollectionExtensions.cs — shared with integration tests
+services.AddSingleton<LspClient>();
+services.AddSingleton<ISyntaxHighlighter, LspSyntaxHighlighter>();
+// ... project, editor, simulation, and view registrations
+```
+
+All registrations use `AddSingleton()` (singleton) lifecycle. Views are resolved on-demand by the Avalonia `ViewLocator`. Integration tests call `ConfigureAppServices()` and override `ILspTransport` with an in-memory `FakeLspTransport` (and `ISimulationServerFacade` with a mock) before building the service provider.
 
 ## Key Differences from JavaFX/Kotlin Original
 

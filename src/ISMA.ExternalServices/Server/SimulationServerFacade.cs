@@ -40,12 +40,6 @@ public sealed class SimulationServerFacade : ISimulationServerFacade, IDisposabl
         return await _compilerClient!.ValidateModelAsync(source).ConfigureAwait(false);
     }
 
-    public async Task<SyntaxTokenDto[]> HighlightSource(string source)
-    {
-        EnsureClients();
-        return await _compilerClient!.HighlightSourceAsync(source).ConfigureAwait(false);
-    }
-
     public async Task<long> RunSimulation(RunSimulationParams @params)
     {
         EnsureClients();

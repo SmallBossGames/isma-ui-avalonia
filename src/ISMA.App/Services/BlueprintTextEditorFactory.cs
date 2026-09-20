@@ -25,6 +25,7 @@ public sealed class BlueprintTextEditorFactory : ISMA.BlueprintEditor.Services.I
     {
         private readonly IsmaTextEditor _editor = new();
         private readonly ISyntaxHighlighter? _highlighter;
+        private readonly string _documentId = Guid.NewGuid().ToString("N");
         private int _highlightVersion;
 
         public IsmaTextEditorAdapter(ISyntaxHighlighter? highlighter)
@@ -60,7 +61,7 @@ public sealed class BlueprintTextEditorFactory : ISMA.BlueprintEditor.Services.I
         {
             try
             {
-                var tokens = await highlighter.Highlight(source);
+                var tokens = await highlighter.Highlight(_documentId, source);
                 if (version != _highlightVersion)
                     return;
                 _editor.SetServerDrivenHighlighting(tokens, source);
@@ -75,6 +76,7 @@ public sealed class BlueprintTextEditorFactory : ISMA.BlueprintEditor.Services.I
         {
             _editor.TextChanged -= OnEditorTextChanged;
             _editor.Dispose();
+            _ = _highlighter?.CloseDocument(_documentId);
         }
     }
 }

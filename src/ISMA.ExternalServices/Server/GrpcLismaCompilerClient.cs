@@ -87,24 +87,6 @@ public sealed class GrpcLismaCompilerClient : IDisposable
         return ValidateModelAsync(source, ct).GetAwaiter().GetResult();
     }
 
-    public async Task<SyntaxTokenDto[]> HighlightSourceAsync(string source, CancellationToken ct = default)
-    {
-        var request = new HighlightRequest { SourceCode = source };
-
-        var response = await _client.HighlightAsync(request, cancellationToken: ct).ConfigureAwait(false);
-
-        return response.Tokens.Select(t => new SyntaxTokenDto
-        {
-            Start = t.Start,
-            Length = t.Length,
-            Kind = MapTokenKind(t.Kind),
-        }).ToArray();
-    }
-
-    public SyntaxTokenDto[] HighlightSource(string source, CancellationToken ct = default)
-    {
-        return HighlightSourceAsync(source, ct).GetAwaiter().GetResult();
-    }
 
     public async Task DeleteCompiledModelAsync(string modelId, CancellationToken ct = default)
     {
@@ -122,18 +104,6 @@ public sealed class GrpcLismaCompilerClient : IDisposable
         DeleteCompiledModelAsync(modelId, ct).GetAwaiter().GetResult();
     }
 
-    private static SyntaxTokenKind MapTokenKind(TokenKind kind)
-    {
-        return kind switch
-        {
-            TokenKind.Unspecified => SyntaxTokenKind.Unspecified,
-            TokenKind.Keyword => SyntaxTokenKind.Keyword,
-            TokenKind.Comment => SyntaxTokenKind.Comment,
-            TokenKind.Number => SyntaxTokenKind.Number,
-            TokenKind.Text => SyntaxTokenKind.Text,
-            _ => SyntaxTokenKind.Unspecified,
-        };
-    }
 
     public void Dispose()
     {

@@ -24,12 +24,10 @@ public sealed class ValidationResult
     public ImmutableArray<string> Warnings { get; set; } = [];
 }
 
-public sealed class SyntaxTokenDto
-{
-    public int Start { get; set; }
-    public int Length { get; set; }
-    public SyntaxTokenKind Kind { get; set; }
-}
+/// <summary>
+/// A semantic syntax token with line/column offsets (LSP model).
+/// </summary>
+public sealed record SyntaxTokenDto(int Line, int StartChar, int Length, SyntaxTokenKind Kind);
 
 public sealed class CachedSimulationResult
 {

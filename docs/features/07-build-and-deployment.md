@@ -203,6 +203,7 @@ var configuration = new ConfigurationBuilder()
 
 string? serverPath = configuration["Server:ScriptPath"];
 string? grinPath = configuration["Grin:ScriptPath"];
+string? lspPath = configuration["Lsp:ScriptPath"];
 ```
 
 ## Dependency Injection
@@ -213,8 +214,11 @@ All services and ViewModels are registered in `App.axaml.cs::ConfigureServiceCol
 public static void ConfigureServiceCollection(IServiceCollection services)
 {
     // Infrastructure services
-    services.AddSingleton<ISimulationServerFacade, SimulationServerFacade>();
-    services.AddSingleton<ISyntaxHighlighter, SyntaxHighlighterService>();
+    services.AddSingleton<ISimulationServerFacade>(sp => /* manager + socket handler + logger */);
+    services.AddSingleton<LspProcessManager>();
+    services.AddSingleton<ILspTransport>(sp => sp.GetRequiredService<LspProcessManager>().Start());
+    services.AddSingleton<LspClient>();
+    services.AddSingleton<ISyntaxHighlighter, LspSyntaxHighlighter>();
 
     // Domain services
     services.AddSingleton<IProjectService, ProjectService>();

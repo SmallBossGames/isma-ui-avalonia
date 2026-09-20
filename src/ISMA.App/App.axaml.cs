@@ -6,8 +6,8 @@ using ISMA.App.Services;
 using ISMA.Domain.Contracts;
 using ISMA.ExternalServices.ChartViewer;
 using ISMA.ExternalServices.FileStorage;
+using ISMA.ExternalServices.Lsp;
 using ISMA.ExternalServices.Server;
-using ISMA.App.Services;
 using ISMA.App.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,6 +78,12 @@ public partial class App : Application
         {
             AppContext.SetData("isma.grin.script", grinPath);
         }
+
+        var lspPath = config["Lsp:ScriptPath"];
+        if (!string.IsNullOrWhiteSpace(lspPath))
+        {
+            AppContext.SetData("isma.lsp.script", lspPath);
+        }
     }
 
     private static IServiceCollection ConfigureServiceCollection()
@@ -95,6 +101,8 @@ public partial class App : Application
             var logger = sp.GetService<ILogger<SimulationServerFacade>>();
             return new SimulationServerFacade(manager, socketHandler, logger);
         });
+        services.AddSingleton<LspProcessManager>();
+        services.AddSingleton<ILspTransport>(sp => sp.GetRequiredService<LspProcessManager>().Start());
 
         services.ConfigureAppServices();
 
