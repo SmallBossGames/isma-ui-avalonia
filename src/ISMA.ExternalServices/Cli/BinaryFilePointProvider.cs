@@ -2,7 +2,7 @@ using System.Text;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 
-namespace ISMA.ExternalServices.Server;
+namespace ISMA.ExternalServices.Cli;
 
 /// <summary>
 /// Reads simulation result files in the ISMA binary exchange format written by

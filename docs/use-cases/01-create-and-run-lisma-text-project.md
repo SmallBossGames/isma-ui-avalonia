@@ -22,7 +22,7 @@
    - *"Monitoring simulation..."* — establishes a server-streaming gRPC channel to receive progress updates.
    - *"Downloading results..."* — fetches the binary `.bin` result file via HTTP over a Unix Domain Socket.
    - *"Simulation complete"* — the result is committed locally.
-7. During execution, a progress bar appears in the **Tasks PopOver** (accessed via the **Tasks** button), showing the simulation's progress from 0% to 100%. If compilation produces errors, they are displayed in the **Error List** DataGrid at the bottom of the window.
+7. During execution, a progress bar appears in the **Tasks PopOver** (accessed via the **Tasks** button), showing the simulation's progress from 0% to 100%. If compilation produces errors, they are displayed in the **Error List** TableView at the bottom of the window.
 8. After completion, the simulation appears in the **Tasks PopOver > Completed** section with the model name, a **Show** button, an **Export** button, and a **Remove** button.
 
 ## Alternative Flows

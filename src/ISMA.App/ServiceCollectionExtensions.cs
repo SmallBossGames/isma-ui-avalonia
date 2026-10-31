@@ -5,7 +5,6 @@ using ISMA.Domain.Contracts;
 using ISMA.ExternalServices.ChartViewer;
 using ISMA.ExternalServices.FileStorage;
 using ISMA.ExternalServices.Lsp;
-using ISMA.ExternalServices.Server;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ISMA.App;
@@ -20,7 +19,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<GrinProcessLauncher>();
         services.AddSingleton<PreferencesProvider>();
-        services.AddSingleton<SimulationServerManager>();
         services.AddSingleton<WindowProvider>();
         services.AddSingleton<IProjectFileService, ProjectFileService>();
         services.AddSingleton<ITextEditorFactory, TextEditorFactory>();

@@ -5,7 +5,7 @@ using ISMA.App.Views;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 using ISMA.ExternalServices.ChartViewer;
-using ISMA.ExternalServices.Server;
+using ISMA.ExternalServices.Cli;
 using ISMA.App.ViewModels;
 using System.Collections.ObjectModel;
 using System.Linq;

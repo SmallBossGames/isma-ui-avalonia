@@ -69,7 +69,7 @@ The Application layer depends on all presentation and infrastructure modules; ea
 - **Syntax highlighting** — AvaloniaEdit with LISMA language syntax highlight definition, backed by server-side tokenization via gRPC
 - **Simulation management** — Run, stop, and monitor ISMA simulations via gRPC or HTTP against the simulation server
 - **Properties grid** — Custom `PropertiesGrid` control for editing simulation parameters
-- **Error list** — DataGrid-bound error list with row, position, fragment, and message columns
+- **Error list** — TableView-bound error list with row, position, fragment, and message columns
 - **Fluent theme** — Native-looking UI with custom global styles (colors, fonts, control templates)
 - **Cross-platform** — Runs on Windows, Linux, and macOS via Avalonia desktop
 
@@ -79,7 +79,6 @@ The Application layer depends on all presentation and infrastructure modules; ea
 |---|---|---|
 | Avalonia | 12.1.2 | UI framework |
 | Avalonia.Themes.Fluent | 12.1.2 | Fluent design theme |
-| Avalonia.Controls.DataGrid | 12.1.2 | Data grid control |
 | Avalonia.AvaloniaEdit | 12.0.0 | Code editing control |
 | AvaloniaEdit.TextMate | 12.0.0 | TextMate syntax integration |
 | Avalonia.Wayland | 12.1.2 | Native Wayland backend (Linux) |

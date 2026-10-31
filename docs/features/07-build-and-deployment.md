@@ -58,9 +58,9 @@ Pure C# assembly with no external dependencies. Contains domain models, DTOs, se
 
 Dependencies: `ISMA.Domain`, `ISMA.Infrastructure`, `CommunityToolkit.Mvvm`.
 
-### ISMA.Infrastructure
+### ISMA.ExternalServices
 
-**File:** `src/ISMA.Infrastructure/ISMA.Infrastructure.csproj`
+**File:** `src/ISMA.ExternalServices/ISMA.ExternalServices.csproj`
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -72,13 +72,12 @@ Dependencies: `ISMA.Domain`, `ISMA.Infrastructure`, `CommunityToolkit.Mvvm`.
     <ProjectReference Include="..\ISMA.Domain\ISMA.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Net.Client" />
-    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 </Project>
 ```
 
-Dependencies: `ISMA.Domain`, `Grpc.Net.Client`, `System.Text.Json`.
+Dependencies: `ISMA.Domain`, `Microsoft.Extensions.Logging.Abstractions`.
 
 ### ISMA.App
 
@@ -160,12 +159,15 @@ dotnet test tests/ISMA.Tests/ISMA.Tests.csproj
 
 ### Prerequisites
 
-The application requires an `appsettings.json` configuration file with paths to the ISMA server and Grin chart viewer:
+The application requires an `appsettings.json` configuration file with paths to the LISMA compiler CLI, the simulation runner CLI, and the Grin chart viewer:
 
 ```json
 {
-  "Server": {
-    "ScriptPath": "/path/to/isma-server"
+  "Compiler": {
+    "ScriptPath": "/path/to/lisma-compiler-cli"
+  },
+  "Runner": {
+    "ScriptPath": "/path/to/simulation-runner-cli"
   },
   "Grin": {
     "ScriptPath": "/path/to/grin"
@@ -173,10 +175,9 @@ The application requires an `appsettings.json` configuration file with paths to 
 }
 ```
 
-Configuration resolution priority:
-1. `appsettings.json` (embedded resource, loaded via `IConfiguration`)
-2. Environment variable `ISMA_SERVER_SCRIPT` (fallback for server path)
-3. Environment variable `ISMA_GRIN_SCRIPT` (fallback for Grin path)
+Configuration resolution priority (per tool):
+1. Environment variable (`ISMA_COMPILER_CLI`, `ISMA_RUNNER_CLI`, `ISMA_GRIN_SCRIPT`)
+2. `appsettings.json` / `appsettings.Local.json` (`Compiler:ScriptPath`, `Runner:ScriptPath`, `Grin:ScriptPath`, loaded via `IConfiguration`)
 
 ### Via run.sh
 
@@ -192,6 +193,29 @@ The provided `run.sh` script sets up the environment and launches the applicatio
 dotnet run --project src/ISMA.App/ISMA.App.csproj
 ```
 
+### Via the ISMA bundle
+
+The ISMA repository's `./.ci-cd/build-bundle.sh` produces `build/bundle/` with standalone CLI distributions. Point the app at them via environment variables:
+
+```bash
+ISMA_COMPILER_CLI=/path/to/bundle/lisma-compiler-cli-app/bin/lisma-compiler-cli \
+ISMA_RUNNER_CLI=/path/to/bundle/simulation-runner-cli-app/bin/simulation-runner-cli \
+ISMA_GRIN_SCRIPT=/path/to/bundle/grin-app/bin/app \
+ISMA_LSP_SCRIPT=/path/to/bundle/isma-lsp-app/bin/isma-lsp \
+./run.sh
+```
+
+Or in `appsettings.json` / `appsettings.Local.json`:
+
+```json
+{
+  "Compiler": { "ScriptPath": "/path/to/bundle/lisma-compiler-cli-app/bin/lisma-compiler-cli" },
+  "Runner": { "ScriptPath": "/path/to/bundle/simulation-runner-cli-app/bin/simulation-runner-cli" },
+  "Grin": { "ScriptPath": "/path/to/bundle/grin-app/bin/app" },
+  "Lsp": { "ScriptPath": "/path/to/bundle/isma-lsp-app/bin/isma-lsp" }
+}
+```
+
 ### Configuration File Location
 
 The `appsettings.json` is embedded as an Avalonia resource and loaded at startup via `Microsoft.Extensions.Configuration`. The path resolution happens in `App.axaml.cs::ConfigureServiceCollection()`:
@@ -201,7 +225,8 @@ var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true)
     .Build();
 
-string? serverPath = configuration["Server:ScriptPath"];
+string? compilerPath = configuration["Compiler:ScriptPath"];
+string? runnerPath = configuration["Runner:ScriptPath"];
 string? grinPath = configuration["Grin:ScriptPath"];
 string? lspPath = configuration["Lsp:ScriptPath"];
 ```
@@ -360,8 +385,9 @@ Unix domain socket communication requires the target platform to support Unix so
 
 | Issue | Solution |
 |-------|----------|
-| Server not found | Verify `Server:ScriptPath` in `appsettings.json` points to a valid ISMA server executable |
+| Compiler not found | Verify `Compiler:ScriptPath` in `appsettings.json` (or `ISMA_COMPILER_CLI`) points to a valid `lisma-compiler-cli` launch script |
+| Runner not found | Verify `Runner:ScriptPath` in `appsettings.json` (or `ISMA_RUNNER_CLI`) points to a valid `simulation-runner-cli` launch script |
 | Grin not launching | Verify `Grin:ScriptPath` in `appsettings.json` points to a valid Grin launcher script |
-| Syntax highlighting not working (server) | Check server connectivity; falls back to embedded XSHD highlighting |
-| Build fails on non-Linux | Ensure .NET 9 SDK is installed; Unix socket support is available on all platforms |
+| Syntax highlighting not working | Check `Lsp:ScriptPath` / `ISMA_LSP_SCRIPT` and that the `isma-lsp` process starts |
+| Build fails on non-Linux | Ensure the matching .NET SDK is installed |
 | DI resolution fails | Verify all services are registered in `ConfigureServiceCollection()` |

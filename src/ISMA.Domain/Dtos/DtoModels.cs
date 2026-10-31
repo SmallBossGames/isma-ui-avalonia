@@ -50,14 +50,4 @@ public sealed class RunSimulationParams
     public double EventDetectionLowBorder { get; set; }
 }
 
-public sealed class SocketPaths
-{
-    public string Grpc { get; set; } = "";
-    public string Http { get; set; } = "";
 
-    public SocketPaths(string grpc, string http)
-    {
-        Grpc = grpc;
-        Http = http;
-    }
-}

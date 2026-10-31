@@ -19,7 +19,7 @@ ISMA.App/
 │   ├── BlueprintEditorView.axaml            # Visual statechart editor canvas
 │   ├── EditArrowPopOverView.axaml           # Floating arrow edit dialog
 │   ├── SettingsPanelView.axaml              # Right sidebar settings panel
-│   ├── IsmaErrorListTableView.axaml         # Error list DataGrid
+│   ├── IsmaErrorListTableView.axaml         # Error list TableView
 │   ├── SimulationProcessBarView.axaml       # Bottom process bar
 │   ├── TasksPopOverView.axaml               # In-progress + completed simulations
 │   └── SelectVariablesDialogWindow.axaml    # Chart variable selector dialog
@@ -108,7 +108,7 @@ Three-row `Grid` layout:
 │  │  │                               │                             │
 │  │  └───────────────────────────────┘                             │
 │  ├───────────────────────────────────────────────────────────────┤ │
-│  │ Error List (DataGrid: Row/Pos/Fragment/Message)               │ │
+│  │ Error List (TableView: Row/Pos/Fragment/Message)              │ │
 │  ├───────────────────────────────────────────────────────────────┤ │
 │  │ [▶ Run] ┌─────────────────────────────────────────────────┐  │ │
 │  │         │ Tasks ▼ (flyout with In Progress + Completed)   │  │ │
@@ -487,7 +487,7 @@ Supports:
 
 **File:** `Views/IsmaErrorListTableView.axaml`
 
-`DataGrid` with columns:
+`TableView` with columns:
 
 | Column | Width | Content |
 |--------|-------|---------|
@@ -562,7 +562,7 @@ Defines the application-wide theme:
 Custom styles for:
 - `Button` / `ToggleButton` — hover and pressed states
 - `MenuItem` — hover background
-- `TextBox` / `DataGrid` — focus border with accent color
+- `TextBox` / `TableView` — focus border with accent color
 - `TabControl` — tab item styling
 - `BoxShadow` — utility style for elevation effects
 
@@ -643,7 +643,7 @@ public partial class CompletedSimulationViewModel
 
 | Scenario | Behavior |
 | --- | --- |
-| Compilation errors | `CompilationErrorDto[]` → `ErrorInfo[]` → `ErrorListViewModel.Errors` → `DataGrid` |
+| Compilation errors | `CompilationErrorDto[]` → `ErrorInfo[]` → `ErrorListViewModel.Errors` → `TableView` |
 | Server process not found | `InvalidOperationException` — server script path not configured |
 | Missing config | `InvalidOperationException` — server or Grin script path not found in appsettings.json |
 | Simulation failure | Exception re-thrown from `SimulationServiceViewModel`, displayed in error list |

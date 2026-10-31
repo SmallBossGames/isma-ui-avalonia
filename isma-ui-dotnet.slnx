@@ -1,7 +1,6 @@
 <Solution>
   <Project type="crossplat" Path="src/ISMA.App/ISMA.App.csproj" />
   <Project Path="src/ISMA.Domain/ISMA.Domain.csproj" />
-  <Project Path="src/ISMA.Grpc/ISMA.Grpc.csproj" />
   <Project Path="src/ISMA.ExternalServices/ISMA.ExternalServices.csproj" />
   <Project Path="src/ISMA.Toolkit/ISMA.Toolkit.csproj" />
   <Project Path="src/ISMA.TextEditor/ISMA.TextEditor.csproj" />

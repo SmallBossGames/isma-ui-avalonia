@@ -35,7 +35,7 @@ This document describes the complete user experience of the ISMA desktop applica
 │  │  │                               │                         │
 │  │  └───────────────────────────────┘                         │
 │  ├─────────────────────────────────────────────────────────────┤ │
-│  │ Error List (DataGrid: Row/Pos/Fragment/Message)             │ │
+│  │ Error List (TableView: Row/Pos/Fragment/Message)            │ │
 │  ├─────────────────────────────────────────────────────────────┤ │
 │  │ [▶ Run] ┌─────────────────────────────────────────────────┐ │ │
 │  │         │ Tasks ▼ (flyout with In Progress + Completed)   │ │ │
@@ -222,7 +222,7 @@ When a blueprint project is compiled/simulated, the visual statechart is automat
 
 **Implementation:** Five `PropertiesGrid` controls, each dynamically generating property input fields from a ViewModel using reflection. The panel uses a label-control pair layout.
 
-**Data flow:** The panel reads from and writes to the `SimulationParametersViewModel` singleton, which holds all parameter sub-ViewModels. When the user clicks "Run", the service's `Snapshot()` method captures the current view model state into a serializable `SimulationParameters` model, which is then sent to the server via gRPC. The panel values are **not** live-bound to the simulation — they are only read at the moment of execution.
+**Data flow:** The panel reads from and writes to the `SimulationParametersViewModel` singleton, which holds all parameter sub-ViewModels. When the user clicks "Run", the service's `Snapshot()` method captures the current view model state into a serializable `SimulationParameters` model, which is then passed to the simulation runner CLI. The panel values are **not** live-bound to the simulation — they are only read at the moment of execution.
 
 ---
 
@@ -238,7 +238,7 @@ When a blueprint project is compiled/simulated, the visual statechart is automat
 | **End** | NumericUpDown | Double | 10.0 | `EndTime` |
 | **Step** | NumericUpDown | Double | 0.1 | `InitialStep` |
 
-**When values are consumed:** Only when "Run" is clicked. The values are captured via `Snapshot()` → `SimulationParameters` → sent to server via gRPC.
+**When values are consumed:** Only when "Run" is clicked. The values are captured via `Snapshot()` → `SimulationParameters` → passed to the simulation runner CLI.
 
 **Parameter details:**
 - **Start (t₀):** The initial time value. The integration begins from this point. Must be less than or equal to End.
@@ -269,7 +269,7 @@ When a blueprint project is compiled/simulated, the visual statechart is automat
 - **Accuracy field:** Disabled when "Accurate" is unchecked
 - **Server / Port fields:** Disabled when "Parallel" is unchecked
 
-**When values are consumed:** At simulation start, via `Snapshot()` → `SimulationParameters` → sent to server via gRPC.
+**When values are consumed:** At simulation start, via `Snapshot()` → `SimulationParameters` → passed to the simulation runner CLI.
 
 **Parameter details:**
 - **Method:** The numerical integration algorithm. Different methods offer different trade-offs between speed and accuracy.
@@ -356,7 +356,7 @@ SimulationParametersViewModel holds all 5 sub-ViewModels as a singleton
         ↓
 On "Run" click → Snapshot() captures all ViewModels → SimulationParameters
         ↓
-Sent to SimulationServerFacade.RunSimulation() → server via gRPC
+Sent to CliSimulationFacade.RunSimulation() → simulation runner CLI
 ```
 
 **Parameters sent to server:** Cauchy initials (start, end, step), integration method (name, accuracy, flags), event detection (gamma, low border — only when enabled).
@@ -369,7 +369,7 @@ Sent to SimulationServerFacade.RunSimulation() → server via gRPC
 
 ### Error List Drawer
 
-A DataGrid panel between the editor area and the process bar.
+A TableView panel between the editor area and the process bar.
 
 **Columns:**
 
@@ -541,7 +541,7 @@ sequenceDiagram
     Server-->>SimSvc: CompileResult
 
     alt Compilation errors
-        SimSvc->>Errors: Display errors in DataGrid
+        SimSvc->>Errors: Display errors in TableView
         SimSvc-->>UI: Stop (no simulation)
     else Compilation succeeds
         SimSvc->>Server: RunSimulation(params)
@@ -588,7 +588,7 @@ sequenceDiagram
     Server-->>PdeSvc: ValidateResult
 
     alt Validation errors
-        PdeSvc->>Errors: Display errors in DataGrid
+        PdeSvc->>Errors: Display errors in TableView
     else No errors
         PdeSvc->>Errors: Clear error list
     end
@@ -744,11 +744,11 @@ sequenceDiagram
 | **Text-based LISMA editing** | Text editor tab | Rich text editor with syntax highlighting and line numbers |
 | **Visual statechart editing** | Blueprint editor tab | Drag-and-drop canvas with states, transitions, and loop transactions |
 | **Remote syntax highlighting** | Text editor | Server-driven tokenization — keywords, comments, numbers colored |
-| **Model compilation** | Server (via gRPC) | Compiles LISMA text or blueprint to a runnable model |
-| **Model validation** | Server (via gRPC) | Validates source code without running (Verify button) |
-| **Simulation execution** | Server (via gRPC) | Runs the compiled model with given parameters |
-| **Real-time progress** | gRPC stream | Server pushes progress updates during simulation |
-| **Simulation cancellation** | gRPC call | Stops a running simulation mid-execution |
+| **Model compilation** | `lisma-compiler-cli` process | Compiles LISMA text or blueprint to a runnable model |
+| **Model validation** | `lisma-compiler-cli` process | Validates source code without running (Verify button) |
+| **Simulation execution** | `simulation-runner-cli` process | Runs the compiled model with given parameters |
+| **Real-time progress** | Progress file polling | Runner writes current time to a progress file, polled every 100 ms |
+| **Simulation cancellation** | SIGTERM to runner process | Stops a running simulation mid-execution |
 | **Error list** | Bottom drawer | Tabular display of compilation/validation errors |
 | **Simulation parameters** | Right sidebar | Configurable: time range, integration method, event detection, result storage |
 | **Parameter presets** | Store/Load settings | Save and load parameter sets as JSON files |
@@ -770,17 +770,18 @@ sequenceDiagram
 When building a replacement UI with the same features:
 
 1. **Separation of concerns:** The UI is cleanly layered — domain models (pure data) → infrastructure (server communication) → ViewModels (business logic) → views (UI components)
-2. **Server communication:** All compilation, validation, and simulation happen on a separate server process. The UI communicates via gRPC (compile, validate, run, monitor, cancel, download) and HTTP (binary result download).
+2. **CLI tool communication:** All compilation, validation, and simulation happen in standalone CLI tools launched as child processes by the UI: `lisma-compiler-cli` (LISMA source on stdin → compiled `.class` on stdout) and `simulation-runner-cli` (compiled model + parameters → binary result file + progress file).
 3. **Multi-project:** Projects are managed in an `ObservableCollection` with an active project concept. Each project has its own ViewModel.
 4. **Observable collections:** UI state is driven by `ObservableCollection<T>` that updates the UI reactively via Avalonia bindings.
 5. **Blueprint-to-text:** The blueprint editor is a visual layer that serializes to/from a LISMA text representation. The conversion happens at compile time via `BlueprintToLismaConverter`, not in real-time.
-6. **External processes:** Three external processes are launched by the UI:
-   - ISMA Server (gRPC backend) — launched automatically on first use via `SimulationServerManager`
+6. **External processes:** Four external processes are launched by the UI:
+   - LISMA Compiler CLI (`lisma-compiler-cli`) — launched per compile/validate via `LismaCompilerCli`
+   - Simulation Runner CLI (`simulation-runner-cli`) — launched per simulation run via `SimulationRunnerCli`
    - LISMA Language Server (`isma-lsp`) — launched at startup via `LspProcessManager`, provides syntax highlighting over LSP
    - Grin Chart Viewer — launched on-demand when user clicks "Show" on results via `GrinProcessLauncher`
 7. **Preferences:** Window geometry and last-opened files are persisted as JSON via `PreferencesProvider`. Simulation parameters are stored/loaded as separate JSON files by the user via `ISimulationParametersStoreService`.
 8. **Syntax highlighting:** Computed by the `isma-lsp` language server process (LSP `semanticTokens/full` over stdio). The UI receives line/column token positions and kinds, then applies colors via `DocumentColorizingTransformer` in AvaloniaEdit.
-9. **Result format:** Binary files containing `SimulationPoint` records (x, yForDE[], rhs[][]). Column names come from server metadata. Both the chart viewer and CSV export consume this binary format via `BinaryFilePointProvider`.
+9. **Result format:** Binary files containing `SimulationPoint` records (x, yForDE[], rhs[][]). Column names come from the result file header. Both the chart viewer and CSV export consume this binary format via `BinaryFilePointProvider`.
 10. **Clipboard propagation:** Cut/copy/paste events are propagated via `EditorPlatformService` to the focused AvaloniaEdit `TextEditor`.
 11. **Result simplification:** Post-processing simplification uses Radial-Distance or Douglas-Peucker algorithms to reduce data points for smoother chart rendering.
 12. **MVVM pattern:** All UI state is managed in ViewModels using CommunityToolkit.Mvvm source generation. Views bind to ViewModel properties and commands via AXAML `Binding`.

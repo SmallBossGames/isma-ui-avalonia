@@ -10,7 +10,7 @@
 
 2. **Initial run attempt:** The user clicks **Simulation > Run** (`Ctrl+F5`) expecting the model to execute.
 
-3. **Compilation error:** The status shows *"Compiling..."* then displays an error message. The **Error List** DataGrid populates with one or more error rows:
+3. **Compilation error:** The status shows *"Compiling..."* then displays an error message. The **Error List** TableView populates with one or more error rows:
    - Row 12, Position 5, Fragment "main": *"Unknown identifier 'xpr'*"
    - Row 45, Position 2, Fragment "Processing": *"Expected ';' at end of statement"*
 
@@ -56,4 +56,4 @@
 | `src/ISMA.ViewModels/ViewModels/ErrorListViewModel.cs` | Error list display and management |
 | `src/ISMA.ViewModels/ViewModels/LismaProjectViewModel.cs` | `ValidateAsync` for verification |
 | `src/ISMA.ViewModels/ViewModels/SimulationService.cs` | Compile/run pipeline with error handling |
-| `src/ISMA.App/Views/MainWindow.axaml` | Error List DataGrid layout |
+| `src/ISMA.App/Views/MainWindow.axaml` | Error List TableView layout |

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ISMA UI Avalonia is a multi-assembly C# desktop application that provides editing, simulation, and visualization capabilities for the ISMA mathematical modeling environment. It follows a layered architecture: domain models (pure C#) → infrastructure services (gRPC/HTTP clients) → ViewModels (MVVM business logic) → app layer (Avalonia views) with `IServiceCollection` dependency injection wiring the layers together.
+ISMA UI Avalonia is a multi-assembly C# desktop application that provides editing, simulation, and visualization capabilities for the ISMA mathematical modeling environment. It follows a layered architecture: domain models (pure C#) → infrastructure services (CLI tool launchers) → ViewModels (MVVM business logic) → app layer (Avalonia views) with `IServiceCollection` dependency injection wiring the layers together.
 
 ## Assembly Structure
 
@@ -18,8 +18,9 @@ isma-ui-avalonia-2/src/
 │   ├── Services/                        # VM-level services (LismaPdeService, etc.)
 │   ├── Converters/                      # BoolToVisibility, ModeToVisibility, etc.
 │   └── Models/                          # VM-specific models (SimulationParameters, etc.)
-├── ISMA.Infrastructure/                 # Server communication, file storage, chart viewer
-│   ├── Server/                          # gRPC/HTTP clients, server manager, facade
+├── ISMA.ExternalServices/               # External tool communication, file storage, chart viewer
+│   ├── Cli/                             # Compiler/runner CLI launchers, facade
+│   ├── Lsp/                             # isma-lsp process + LSP client
 │   ├── ChartViewer/                     # GrinProcessLauncher
 │   └── FileStorage/                     # PreferencesProvider, JSON serialization
 └── ISMA.App/                            # UI views, controls, app entry point, DI
@@ -51,7 +52,7 @@ The `ISMA.App` assembly depends on all other assemblies. `ISMA.ViewModels` depen
 ### Separation of Concerns
 
 - **Domain layer** — No UI or framework dependencies. Pure C# data classes and interfaces for simulation results, progress, blueprints, and metadata.
-- **Infrastructure** — No Avalonia. gRPC stubs, HTTP client, server process management, file storage, and chart launching are all plain C#.
+- **Infrastructure** — No Avalonia. CLI process management (compiler, runner), LSP client, file storage, and chart launching are all plain C#.
 - **ViewModels** — No Avalonia. All MVVM ViewModels use `CommunityToolkit.Mvvm` source-generated attributes (`[ObservableProperty]`, `[RelayCommand]`). Views bind to ViewModel properties and commands.
 - **App layer** — Wires everything together. Avalonia views observe ViewModels; ViewModels consume infrastructure services and domain models.
 
@@ -86,7 +87,7 @@ ISMA.Domain (contracts/interfaces)
 
 ### Async/Await Concurrency
 
-All long-running operations (simulation monitoring, file I/O, server communication) use `async/await`. The UI thread is never blocked. Progress updates from gRPC streams are marshalled to the ViewModel via `ObservableCollection` additions on the UI thread.
+All long-running operations (simulation monitoring, file I/O, CLI tool communication) use `async/await`. The UI thread is never blocked. Progress updates from the runner's progress file are marshalled to the ViewModel via `ObservableCollection` additions on the UI thread.
 
 ### Observable Collections
 
@@ -99,7 +100,7 @@ sequenceDiagram
     participant Main as Program.Main()
     participant App as App.OnFrameworkInitializationRequested()
     participant DI as ConfigureServices()
-    participant Server as SimulationServerFacade
+    participant Facade as CliSimulationFacade
     participant Window as MainWindow
 
     Main->>App: BuildAvaloniaApp() → Start()
@@ -107,9 +108,8 @@ sequenceDiagram
     DI-->>App: ServiceProvider ready
     App->>Window: Create MainWindowViewModel
     App->>Window: Create MainWindow
-    Window->>Server: Lazy initialization on first call
-    Server->>Server: Start server process (on first use)
     App->>Window: Show window
+    Note over Facade: compiler/runner CLIs are launched per operation (no resident process)
     Window->>Window: Restore window preferences
     Window->>Window: Open last projects
 ```
@@ -199,7 +199,6 @@ All registrations use `AddSingleton()` (singleton) lifecycle. Views are resolved
 | Property Binding | TornadoFX bind() | AXAML Binding + CommunityToolkit source generation |
 | Rich Text Editor | fxmisc.richtext | AvaloniaEdit (ICSharpCode.AvaloniaEdit) |
 | Serialization | kotlinx.serialization | System.Text.Json |
-| gRPC | gRPC-Netty with Epoll | Grpc.Net.Client with Unix socket handler |
-| HTTP Client | Ktor CIO | HttpClient with Unix socket handler |
+| Compilation/Simulation | isma-daemon (gRPC over Unix sockets) | Direct child-process launches of `lisma-compiler-cli` and `simulation-runner-cli` |
 | Icon Library | Ikonli (Material2) | Avalonia.EmbeddedIcon (Material symbols) |
 | Platform | JVM (Linux/macOS/Windows) | .NET (Linux/macOS/Windows) |

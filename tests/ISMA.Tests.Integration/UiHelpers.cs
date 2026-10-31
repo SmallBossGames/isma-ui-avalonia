@@ -235,11 +235,11 @@ public static class UiHelpers
     }
 
     /// <summary>
-    /// Get the ErrorList DataGrid from the MainWindow.
+    /// Get the ErrorList TableView from the MainWindow.
     /// </summary>
-    public static DataGrid? GetErrorList(this MainWindow window)
+    public static TableView? GetErrorList(this MainWindow window)
     {
-        return window.FindControl<DataGrid>(AutomationIds.ErrorList);
+        return window.FindControl<TableView>(AutomationIds.ErrorList);
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ public static class UiHelpers
     }
 
     /// <summary>
-    /// Get the number of rows (items) in the ErrorList DataGrid.
+    /// Get the number of rows (items) in the ErrorList TableView.
     /// </summary>
     public static int GetErrorListRows(this MainWindow window)
     {

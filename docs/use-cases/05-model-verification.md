@@ -11,7 +11,7 @@
 3. If the active project is a Blueprint statechart, the `BlueprintToLismaConverter` first transforms the visual model into LISMA text.
 4. The LISMA text is sent to the server for validation via the `GrpcLismaCompilerClient.ValidateAsync` gRPC call.
 5. The server analyzes the source code and returns a list of errors/warnings.
-6. The **Error List** DataGrid (bottom of the window) is cleared of previous results and populated with the new validation results:
+6. The **Error List** TableView (bottom of the window) is cleared of previous results and populated with the new validation results:
    - **Row:** Line number where the issue occurs.
    - **Position:** Character position on the line.
    - **Fragment:** Code region name.

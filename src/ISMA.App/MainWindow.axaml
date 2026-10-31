@@ -50,42 +50,41 @@
                       Header="Error list"
                       IsExpanded="False"
                       AutomationProperties.AutomationId="ErrorListDrawer">
-                <DataGrid x:Name="ErrorList" AutomationProperties.AutomationId="ErrorList" ItemsSource="{Binding ErrorList.Errors}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          CanUserResizeColumns="False"
-                          MaxHeight="200">
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Width="5*" Header="Row">
-                            <DataGridTemplateColumn.CellTemplate>
+                <TableView x:Name="ErrorList" AutomationProperties.AutomationId="ErrorList"
+                           ItemsSource="{Binding ErrorList.Errors}"
+                           CanUserResizeColumns="False"
+                           MaxHeight="200">
+                    <TableView.Columns>
+                        <TableViewColumn Width="5*" Header="Row">
+                            <TableViewColumn.CellTemplate>
                                 <DataTemplate x:DataType="m:ErrorInfo">
                                     <TextBlock Text="{Binding Row}"
                                                HorizontalAlignment="Right"
                                                Padding="4,2,8,2" />
                                 </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Width="5*" Header="Position">
-                            <DataGridTemplateColumn.CellTemplate>
+                            </TableViewColumn.CellTemplate>
+                        </TableViewColumn>
+                        <TableViewColumn Width="5*" Header="Position">
+                            <TableViewColumn.CellTemplate>
                                 <DataTemplate x:DataType="m:ErrorInfo">
                                     <TextBlock Text="{Binding Position}"
                                                HorizontalAlignment="Right"
                                                Padding="4,2,8,2" />
                                 </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Width="10*" Header="Fragment">
-                            <DataGridTemplateColumn.CellTemplate>
+                            </TableViewColumn.CellTemplate>
+                        </TableViewColumn>
+                        <TableViewColumn Width="10*" Header="Fragment">
+                            <TableViewColumn.CellTemplate>
                                 <DataTemplate x:DataType="m:ErrorInfo">
                                     <TextBlock Text="{Binding FragmentName}"
                                                Padding="4,2,4,2" />
                                 </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Width="80*" Header="Message"
-                                            Binding="{Binding Message}" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                            </TableViewColumn.CellTemplate>
+                        </TableViewColumn>
+                        <TableViewColumn Width="80*" Header="Message"
+                                         Binding="{Binding Message}" />
+                    </TableView.Columns>
+                </TableView>
             </Expander>
             <views:SimulationProcessBarView x:Name="ProcessBar" />
         </StackPanel>

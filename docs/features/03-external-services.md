@@ -2,21 +2,18 @@
 
 ## Purpose
 
-The `ISMA.ExternalServices` assembly handles all communication with the ISMA server process. It manages the server's lifecycle (start/stop as a child process), provides gRPC clients over Unix Domain Sockets, an HTTP client over Unix sockets for result file downloads, a facade that orchestrates these clients into high-level operations, and an LSP client that drives the standalone `isma-lsp` language server process for syntax highlighting.
+The `ISMA.ExternalServices` assembly handles all communication with external ISMA tools. It launches and supervises the standalone CLI tools — the LISMA compiler CLI (`lisma-compiler-cli`) and the simulation runner CLI (`simulation-runner-cli`) — via a facade that maps them to the `ISimulationServerFacade` contract, and it drives the standalone `isma-lsp` language server process for syntax highlighting. There is no server process: compilation and simulation run as short-lived child processes.
 
 ## Structure
 
 ```
-ISMA.Infrastructure/
-├── Server/
-│   ├── SimulationServerFacade.cs        # Single facade for all server operations
-│   ├── SimulationServerManager.cs       # Server process lifecycle (start/stop)
-│   ├── GrpcSimulationClient.cs          # Simulation run/monitor/cancel via gRPC
-│   ├── GrpcLismaCompilerClient.cs       # Compile/validate/delete via gRPC
-│   ├── HttpSimulationClient.cs          # HTTP result download
+ISMA.ExternalServices/
+├── Cli/
+│   ├── CliSimulationFacade.cs           # ISimulationServerFacade over the CLIs
+│   ├── LismaCompilerCli.cs              # Compiler CLI launcher (stdin → .class)
+│   ├── SimulationRunnerCli.cs           # Runner CLI launcher (simulation runs)
 │   ├── BinaryFilePointProvider.cs       # Binary result file reader
-│   ├── BinaryEquationIndexProvider.cs   # Equation metadata from column names
-│   └── UnixSocketHandler.cs             # Unix domain socket transport
+│   └── BinaryEquationIndexProvider.cs   # Equation metadata from column names
 ├── Lsp/
 │   ├── ILspTransport.cs                 # Byte-level LSP transport contract
 │   ├── ProcessLspTransport.cs           # stdio transport with Content-Length framing
@@ -29,112 +26,67 @@ ISMA.Infrastructure/
     └── PreferencesProvider.cs           # JSON preferences persistence
 ```
 
-## Server Lifecycle
+## CLI Tool Lifecycle
 
-### SimulationServerManager
+### LismaCompilerCli
 
-**File:** `Server/SimulationServerManager.cs`
+**File:** `Cli/LismaCompilerCli.cs`
 
-Manages the isma-server child process. The script path is resolved from `appsettings.json` (`Server:ScriptPath`) or environment variable `ISMA_SERVER_SCRIPT`.
+Launches the LISMA compiler CLI. The script path is resolved from the `ISMA_COMPILER_CLI` environment variable or the `isma.compiler.cli` config key (set from `appsettings.json` `Compiler:ScriptPath` / `appsettings.Local.json`).
 
-```csharp
-public class SimulationServerManager : IDisposable
-{
-    public SimulationServerManager(string scriptPath);
-    public bool IsRunning { get; }
-    public void Start();
-    public void Stop();
-    public void Dispose();
-}
-```
+**Contract:** LISMA source is written to stdin.
 
-**Startup protocol:**
-
-1. `ProcessBuilder(scriptPath).Start()` launches the server
-2. Reads stdout line-by-line, skipping `WARNING:`, `SLF4J:`, blank, and log-prefixed lines
-3. Expects the first non-skipped line to contain `GRPC_SOCKET=<path>`
-4. Extracts gRPC socket path and HTTP socket path (line containing `HTTP_SOCKET=<path>`)
-5. Returns socket paths for client initialization
-
-A shutdown hook ensures the server process is destroyed on application exit.
-
-### SimulationServerFacade
-
-**File:** `Server/SimulationServerFacade.cs`
-
-The facade orchestrates the three client connections. It's initialized lazily on first use:
-
-```csharp
-public class SimulationServerFacade : ISimulationServerFacade
-{
-    public Task<CompileResult> CompileModel(string source);
-    public Task<ValidateResult> ValidateModel(string source);
-    public Task<string> RunSimulation(SimulationParameters parameters, string source);
-    public IAsyncEnumerable<SimulationProgress> MonitorSimulation(string simulationId);
-    public Task<DownloadResult> DownloadResult(string simulationId);
-    public Task CancelSimulation(string simulationId);
-    public Task<IList<string>> GetSimulationMethods();
-    public void Shutdown();
-}
-```
-
-| Method | Client | Description |
+| Mode | Exit 0 | Exit 1 |
 | --- | --- | --- |
-| `CompileModel(source)` | `GrpcLismaCompilerClient` | Compiles LISMA source, returns model ID + errors |
-| `ValidateModel(source)` | `GrpcLismaCompilerClient` | Validates LISMA source, returns errors |
-| `RunSimulation(params, source)` | `GrpcSimulationClient` | Starts simulation, returns simulation ID |
-| `MonitorSimulation(id)` | `GrpcSimulationClient` | Returns `IAsyncEnumerable<SimulationProgress>` |
-| `DownloadResult(id)` | `GrpcSimulationClient` + `HttpSimulationClient` | Gets download URL, downloads to temp file |
-| `CancelSimulation(id)` | `GrpcSimulationClient` | Cancels running simulation |
-| `GetSimulationMethods()` | `GrpcSimulationClient` | Lists available integration methods |
+| Compile (default) | stdout = compiled `.class` bytes | stdout = one `row:col:message` error line per error |
+| `--validate` | no output | stdout = error lines |
 
-**DTOs defined in the facade:**
+`row`/`col` are 1-based/0-based ANTLR positions; `-1` means the error has no source position. Any other exit code (or a `lisma-compiler-cli: <msg>` stderr line) is a launcher-level failure and throws `InvalidOperationException`.
 
-```csharp
-public record CompileResult(string ModelId, CompilationErrorDto[] Errors, string[] Warnings);
-public record ValidateResult(CompilationErrorDto[] Errors, string[] Warnings);
-public record DownloadResult(FileInfo File, IList<string> ColumnNames);
+### SimulationRunnerCli
+
+**File:** `Cli/SimulationRunnerCli.cs`
+
+Launches the simulation runner CLI. The script path is resolved from the `ISMA_RUNNER_CLI` environment variable or the `isma.runner.cli` config key (set from `appsettings.json` `Runner:ScriptPath`).
+
+**Arguments:**
+
+```
+--model <compiled.class> --out <result.bin> --progress <file>
+--start <t0> --end <t1> --step <h> --method <name>
+[--accuracy <a> --accuracy-enabled] [--stability-enabled]
+[--gamma <g> --low-border <b>]
 ```
 
-## gRPC Clients
+- `--list-methods` prints the bundled integration method names, one per line (exit 0).
+- Exit 0 = success; exit 1 = failure with `simulation-runner: <message>` on stderr and the `--out` file deleted.
+- The `--progress` file is plain text, overwritten each step with the current time.
+- Cancellation is SIGTERM (the runner's shutdown hook aborts the run).
 
-### GrpcSimulationClient
+### CliSimulationFacade
 
-**File:** `Server/GrpcSimulationClient.cs`
+**File:** `Cli/CliSimulationFacade.cs`
 
-gRPC client using a custom `UnixSocketHandler` for Unix Domain Socket transport. Supports:
-- `RunSimulation` — starts a simulation, returns simulation ID
-- `MonitorSimulation` — server-streaming gRPC that yields `SimulationProgress` updates
-- `CancelSimulation` — cancels a running simulation
-- `GetSimulationMethods` — returns available integration method names
+Implements `ISimulationServerFacade` (domain contract) on top of the two launchers:
 
-### GrpcLismaCompilerClient
+| Method | Implementation |
+| --- | --- |
+| `CompileModel(source)` | Runs the compiler, stores the `.class` in `%TEMP%/isma-ui/`, returns `ModelId` = the file path |
+| `ValidateModel(source)` | Runs the compiler with `--validate`, parses error lines |
+| `RunSimulation(params)` | Starts the runner with `--model <ModelId>` + a per-simulation `--out`/`--progress` pair, returns a local simulation ID |
+| `MonitorSimulation(id)` | Polls the progress file every 100 ms until the process exits, yielding `SimulationProgress` |
+| `DownloadResult(id)` | Waits for exit; non-zero exit throws with the runner stderr; otherwise returns the result file path + column names read from the binary header |
+| `CancelSimulation(id)` | Sends SIGTERM to the runner process (hard kill fallback) |
+| `GetSimulationMethods()` | Runs `--list-methods` |
+| `Shutdown()` | Terminates running runner processes and deletes stored model files |
 
-**File:** `Server/GrpcLismaCompilerClient.cs`
-
-Same Unix socket setup, communicates with the compiler service for:
-- `CompileModel` — compiles LISMA source, returns model ID and compilation errors
-- `ValidateModel` — validates LISMA source without compiling
-
-### UnixSocketHandler
-
-**File:** `Server/UnixSocketHandler.cs`
-
-Custom `HttpMessageHandler` that routes HTTP requests to Unix domain socket paths. Enables `HttpClient` to communicate with the server over Unix sockets instead of TCP.
-
-## HTTP Client
-
-### HttpSimulationClient
-
-**File:** `Server/HttpSimulationClient.cs`
-
-`HttpClient` with `UnixSocketHandler` for downloading simulation result files over Unix Domain Sockets. Used exclusively by `DownloadResult()` — the gRPC client returns a download URL, and the HTTP client fetches the binary file.
+Model IDs are local file paths; simulation IDs are local counters. Compiled models and result files live in `%TEMP%/isma-ui/`.
 
 ## Data Providers
 
 ### BinaryFilePointProvider
 
-**File:** `Server/BinaryFilePointProvider.cs`
+**File:** `Cli/BinaryFilePointProvider.cs`
 
 Implements `ISimulationResultReader`. Reads binary simulation results and streams `SimulationPoint` data:
 
@@ -146,57 +98,46 @@ public class BinaryFilePointProvider : ISimulationResultReader
 }
 ```
 
+The binary exchange format (big-endian, no header/magic): `short` column count, per column `short` name length + UTF-8 name, then rows of `columnCount` big-endian doubles until EOF. Column order: `TIME`, then `DE_*`, then `AE_*`, then `f*`.
+
 ### BinaryEquationIndexProvider
 
-**File:** `Server/BinaryEquationIndexProvider.cs`
+**File:** `Cli/BinaryEquationIndexProvider.cs`
 
 Implements `IEquationIndexProvider` by parsing column name prefixes:
 - `DE_` — differential equation variables
 - `AE_` — algebraic equation variables
 - `f` — forcing functions
 
-Derives equation counts and codes from the column metadata returned with the simulation result.
+Derives equation counts and codes from the column metadata of the simulation result.
 
 ## Communication Flow: Simulation Run
 
 ```mermaid
 sequenceDiagram
     participant UI as SimulationServiceViewModel
-    participant Facade as SimulationServerFacade
-    participant Grpc as GrpcSimulationClient
-    participant Http as HttpSimulationClient
-    participant Server as isma-server
+    participant Facade as CliSimulationFacade
+    participant Comp as lisma-compiler-cli
+    participant Run as simulation-runner-cli
 
     UI->>Facade: CompileModel(source)
-    Facade->>Grpc: CompileRequest
-    Grpc->>Server: compile()
-    Server-->>Grpc: CompileResponse
-    Grpc-->>Facade: CompileResult
+    Facade->>Comp: stdin = source
+    Comp-->>Facade: stdout = .class bytes (exit 0)
+    Facade-->>UI: CompileResult(ModelId = .class path)
 
-    UI->>Facade: RunSimulation(params, source)
-    Facade->>Grpc: RunSimulationRequest
-    Grpc->>Server: runSimulation()
-    Server-->>Grpc: simulationId
-    Grpc-->>Facade: simulationId
+    UI->>Facade: RunSimulation(params)
+    Facade->>Run: --model <ModelId> --out ... --progress ... --start ... --method ...
+    Run-->>Facade: process started
+    Facade-->>UI: simulationId
 
-    UI->>Facade: MonitorSimulation(id)
-    Facade->>Grpc: MonitorSimulationRequest
-    Grpc->>Server: monitorSimulation()
-    Server-->>Grpc: ServerStream<SimulationProgress>
-    Grpc-->>Facade: IAsyncEnumerable<SimulationProgress>
-    Facade-->>UI: yield progress updates
+    loop until process exits
+        Facade->>Run: read progress file (100 ms poll)
+        Facade-->>UI: SimulationProgress
+    end
 
     UI->>Facade: DownloadResult(id)
-    Facade->>Grpc: GetSimulationResultRequest
-    Grpc->>Server: getSimulationResult()
-    Server-->>Grpc: downloadUrl
-    Grpc-->>Facade: downloadUrl
-    Facade->>Http: downloadToFile(url, file)
-    Http->>Server: HTTP GET
-    Server-->>Http: binary data
-    Http-->>Facade: cached file
-
-    Facade-->>UI: DownloadResult(file, columnNames)
+    Facade->>Run: wait for exit, read result file header
+    Facade-->>UI: CachedSimulationResult(file, columnNames)
 ```
 
 ## External Processes
@@ -216,7 +157,7 @@ Launches the GRIN chart viewer as a child process. Resolves script path from `ap
 
 ## LSP Client
 
-The `Lsp/` package drives the standalone `isma-lsp` language server for syntax highlighting, replacing the previous gRPC `HighlightSource` call.
+The `Lsp/` package drives the standalone `isma-lsp` language server for syntax highlighting.
 
 ### ILspTransport / ProcessLspTransport
 
@@ -228,7 +169,7 @@ The `Lsp/` package drives the standalone `isma-lsp` language server for syntax h
 
 **File:** `Lsp/LspProcessManager.cs`
 
-Manages the `isma-lsp` child process, mirroring `SimulationServerManager`. The script path is resolved from `appsettings.json` (`Lsp:ScriptPath`) or environment variable `ISMA_LSP_SCRIPT`. `Start()` is idempotent — repeated calls return the same transport.
+Manages the `isma-lsp` child process. The script path is resolved from `appsettings.json` (`Lsp:ScriptPath`) or environment variable `ISMA_LSP_SCRIPT`. `Start()` is idempotent — repeated calls return the same transport.
 
 ### LspClient
 
@@ -272,9 +213,9 @@ public class PreferencesProvider : IPreferencesProvider
 
 | Scenario | Behavior |
 | --- | --- |
-| Server script not found | `InvalidOperationException` — server path not configured |
-| Server produces no output | `InvalidOperationException` — server started but produced no socket paths |
-| HTTP socket not found in output | `InvalidOperationException` — HTTP socket path not found in server output |
-| Empty download URL | `InvalidOperationException` — download URL is empty |
-| gRPC failure | Propagated as `RpcException` from the gRPC client |
-| Unix socket unavailable | `SocketException` at client creation time |
+| CLI script not found | `InvalidOperationException` — tool path not configured (`ISMA_COMPILER_CLI` / `ISMA_RUNNER_CLI` or appsettings keys) |
+| Compiler exits with code > 1 | `InvalidOperationException` with the compiler stderr |
+| Runner exits non-zero | `DownloadResult` throws `InvalidOperationException` with the runner stderr (`simulation-runner: <message>`) |
+| Runner result file missing after exit | `InvalidOperationException` — result file not found |
+| Unknown simulation ID | `InvalidOperationException` — simulation registry miss |
+| Unknown script path (LSP/Grin) | LSP: `InvalidOperationException`; Grin: launch skipped with an error log |

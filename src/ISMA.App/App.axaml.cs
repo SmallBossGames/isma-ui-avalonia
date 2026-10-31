@@ -6,8 +6,8 @@ using ISMA.App.Services;
 using ISMA.Domain.Contracts;
 using ISMA.ExternalServices.ChartViewer;
 using ISMA.ExternalServices.FileStorage;
+using ISMA.ExternalServices.Cli;
 using ISMA.ExternalServices.Lsp;
-using ISMA.ExternalServices.Server;
 using ISMA.App.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,10 +67,16 @@ public partial class App : Application
             .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
             .Build();
 
-        var serverPath = config["Server:ScriptPath"];
-        if (!string.IsNullOrWhiteSpace(serverPath))
+        var compilerPath = config["Compiler:ScriptPath"];
+        if (!string.IsNullOrWhiteSpace(compilerPath))
         {
-            AppContext.SetData("isma.server.script", serverPath);
+            AppContext.SetData("isma.compiler.cli", compilerPath);
+        }
+
+        var runnerPath = config["Runner:ScriptPath"];
+        if (!string.IsNullOrWhiteSpace(runnerPath))
+        {
+            AppContext.SetData("isma.runner.cli", runnerPath);
         }
 
         var grinPath = config["Grin:ScriptPath"];
@@ -94,12 +100,14 @@ public partial class App : Application
             .AddConsole()
             .SetMinimumLevel(LogLevel.Debug));
 
+        services.AddSingleton<LismaCompilerCli>();
+        services.AddSingleton<SimulationRunnerCli>();
         services.AddSingleton<ISimulationServerFacade>(sp =>
         {
-            var manager = sp.GetRequiredService<SimulationServerManager>();
-            var socketHandler = UnixSocketHandlerFactory.Create();
-            var logger = sp.GetService<ILogger<SimulationServerFacade>>();
-            return new SimulationServerFacade(manager, socketHandler, logger);
+            var compiler = sp.GetRequiredService<LismaCompilerCli>();
+            var runner = sp.GetRequiredService<SimulationRunnerCli>();
+            var logger = sp.GetService<ILogger<CliSimulationFacade>>();
+            return new CliSimulationFacade(compiler, runner, logger);
         });
         services.AddSingleton<LspProcessManager>();
         services.AddSingleton<ILspTransport>(sp => sp.GetRequiredService<LspProcessManager>().Start());

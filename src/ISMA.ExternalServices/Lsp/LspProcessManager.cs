@@ -3,8 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace ISMA.ExternalServices.Lsp;
 
 /// <summary>
-/// Manages the LISMA language server process, mirroring
-/// <see cref="Server.SimulationServerManager"/> for the gRPC server.
+/// Manages the LISMA language server process.
 /// The script path is resolved from the <c>ISMA_LSP_SCRIPT</c> environment
 /// variable or the <c>isma.lsp.script</c> config key.
 /// </summary>

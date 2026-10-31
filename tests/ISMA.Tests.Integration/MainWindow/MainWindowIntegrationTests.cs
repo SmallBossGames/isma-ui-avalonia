@@ -18,7 +18,7 @@ public class MainWindowIntegrationTests
         var menubar = _app.FindControl<IsmaMenuBarView>("MenuBar");
         var toolbar = _app.FindControl<IsmaToolBarView>("ToolBar");
         var tabPane = _app.FindControl<EditorTabPaneView>("EditorTabPane");
-        var errorList = _app.FindControl<DataGrid>("ErrorList");
+        var errorList = _app.FindControl<TableView>("ErrorList");
         var processBar = _app.FindControl<SimulationProcessBarView>("ProcessBar");
 
         menubar.Should().NotBeNull();

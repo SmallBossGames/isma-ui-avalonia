@@ -4,7 +4,7 @@ Cross-platform desktop client for the ISMA mathematical modeling environment, bu
 
 ## Purpose
 
-ISMA UI Avalonia is the desktop client for the ISMA mathematical modeling environment. It provides a multi-project editing interface with syntax-highlighted LISMA source code, a visual statechart (blueprint) editor, simulation execution pipeline, and result visualization. The UI runs as a separate process from `isma-server`, communicating via gRPC over Unix Domain Sockets and HTTP over Unix sockets.
+ISMA UI Avalonia is the desktop client for the ISMA mathematical modeling environment. It provides a multi-project editing interface with syntax-highlighted LISMA source code, a visual statechart (blueprint) editor, simulation execution pipeline, and result visualization. Compilation and simulation run in standalone CLI tools (`lisma-compiler-cli`, `simulation-runner-cli`) launched by the UI as child processes; there is no server.
 
 ## Quick Navigation
 
@@ -12,7 +12,7 @@ ISMA UI Avalonia is the desktop client for the ISMA mathematical modeling enviro
 | --- | --- |
 | [Overview](01-overview.md) | Architecture, module structure, dependency graph, DI wiring |
 | [Domain Layer](02-domain-layer.md) | Domain models, interfaces, result streaming |
-| [External Services](03-external-services.md) | gRPC client, HTTP client, server lifecycle, facade |
+| [External Services](03-external-services.md) | Compiler/runner CLI launchers, facade, LSP client, preferences |
 | [UI Components](04-ui-components.md) | App entry point, views, editors, toolbars, models |
 | [UX Reference](05-ux-reference.md) | Complete user experience specification: windows, menus, dialogs, transitions, features |
 | [Blueprint Editor Architecture](06-blueprint-editor-architecture.md) | Technical architecture: module structure, MVVM pattern, data flow, controls, utilities, serialization |
@@ -24,19 +24,19 @@ ISMA UI Avalonia is the desktop client for the ISMA mathematical modeling enviro
 | File | Role |
 | --- | --- |
 | `src/ISMA.App/Program.cs` | Avalonia `Application` entry point |
-| `src/ISMA.App/App.axaml.cs` | DI configuration, server path resolution, main window creation |
+| `src/ISMA.App/App.axaml.cs` | DI configuration, external tool path resolution, main window creation |
 | `src/ISMA.App/MainWindow.axaml` | Main window layout: menu, toolbar, editor tab pane, settings panel, error list, process bar |
 | `src/ISMA.ViewModels/ViewModels/MainWindowViewModel.cs` | All application commands: File, Edit, Simulation, Settings |
 | `src/ISMA.ViewModels/ViewModels/LismaProjectViewModel.cs` | LISMA text project with syntax highlighting |
 | `src/ISMA.ViewModels/ViewModels/BlueprintEditorViewModel.cs` | Visual statechart with states, transitions, loop arrows |
 | `src/ISMA.ViewModels/ViewModels/SimulationServiceViewModel.cs` | Simulation orchestration: compile, run, monitor, download |
-| `src/ISMA.Infrastructure/Server/SimulationServerFacade.cs` | Server communication facade |
+| `src/ISMA.ExternalServices/Cli/CliSimulationFacade.cs` | CLI-based simulation facade (compile, run, monitor, cancel) |
 | `src/ISMA.Domain/Conversion/BlueprintToLismaConverter.cs` | Blueprint-to-LISMA conversion |
 | `src/ISMA.App/Views/IsmaTextEditorView.axaml` | AvaloniaEdit-based LISMA text editor |
 | `src/ISMA.App/Views/BlueprintEditorView.axaml` | Visual statechart editor canvas |
-| `src/ISMA.App/Services/ServerDrivenHighlightingTransformer.cs` | Server-driven syntax highlighting for AvaloniaEdit |
+| `src/ISMA.ExternalServices/Lsp/LspSyntaxHighlighter.cs` | LSP-driven syntax highlighting for AvaloniaEdit |
 | `src/ISMA.App/Controls/PropertiesGrid.axaml` | Reusable property grid component |
-| `src/ISMA.Infrastructure/FileStorage/PreferencesProvider.cs` | JSON preferences persistence |
+| `src/ISMA.ExternalServices/FileStorage/PreferencesProvider.cs` | JSON preferences persistence |
 
 ## Building
 
@@ -46,11 +46,12 @@ dotnet build isma-ui-dotnet.slnx
 
 ## Running
 
-Requires `appsettings.json` with server and Grin launcher paths:
+Requires `appsettings.json` with compiler, runner, and Grin launcher paths:
 
 ```json
 {
-  "Server": { "ScriptPath": "/path/to/isma-server" },
+  "Compiler": { "ScriptPath": "/path/to/lisma-compiler-cli" },
+  "Runner": { "ScriptPath": "/path/to/simulation-runner-cli" },
   "Grin": { "ScriptPath": "/path/to/grin" }
 }
 ```
@@ -63,7 +64,7 @@ When running via the provided `run.sh` script, these paths are auto-configured.
 | --- | --- | --- |
 | `ISMA.Domain` | Pure C# domain models, DTOs, contracts, conversion logic | `ISMA.Domain` |
 | `ISMA.ViewModels` | MVVM ViewModels, converters, VM-level services | `ISMA.ViewModels` |
-| `ISMA.Infrastructure` | Server communication (gRPC/HTTP), file storage, chart viewer | `ISMA.Infrastructure` |
+| `ISMA.ExternalServices` | CLI tool launchers (compiler, runner), LSP client, file storage, chart viewer | `ISMA.ExternalServices` |
 | `ISMA.App` | UI views, controls, app entry point, DI composition | `ISMA.App` |
 
 ## Documents by Audience

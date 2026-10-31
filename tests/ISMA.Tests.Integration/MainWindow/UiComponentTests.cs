@@ -26,7 +26,7 @@ public class UiComponentTests
         var menubar = _app.FindControl<IsmaMenuBarView>(AutomationIds.MenuBar);
         var toolbar = _app.FindControl<IsmaToolBarView>(AutomationIds.ToolBar);
         var tabPane = _app.FindControl<EditorTabPaneView>(AutomationIds.EditorTabPane);
-        var errorList = _app.FindControl<DataGrid>(AutomationIds.ErrorList);
+        var errorList = _app.FindControl<TableView>(AutomationIds.ErrorList);
         var processBar = _app.FindControl<SimulationProcessBarView>(AutomationIds.ProcessBar);
 
         menubar.Should().NotBeNull();

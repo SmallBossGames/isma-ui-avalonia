@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Models;
 
-namespace ISMA.ExternalServices.Server;
+namespace ISMA.ExternalServices.Cli;
 
 public sealed class BinaryEquationIndexProvider : IEquationIndexProvider
 {
