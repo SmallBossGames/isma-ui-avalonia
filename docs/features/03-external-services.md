@@ -9,9 +9,16 @@ The `ISMA.ExternalServices` assembly handles all communication with external ISM
 ```
 ISMA.ExternalServices/
 ├── Cli/
-│   ├── CliSimulationFacade.cs           # ISimulationServerFacade over the CLIs
-│   ├── LismaCompilerCli.cs              # Compiler CLI launcher (stdin → .class)
-│   ├── SimulationRunnerCli.cs           # Runner CLI launcher (simulation runs)
+│   ├── CliToolLaunchers.cs              # Per-tool launchers (compiler, runner)
+│   ├── CliLauncher.cs                   # Tool path resolution + non-blocking launch
+│   ├── CliProcess.cs                    # Process handle: streams, exit code, SIGTERM/KILL
+│   ├── CliStreams.cs                    # Stream helpers (read-all, write-all)
+│   ├── CliToolException.cs              # Tool failure outside the documented contract
+│   ├── CliWorkDir.cs                    # Shared %TEMP%/isma-ui artifact directory
+│   ├── LismaCompilerCli.cs              # ILismaCompiler adapter (stdin → .class)
+│   ├── SimulationRunnerCli.cs           # ISimulationRunner adapter (simulation runs)
+│   ├── ActiveSimulation.cs              # IActiveSimulation: binary stream → result file + times
+│   ├── CliSimulationFacade.cs           # ISimulationServerFacade over the tool ports
 │   ├── BinaryFilePointProvider.cs       # Binary result file reader
 │   └── BinaryEquationIndexProvider.cs   # Equation metadata from column names
 ├── Lsp/
@@ -28,11 +35,31 @@ ISMA.ExternalServices/
 
 ## CLI Tool Lifecycle
 
+The CLI integration is layered (onion): the domain defines the tool ports
+(`ILismaCompiler`, `ISimulationRunner`, `IActiveSimulation` in
+`ISMA.Domain/Contracts/`), and this assembly provides the CLI adapters. The
+facade depends only on the ports, never on the concrete adapters.
+
+### CliLauncher / CliProcess / CliToolLaunchers
+
+**Files:** `Cli/CliLauncher.cs`, `Cli/CliProcess.cs`, `Cli/CliToolLaunchers.cs`
+
+`CliToolLaunchers` holds one `CliLauncher` per tool (compiler, runner). Each
+`CliLauncher` resolves the tool path from the environment variable
+(`ISMA_COMPILER_CLI` / `ISMA_RUNNER_CLI`) or the `AppContext` config key
+(`isma.compiler.cli` / `isma.runner.cli`, set from `appsettings.json`
+`Compiler:ScriptPath` / `Runner:ScriptPath`), and launches it via
+`StartAsync` — the blocking fork/exec runs on the thread pool, so launching is
+safe from the UI thread. `CliProcess` wraps the child process: async access to
+stdin/stdout/stderr, `WaitExitCodeAsync`, and `TerminateAsync` (SIGTERM on Unix
+so the tool can run its shutdown hooks, hard kill after 2 s if it does not exit;
+hard kill on Windows).
+
 ### LismaCompilerCli
 
 **File:** `Cli/LismaCompilerCli.cs`
 
-Launches the LISMA compiler CLI. The script path is resolved from the `ISMA_COMPILER_CLI` environment variable or the `isma.compiler.cli` config key (set from `appsettings.json` `Compiler:ScriptPath` / `appsettings.Local.json`).
+`ILismaCompiler` adapter for the LISMA compiler CLI.
 
 **Contract:** LISMA source is written to stdin.
 
@@ -41,44 +68,57 @@ Launches the LISMA compiler CLI. The script path is resolved from the `ISMA_COMP
 | Compile (default) | stdout = compiled `.class` bytes | stdout = one `row:col:message` error line per error |
 | `--validate` | no output | stdout = error lines |
 
-`row`/`col` are 1-based/0-based ANTLR positions; `-1` means the error has no source position. Any other exit code (or a `lisma-compiler-cli: <msg>` stderr line) is a launcher-level failure and throws `InvalidOperationException`.
+`row`/`col` are 1-based/0-based ANTLR positions; `-1` means the error has no source position. Any other exit code is a tool failure and throws `CliToolException` (an `InvalidOperationException`) with the compiler stderr.
 
 ### SimulationRunnerCli
 
 **File:** `Cli/SimulationRunnerCli.cs`
 
-Launches the simulation runner CLI. The script path is resolved from the `ISMA_RUNNER_CLI` environment variable or the `isma.runner.cli` config key (set from `appsettings.json` `Runner:ScriptPath`).
+`ISimulationRunner` adapter for the simulation runner CLI.
 
 **Arguments:**
 
 ```
---model <compiled.class> --out <result.bin> --progress <file>
+--model <compiled.class>
 --start <t0> --end <t1> --step <h> --method <name>
 [--accuracy <a> --accuracy-enabled] [--stability-enabled]
 [--gamma <g> --low-border <b>]
 ```
 
 - `--list-methods` prints the bundled integration method names, one per line (exit 0).
-- Exit 0 = success; exit 1 = failure with `simulation-runner: <message>` on stderr and the `--out` file deleted.
-- The `--progress` file is plain text, overwritten each step with the current time.
+- Exit 0 = success; exit 1 = failure with `simulation-runner: <message>` on stderr.
+- The runner streams the result to stdout in the binary format: a metadata header (column count, then per-column name length + UTF-8 name), then one row per time step (big-endian doubles; the first column is TIME), each row flushed as it is produced.
 - Cancellation is SIGTERM (the runner's shutdown hook aborts the run).
+
+### ActiveSimulation
+
+**File:** `Cli/ActiveSimulation.cs`
+
+`IActiveSimulation` over a running runner process. A background task reads the
+runner's stdout (the binary exchange format), tees the bytes into a result file
+in `%TEMP%/isma-ui/` as they arrive, and publishes the TIME column of each row
+to a channel. `Times` exposes the channel; `GetResultAsync` waits for the
+process to exit and the stream to drain, then returns the result file + column
+names (non-zero exit throws `CliToolException` with the runner stderr);
+`CancelAsync` terminates the process.
 
 ### CliSimulationFacade
 
 **File:** `Cli/CliSimulationFacade.cs`
 
-Implements `ISimulationServerFacade` (domain contract) on top of the two launchers:
+Implements `ISimulationServerFacade` (domain contract) on top of the tool ports
+(`ILismaCompiler`, `ISimulationRunner`):
 
 | Method | Implementation |
 | --- | --- |
-| `CompileModel(source)` | Runs the compiler, stores the `.class` in `%TEMP%/isma-ui/`, returns `ModelId` = the file path |
-| `ValidateModel(source)` | Runs the compiler with `--validate`, parses error lines |
-| `RunSimulation(params)` | Starts the runner with `--model <ModelId>` + a per-simulation `--out`/`--progress` pair, returns a local simulation ID |
-| `MonitorSimulation(id)` | Polls the progress file every 100 ms until the process exits, yielding `SimulationProgress` |
-| `DownloadResult(id)` | Waits for exit; non-zero exit throws with the runner stderr; otherwise returns the result file path + column names read from the binary header |
-| `CancelSimulation(id)` | Sends SIGTERM to the runner process (hard kill fallback) |
+| `CompileModel(source)` | Compiles via `ILismaCompiler`, stores the `.class` in `%TEMP%/isma-ui/`, returns `ModelId` = the file path |
+| `ValidateModel(source)` | Validates via `ILismaCompiler` |
+| `RunSimulation(params)` | Starts the runner (async — no blocking on the caller's thread), returns a local simulation ID |
+| `MonitorSimulation(id)` | Consumes the runner's TIME stream, coalesced to at most one update per 100 ms or per 0.5 % of the time span (the runner emits one row per integration step; yielding every row would flood the UI dispatcher). The final time is always yielded. The coalescing loop runs off the UI synchronization context |
+| `DownloadResult(id)` | Waits for the run to finish; non-zero exit throws with the runner stderr; otherwise returns the streamed result file path + column names |
+| `CancelSimulation(id)` | Terminates the runner process (SIGTERM, hard kill fallback) |
 | `GetSimulationMethods()` | Runs `--list-methods` |
-| `Shutdown()` | Terminates running runner processes and deletes stored model files |
+| `Shutdown()` | Terminates running simulations and deletes stored model files |
 
 Model IDs are local file paths; simulation IDs are local counters. Compiled models and result files live in `%TEMP%/isma-ui/`.
 
@@ -126,17 +166,18 @@ sequenceDiagram
     Facade-->>UI: CompileResult(ModelId = .class path)
 
     UI->>Facade: RunSimulation(params)
-    Facade->>Run: --model <ModelId> --out ... --progress ... --start ... --method ...
+    Facade->>Run: --model <ModelId> --start ... --method ...
     Run-->>Facade: process started
     Facade-->>UI: simulationId
 
     loop until process exits
-        Facade->>Run: read progress file (100 ms poll)
+        Run-->>Facade: stdout row (TIME column)
+        Note over Facade: coalesce to ~10 updates/s
         Facade-->>UI: SimulationProgress
     end
 
     UI->>Facade: DownloadResult(id)
-    Facade->>Run: wait for exit, read result file header
+    Facade->>Run: wait for exit + stdout drain
     Facade-->>UI: CachedSimulationResult(file, columnNames)
 ```
 
@@ -214,8 +255,8 @@ public class PreferencesProvider : IPreferencesProvider
 | Scenario | Behavior |
 | --- | --- |
 | CLI script not found | `InvalidOperationException` — tool path not configured (`ISMA_COMPILER_CLI` / `ISMA_RUNNER_CLI` or appsettings keys) |
-| Compiler exits with code > 1 | `InvalidOperationException` with the compiler stderr |
-| Runner exits non-zero | `DownloadResult` throws `InvalidOperationException` with the runner stderr (`simulation-runner: <message>`) |
-| Runner result file missing after exit | `InvalidOperationException` — result file not found |
+| Compiler exits with code > 1 | `CliToolException` (an `InvalidOperationException`) with the compiler stderr |
+| Runner exits non-zero | `DownloadResult` throws `CliToolException` with the runner stderr (`simulation-runner: <message>`); the partial result file is deleted |
+| Runner produces no output but exits 0 | an empty result file is returned |
 | Unknown simulation ID | `InvalidOperationException` — simulation registry miss |
 | Unknown script path (LSP/Grin) | LSP: `InvalidOperationException`; Grin: launch skipped with an error log |

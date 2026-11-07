@@ -100,15 +100,17 @@ public partial class App : Application
             .AddConsole()
             .SetMinimumLevel(LogLevel.Debug));
 
-        services.AddSingleton<LismaCompilerCli>();
-        services.AddSingleton<SimulationRunnerCli>();
-        services.AddSingleton<ISimulationServerFacade>(sp =>
-        {
-            var compiler = sp.GetRequiredService<LismaCompilerCli>();
-            var runner = sp.GetRequiredService<SimulationRunnerCli>();
-            var logger = sp.GetService<ILogger<CliSimulationFacade>>();
-            return new CliSimulationFacade(compiler, runner, logger);
-        });
+        services.AddSingleton<CliToolLaunchers>();
+        services.AddSingleton<ILismaCompiler>(sp => new LismaCompilerCli(
+            sp.GetRequiredService<CliToolLaunchers>().Compiler,
+            sp.GetService<ILogger<LismaCompilerCli>>()));
+        services.AddSingleton<ISimulationRunner>(sp => new SimulationRunnerCli(
+            sp.GetRequiredService<CliToolLaunchers>().Runner,
+            sp.GetService<ILogger<SimulationRunnerCli>>()));
+        services.AddSingleton<ISimulationServerFacade>(sp => new CliSimulationFacade(
+            sp.GetRequiredService<ILismaCompiler>(),
+            sp.GetRequiredService<ISimulationRunner>(),
+            sp.GetService<ILogger<CliSimulationFacade>>()));
         services.AddSingleton<LspProcessManager>();
         services.AddSingleton<ILspTransport>(sp => sp.GetRequiredService<LspProcessManager>().Start());
 

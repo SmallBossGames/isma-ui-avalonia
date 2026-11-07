@@ -87,7 +87,7 @@ ISMA.Domain (contracts/interfaces)
 
 ### Async/Await Concurrency
 
-All long-running operations (simulation monitoring, file I/O, CLI tool communication) use `async/await`. The UI thread is never blocked. Progress updates from the runner's progress file are marshalled to the ViewModel via `ObservableCollection` additions on the UI thread.
+All long-running operations (simulation monitoring, file I/O, CLI tool communication) use `async/await`. The UI thread is never blocked. Progress updates derived from the runner's stdout stream (the TIME column of each streamed result row) are marshalled to the ViewModel via `ObservableCollection` additions on the UI thread.
 
 ### Observable Collections
 

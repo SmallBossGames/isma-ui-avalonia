@@ -747,7 +747,7 @@ sequenceDiagram
 | **Model compilation** | `lisma-compiler-cli` process | Compiles LISMA text or blueprint to a runnable model |
 | **Model validation** | `lisma-compiler-cli` process | Validates source code without running (Verify button) |
 | **Simulation execution** | `simulation-runner-cli` process | Runs the compiled model with given parameters |
-| **Real-time progress** | Progress file polling | Runner writes current time to a progress file, polled every 100 ms |
+| **Real-time progress** | Stdout stream | Runner streams binary result rows to stdout; progress derived from the TIME column as `(t − t0) / (tEnd − t0)` |
 | **Simulation cancellation** | SIGTERM to runner process | Stops a running simulation mid-execution |
 | **Error list** | Bottom drawer | Tabular display of compilation/validation errors |
 | **Simulation parameters** | Right sidebar | Configurable: time range, integration method, event detection, result storage |
@@ -770,7 +770,7 @@ sequenceDiagram
 When building a replacement UI with the same features:
 
 1. **Separation of concerns:** The UI is cleanly layered — domain models (pure data) → infrastructure (server communication) → ViewModels (business logic) → views (UI components)
-2. **CLI tool communication:** All compilation, validation, and simulation happen in standalone CLI tools launched as child processes by the UI: `lisma-compiler-cli` (LISMA source on stdin → compiled `.class` on stdout) and `simulation-runner-cli` (compiled model + parameters → binary result file + progress file).
+2. **CLI tool communication:** All compilation, validation, and simulation happen in standalone CLI tools launched as child processes by the UI: `lisma-compiler-cli` (LISMA source on stdin → compiled `.class` on stdout) and `simulation-runner-cli` (compiled model + parameters → binary result rows streamed to stdout, progress derived from the TIME column).
 3. **Multi-project:** Projects are managed in an `ObservableCollection` with an active project concept. Each project has its own ViewModel.
 4. **Observable collections:** UI state is driven by `ObservableCollection<T>` that updates the UI reactively via Avalonia bindings.
 5. **Blueprint-to-text:** The blueprint editor is a visual layer that serializes to/from a LISMA text representation. The conversion happens at compile time via `BlueprintToLismaConverter`, not in real-time.

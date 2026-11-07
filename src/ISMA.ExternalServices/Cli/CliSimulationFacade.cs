@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Globalization;
 using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using ISMA.Domain.Models;
@@ -9,18 +7,18 @@ using Microsoft.Extensions.Logging;
 namespace ISMA.ExternalServices.Cli;
 
 /// <summary>
-/// <see cref="ISimulationServerFacade"/> implementation that drives the
-/// standalone LISMA compiler CLI and simulation runner CLI directly, without
-/// the isma-daemon. Model IDs are local paths of compiled <c>.class</c> files;
-/// simulation IDs are local.
+/// <see cref="ISimulationServerFacade"/> implementation that drives the standalone
+/// LISMA compiler CLI and simulation runner CLI directly, without the isma-daemon.
+/// Model IDs are local paths of compiled <c>.class</c> files; simulation IDs are local.
 /// </summary>
 public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
 {
-    private static readonly TimeSpan ProgressPollInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan MinProgressInterval = TimeSpan.FromMilliseconds(100);
+    private const double MinProgressDelta = 0.005;
 
-    private readonly LismaCompilerCli _compiler;
-    private readonly SimulationRunnerCli _runner;
-    private readonly ILogger? _logger;
+    private readonly ILismaCompiler _compiler;
+    private readonly ISimulationRunner _runner;
+    private readonly ILogger<CliSimulationFacade>? _logger;
     private readonly object _gate = new();
     private readonly Dictionary<long, SimulationEntry> _simulations = new();
     private readonly List<string> _modelFiles = new();
@@ -28,44 +26,36 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
 
     private sealed class SimulationEntry
     {
-        public required RunnerProcess Runner { get; init; }
+        public required IActiveSimulation Simulation { get; init; }
         public required double StartTime { get; init; }
         public required double EndTime { get; init; }
     }
 
-    public CliSimulationFacade(LismaCompilerCli compiler, SimulationRunnerCli runner, ILogger? logger = null)
+    public CliSimulationFacade(ILismaCompiler compiler, ISimulationRunner runner, ILogger<CliSimulationFacade>? logger = null)
     {
         _compiler = compiler;
         _runner = runner;
         _logger = logger;
     }
 
-    private static string WorkDir
-    {
-        get
-        {
-            var dir = Path.Combine(Path.GetTempPath(), "isma-ui");
-            Directory.CreateDirectory(dir);
-            return dir;
-        }
-    }
-
     public async Task<CompileResult> CompileModel(string source)
     {
-        var classFile = Path.Combine(WorkDir, $"isma-model-{Guid.NewGuid():N}.class");
-        var errors = await _compiler.CompileAsync(source, classFile).ConfigureAwait(false);
+        var outcome = await _compiler.CompileAsync(source).ConfigureAwait(false);
 
-        if (errors.IsDefaultOrEmpty)
+        if (!outcome.Succeeded)
         {
-            lock (_gate)
-            {
-                _modelFiles.Add(classFile);
-            }
-
-            return new CompileResult { ModelId = classFile, Errors = errors, Warnings = ImmutableArray<string>.Empty };
+            return new CompileResult { ModelId = "", Errors = outcome.Errors, Warnings = ImmutableArray<string>.Empty };
         }
 
-        return new CompileResult { ModelId = "", Errors = errors, Warnings = ImmutableArray<string>.Empty };
+        var classFile = Path.Combine(CliWorkDir.Root, $"isma-model-{Guid.NewGuid():N}.class");
+        await File.WriteAllBytesAsync(classFile, outcome.CompiledModel).ConfigureAwait(false);
+
+        lock (_gate)
+        {
+            _modelFiles.Add(classFile);
+        }
+
+        return new CompileResult { ModelId = classFile, Errors = outcome.Errors, Warnings = ImmutableArray<string>.Empty };
     }
 
     public async Task<ValidationResult> ValidateModel(string source)
@@ -74,111 +64,110 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
         return new ValidationResult { Errors = errors, Warnings = ImmutableArray<string>.Empty };
     }
 
-    public Task<long> RunSimulation(RunSimulationParams @params)
+    public async Task<long> RunSimulation(RunSimulationParams @params)
     {
+        var simulation = await _runner.StartAsync(@params).ConfigureAwait(false);
+
+        long id;
         lock (_gate)
         {
-            var id = _nextSimulationId++;
-            var resultFile = Path.Combine(WorkDir, $"isma-simulation-{id}.bin");
-            var progressFile = Path.Combine(WorkDir, $"isma-progress-{id}.txt");
-            var runner = _runner.Start(@params, resultFile, progressFile);
+            id = _nextSimulationId++;
             _simulations[id] = new SimulationEntry
             {
-                Runner = runner,
+                Simulation = simulation,
                 StartTime = @params.StartTime,
                 EndTime = @params.EndTime,
             };
-            return Task.FromResult(id);
         }
+
+        _logger?.LogDebug("Started simulation {SimulationId}", id);
+        return id;
     }
 
+    /// <summary>
+    /// Streams simulation progress, coalesced to at most one update per
+    /// <see cref="MinProgressInterval"/> or <see cref="MinProgressDelta"/> of the time span —
+    /// the runner emits one row per integration step, and yielding every row would
+    /// flood the UI dispatcher. The final time is always yielded. The coalescing loop
+    /// runs off the caller's synchronization context.
+    /// </summary>
     public async IAsyncEnumerable<SimulationProgress> MonitorSimulation(long id)
     {
         var entry = GetEntry(id);
-
-        while (true)
+        var span = entry.EndTime - entry.StartTime;
+        if (span <= 0)
         {
-            var exited = false;
-            try
-            {
-                await entry.Runner.ExitTask.WaitAsync(ProgressPollInterval).ConfigureAwait(false);
-                exited = true;
-            }
-            catch (TimeoutException)
-            {
-                // process still running — keep polling
-            }
+            yield break;
+        }
 
-            var current = ReadProgress(entry.Runner.ProgressFile);
-            if (current is not null)
+        double? lastYieldedTime = null;
+        double? lastYieldedNormalized = null;
+        var lastYieldedAt = DateTime.MinValue;
+        var pending = 0.0;
+        var hasPending = false;
+
+        var enumerator = entry.Simulation.Times.GetAsyncEnumerator();
+        try
+        {
+            while (await enumerator.MoveNextAsync().ConfigureAwait(false))
             {
+                pending = enumerator.Current;
+                hasPending = true;
+                var normalized = (pending - entry.StartTime) / span;
+                var now = DateTime.UtcNow;
+                var due = lastYieldedNormalized is null
+                          || Math.Abs(normalized - lastYieldedNormalized.Value) >= MinProgressDelta
+                          || (now - lastYieldedAt) >= MinProgressInterval;
+                if (!due)
+                {
+                    continue;
+                }
+
+                lastYieldedTime = pending;
+                lastYieldedNormalized = normalized;
+                lastYieldedAt = now;
                 yield return new SimulationProgress
                 {
                     StartTime = entry.StartTime,
                     EndTime = entry.EndTime,
-                    CurrentTime = current.Value,
+                    CurrentTime = pending,
                 };
             }
+        }
+        finally
+        {
+            await enumerator.DisposeAsync().ConfigureAwait(false);
+        }
 
-            if (exited)
+        if (hasPending && lastYieldedTime != pending)
+        {
+            // the final step was coalesced away — report it so progress reaches the end
+            yield return new SimulationProgress
             {
-                yield break;
-            }
+                StartTime = entry.StartTime,
+                EndTime = entry.EndTime,
+                CurrentTime = pending,
+            };
         }
     }
 
     public async Task<CachedSimulationResult> DownloadResult(long id)
     {
         var entry = GetEntry(id);
-
-        var (exitCode, stderr) = await entry.Runner.WaitAsync().ConfigureAwait(false);
-        if (exitCode != 0)
-        {
-            throw new InvalidOperationException(
-                $"Simulation runner failed (exit code {exitCode}): {Truncate(stderr)}");
-        }
-
-        if (!File.Exists(entry.Runner.ResultFile))
-        {
-            throw new InvalidOperationException($"Simulation result file not found: {entry.Runner.ResultFile}");
-        }
-
-        ImmutableArray<string> columnNames;
-        try
-        {
-            columnNames = BinaryFilePointProvider.ReadMetadata(entry.Runner.ResultFile).ColumnNames;
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogWarning(ex, "Failed to read simulation result metadata from {File}", entry.Runner.ResultFile);
-            columnNames = ImmutableArray<string>.Empty;
-        }
+        var result = await entry.Simulation.GetResultAsync().ConfigureAwait(false);
 
         return new CachedSimulationResult
         {
-            File = entry.Runner.ResultFile,
-            ColumnNames = columnNames,
+            File = result.File,
+            ColumnNames = result.ColumnNames,
         };
     }
 
-    public Task CancelSimulation(long id)
-    {
-        var entry = GetEntry(id);
+    public Task CancelSimulation(long id) => GetEntry(id).Simulation.CancelAsync();
 
-        if (!entry.Runner.Process.HasExited)
-        {
-            Terminate(entry.Runner.Process);
-        }
+    public Task<IReadOnlyList<string>> GetSimulationMethods() => _runner.GetMethodsAsync();
 
-        return Task.CompletedTask;
-    }
-
-    public Task<string[]> GetSimulationMethods()
-    {
-        return _runner.ListMethodsAsync();
-    }
-
-    public Task Shutdown()
+    public async Task Shutdown()
     {
         List<SimulationEntry> entries;
         List<string> modelFiles;
@@ -192,10 +181,7 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
 
         foreach (var entry in entries)
         {
-            if (!entry.Runner.Process.HasExited)
-            {
-                Terminate(entry.Runner.Process);
-            }
+            await entry.Simulation.DisposeAsync().ConfigureAwait(false);
         }
 
         foreach (var file in modelFiles)
@@ -204,7 +190,6 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
         }
 
         _logger?.LogInformation("Shut down CLI simulation facade");
-        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -225,76 +210,6 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
         }
     }
 
-    private static double? ReadProgress(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            var line = File.ReadAllText(path).Trim();
-            if (line.Length == 0)
-            {
-                return null;
-            }
-
-            return double.Parse(line, CultureInfo.InvariantCulture);
-        }
-        catch (Exception)
-        {
-            // partially written file or transient IO error — retry on next poll
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Sends SIGTERM on Unix (the runner's shutdown hook cancels the run);
-    /// falls back to a hard kill if the signal cannot be delivered.
-    /// </summary>
-    private static void Terminate(Process process)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            process.Kill();
-            return;
-        }
-
-        try
-        {
-            var killInfo = new ProcessStartInfo
-            {
-                FileName = "kill",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            killInfo.ArgumentList.Add("-TERM");
-            killInfo.ArgumentList.Add(process.Id.ToString(CultureInfo.InvariantCulture));
-            using var kill = new Process { StartInfo = killInfo };
-            kill.Start();
-            kill.WaitForExit(2000);
-        }
-        catch (Exception)
-        {
-            try
-            {
-                process.Kill();
-            }
-            catch
-            {
-                // process already gone
-            }
-        }
-    }
-
-    private static string Truncate(string text)
-    {
-        return text.Length <= 500 ? text : text[..500] + "…";
-    }
-
     private static void TryDelete(string path)
     {
         try
@@ -304,7 +219,7 @@ public sealed class CliSimulationFacade : ISimulationServerFacade, IDisposable
                 File.Delete(path);
             }
         }
-        catch (Exception)
+        catch
         {
             // best effort
         }

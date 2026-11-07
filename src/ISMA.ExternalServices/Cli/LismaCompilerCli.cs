@@ -1,125 +1,68 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using ISMA.Domain.Contracts;
 using ISMA.Domain.Dtos;
 using Microsoft.Extensions.Logging;
 
 namespace ISMA.ExternalServices.Cli;
 
 /// <summary>
-/// Launches the standalone LISMA compiler CLI (<c>lisma-compiler-cli</c>).
-/// Contract: LISMA source on stdin. Compile mode — exit 0 puts the compiled
+/// <see cref="ILismaCompiler"/> adapter for the standalone LISMA compiler CLI.
+/// Protocol: LISMA source on stdin. Compile mode — exit 0 puts the compiled
 /// <c>.class</c> bytes on stdout, exit 1 puts <c>row:col:message</c> error
 /// lines on stdout. Validate mode (<c>--validate</c>) — exit 0 is clean,
-/// exit 1 puts error lines on stdout.
+/// exit 1 puts error lines on stdout. Any other exit code is a tool failure.
 /// </summary>
-public sealed class LismaCompilerCli
+public sealed class LismaCompilerCli(CliLauncher launcher, ILogger<LismaCompilerCli>? logger = null) : ILismaCompiler
 {
-    private readonly ILogger<LismaCompilerCli>? _logger;
+    private const string ToolName = "lisma-compiler-cli";
 
-    public LismaCompilerCli(ILogger<LismaCompilerCli>? logger = null)
+    public async Task<CompilationOutcome> CompileAsync(string source, CancellationToken cancellationToken = default)
     {
-        _logger = logger;
-    }
+        logger?.LogDebug("Launching LISMA compiler: compile");
+        await using var process = await launcher.StartAsync([], cancellationToken).ConfigureAwait(false);
+        var (exitCode, stdout) = await RunWithSourceAsync(process, source, cancellationToken).ConfigureAwait(false);
 
-    public string ResolveScriptPath()
-    {
-        var envPath = Environment.GetEnvironmentVariable("ISMA_COMPILER_CLI");
-        if (!string.IsNullOrWhiteSpace(envPath))
+        return exitCode switch
         {
-            return envPath;
-        }
-
-        var configPath = AppContext.GetData("isma.compiler.cli") as string;
-        if (!string.IsNullOrWhiteSpace(configPath))
-        {
-            return configPath;
-        }
-
-        throw new InvalidOperationException(
-            "Cannot resolve LISMA compiler CLI path. Set ISMA_COMPILER_CLI environment variable or 'isma.compiler.cli' config key.");
-    }
-
-    /// <summary>
-    /// Compiles LISMA source and writes the compiled <c>.class</c> bytes to
-    /// <paramref name="classFile"/>. Returns diagnostic errors (empty on success).
-    /// </summary>
-    public async Task<ImmutableArray<CompilationError>> CompileAsync(
-        string source, string classFile, string? scriptPath = null, CancellationToken ct = default)
-    {
-        var (exitCode, stdout, stderr) = await RunAsync(source, Array.Empty<string>(), scriptPath, ct).ConfigureAwait(false);
-
-        if (exitCode == 0)
-        {
-            await File.WriteAllBytesAsync(classFile, stdout, ct).ConfigureAwait(false);
-            return ImmutableArray<CompilationError>.Empty;
-        }
-
-        if (exitCode == 1)
-        {
-            return ParseErrorLines(stdout);
-        }
-
-        throw new InvalidOperationException($"LISMA compiler exited with code {exitCode}: {stderr}");
-    }
-
-    /// <summary>Validates LISMA source without producing a compiled model.</summary>
-    public async Task<ImmutableArray<CompilationError>> ValidateAsync(
-        string source, string? scriptPath = null, CancellationToken ct = default)
-    {
-        var (exitCode, stdout, stderr) = await RunAsync(source, new[] { "--validate" }, scriptPath, ct).ConfigureAwait(false);
-
-        if (exitCode == 0)
-        {
-            return ImmutableArray<CompilationError>.Empty;
-        }
-
-        if (exitCode == 1)
-        {
-            return ParseErrorLines(stdout);
-        }
-
-        throw new InvalidOperationException($"LISMA compiler exited with code {exitCode}: {stderr}");
-    }
-
-    private async Task<(int ExitCode, byte[] Stdout, string Stderr)> RunAsync(
-        string source, string[] args, string? scriptPath, CancellationToken ct)
-    {
-        var path = scriptPath ?? ResolveScriptPath();
-
-        var psi = new ProcessStartInfo
-        {
-            FileName = path,
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
+            0 => CompilationOutcome.Success(stdout),
+            1 => CompilationOutcome.Failed(ParseErrorLines(stdout)),
+            _ => throw await ToolFailureAsync(process, exitCode).ConfigureAwait(false),
         };
-        foreach (var arg in args)
+    }
+
+    public async Task<ImmutableArray<CompilationError>> ValidateAsync(string source, CancellationToken cancellationToken = default)
+    {
+        logger?.LogDebug("Launching LISMA compiler: --validate");
+        await using var process = await launcher.StartAsync(["--validate"], cancellationToken).ConfigureAwait(false);
+        var (exitCode, stdout) = await RunWithSourceAsync(process, source, cancellationToken).ConfigureAwait(false);
+
+        return exitCode switch
         {
-            psi.ArgumentList.Add(arg);
-        }
+            0 => ImmutableArray<CompilationError>.Empty,
+            1 => ParseErrorLines(stdout),
+            _ => throw await ToolFailureAsync(process, exitCode).ConfigureAwait(false),
+        };
+    }
 
-        _logger?.LogDebug("Launching LISMA compiler: {Path} {Args}", path, string.Join(' ', args));
+    private static async Task<(int ExitCode, byte[] Stdout)> RunWithSourceAsync(
+        CliProcess process, string source, CancellationToken cancellationToken)
+    {
+        // start draining stdout before writing stdin so a chatty tool cannot deadlock the pipe
+        var stdoutTask = CliStreams.ReadAllAsync(process.Stdout, cancellationToken);
+        await CliStreams.WriteAllAsync(process.Stdin, Encoding.UTF8.GetBytes(source), cancellationToken).ConfigureAwait(false);
+        process.Stdin.Close();
 
-        using var process = new Process { StartInfo = psi };
-        process.Start();
+        var stdout = await stdoutTask.ConfigureAwait(false);
+        var exitCode = await process.WaitExitCodeAsync(cancellationToken).ConfigureAwait(false);
+        return (exitCode, stdout);
+    }
 
-        var stdoutBuffer = new MemoryStream();
-        var stdoutTask = process.StandardOutput.BaseStream.CopyToAsync(stdoutBuffer, ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-
-        await process.StandardInput.WriteAsync(source.AsMemory(), ct).ConfigureAwait(false);
-        process.StandardInput.Close();
-
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        await stdoutTask.ConfigureAwait(false);
-        var stderr = (await stderrTask.ConfigureAwait(false)).Trim();
-
-        _logger?.LogDebug("LISMA compiler exited with code {ExitCode}", process.ExitCode);
-        return (process.ExitCode, stdoutBuffer.ToArray(), stderr);
+    private static async Task<CliToolException> ToolFailureAsync(CliProcess process, int exitCode)
+    {
+        var stderr = (await process.Stderr.ConfigureAwait(false)).Trim();
+        return new CliToolException(ToolName, exitCode, stderr);
     }
 
     private static ImmutableArray<CompilationError> ParseErrorLines(byte[] stdout)

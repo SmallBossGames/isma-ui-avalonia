@@ -13,9 +13,8 @@ namespace ISMA.Tests.Integration.Simulation;
 /// compiler/runner executables (shell scripts) that emulate the exact CLI
 /// contracts: the compiler reads LISMA source from stdin and writes the
 /// compiled .class (or row:col:message error lines) to stdout; the runner
-/// takes --model/--out/--progress/--start/--end/--step/--method, writes a
-/// result file in the real ISMA binary exchange format plus a progress file,
-/// and supports --list-methods.
+/// takes --model/--start/--end/--step/--method, streams the result to stdout
+/// in the real ISMA binary exchange format, and supports --list-methods.
 /// </summary>
 public class CliToolsIntegrationTests : IDisposable
 {
@@ -34,7 +33,10 @@ public class CliToolsIntegrationTests : IDisposable
         AppContext.SetData("isma.compiler.cli", compilerScript);
         AppContext.SetData("isma.runner.cli", runnerScript);
 
-        _facade = new CliSimulationFacade(new LismaCompilerCli(), new SimulationRunnerCli());
+        var launchers = new CliToolLaunchers();
+        _facade = new CliSimulationFacade(
+            new LismaCompilerCli(launchers.Compiler),
+            new SimulationRunnerCli(launchers.Runner));
     }
 
     [Fact]
@@ -159,6 +161,38 @@ public class CliToolsIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task MonitorSimulation_CoalescesHighFrequencyStepStream()
+    {
+        var compileResult = await _facade.CompileModel("model m { ... }");
+        compileResult.Errors.Should().BeEmpty();
+        File.WriteAllText(Path.Combine(_dir, "runner-many"), "1");
+        CreateManyRowsResultFile();
+
+        var id = await _facade.RunSimulation(new RunSimulationParams
+        {
+            StartTime = 0,
+            EndTime = 100,
+            InitialStep = 0.001,
+            MethodName = "euler",
+            CompiledModelId = compileResult.ModelId,
+        });
+
+        var count = 0;
+        double? last = null;
+        await foreach (var p in _facade.MonitorSimulation(id))
+        {
+            count++;
+            last = p.CurrentTime;
+        }
+
+        // the runner streams 100_001 rows; yielding one update per row would flood
+        // the UI dispatcher, so the facade must coalesce to a bounded number of updates
+        // (~200 delta steps + time-based updates + the final one)
+        count.Should().BeLessThan(1000, "progress must be coalesced, not one update per integration step");
+        last.Should().Be(100.0, "the final step must always be reported");
+    }
+
+    [Fact]
     public async Task GetSimulationMethods_ReturnsBundledMethods()
     {
         File.WriteAllText(Path.Combine(_dir, "methods.txt"), "euler\nrk2\nrkfehlberg\n");
@@ -265,20 +299,19 @@ public class CliToolsIntegrationTests : IDisposable
                 exit 0
             fi
             for a in "$@"; do printf '%s\n' "$a"; done > "$DIR/runner-args.txt"
-            OUT=""
-            PROG=""
             while [ $# -gt 0 ]; do
                 case "$1" in
                     --model) printf '%s\n' "$2" > "$DIR/runner-model.txt"; shift 2;;
-                    --out) OUT="$2"; shift 2;;
-                    --progress) PROG="$2"; shift 2;;
                     *) shift;;
                 esac
             done
             if [ -f "$DIR/runner-fail" ]; then
-                rm -f "$OUT"
                 echo "simulation-runner: fake failure" >&2
                 exit 1
+            fi
+            if [ -f "$DIR/runner-many" ]; then
+                cat "$DIR/result-many.bin"
+                exit 0
             fi
             if [ -f "$DIR/runner-slow" ]; then
                 trap 'rm -f "$DIR/runner-running"; exit 143' TERM
@@ -288,11 +321,7 @@ public class CliToolsIntegrationTests : IDisposable
                 rm -f "$DIR/runner-running"
                 exit 143
             fi
-            for t in 0.0 0.25 0.5 0.75 1.0; do
-                printf '%s\n' "$t" > "$PROG"
-                sleep 0.05
-            done
-            cat "$DIR/result.bin" > "$OUT"
+            cat "$DIR/result.bin"
             exit 0
             """;
     }
@@ -317,7 +346,36 @@ public class CliToolsIntegrationTests : IDisposable
         }
 
         WriteRow(fs, 0.0, 1.0, 2.0, -1.0);
-        WriteRow(fs, 0.1, 0.9, 1.8, -0.9);
+        WriteRow(fs, 0.25, 0.9, 1.8, -0.9);
+        WriteRow(fs, 0.5, 0.8, 1.6, -0.8);
+        WriteRow(fs, 0.75, 0.7, 1.4, -0.7);
+        WriteRow(fs, 1.0, 0.6, 1.2, -0.6);
+
+        _tempFiles.Add(path);
+    }
+
+    /// <summary>
+    /// Writes a result file with 100_001 rows (TIME 0..100 in 0.001 increments)
+    /// to emulate a long simulation run.
+    /// </summary>
+    private void CreateManyRowsResultFile()
+    {
+        var path = Path.Combine(_dir, "result-many.bin");
+        using var fs = File.Create(path);
+
+        var columns = new[] { "TIME", "DE_0-x", "f0" };
+        WriteUInt16BE(fs, (ushort)columns.Length);
+        foreach (var name in columns)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(name);
+            WriteUInt16BE(fs, (ushort)bytes.Length);
+            fs.Write(bytes);
+        }
+
+        for (var i = 0; i <= 100_000; i++)
+        {
+            WriteRow(fs, i / 1000.0, 1.0, -1.0);
+        }
 
         _tempFiles.Add(path);
     }

@@ -13,7 +13,7 @@ public interface ISimulationServerFacade
     IAsyncEnumerable<SimulationProgress> MonitorSimulation(long id);
     Task<CachedSimulationResult> DownloadResult(long id);
     Task CancelSimulation(long id);
-    Task<string[]> GetSimulationMethods();
+    Task<IReadOnlyList<string>> GetSimulationMethods();
     Task Shutdown();
 }
 
